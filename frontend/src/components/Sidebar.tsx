@@ -1,0 +1,250 @@
+import { useState } from 'react';
+import {
+  Layers,
+  TrendingUp,
+  ArrowRightLeft,
+  ShoppingCart,
+  BarChart3,
+  ShieldCheck,
+  Building2,
+  User,
+  LogOut,
+  RefreshCw,
+  Server,
+  Sliders,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+} from 'lucide-react';
+import { UserRole, BranchLocation, type UserSession } from '../types/auth';
+
+interface SidebarProps {
+  userSession: UserSession;
+  activeTab: string;
+  onSelectTab: (tabId: string) => void;
+  selectedBranch: string;
+  onSelectBranch: (branch: string) => void;
+  isLiveBackend: boolean;
+  onRefresh: () => void;
+  onLogout: () => void;
+}
+
+export function Sidebar({
+  userSession,
+  activeTab,
+  onSelectTab,
+  selectedBranch,
+  onSelectBranch,
+  isLiveBackend,
+  onRefresh,
+  onLogout,
+}: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+
+  const getRoleIcon = () => {
+    switch (userSession.role) {
+      case UserRole.Owner:
+        return <ShieldCheck size={16} style={{ color: '#38BDF8' }} />;
+      case UserRole.BranchManager:
+        return <Building2 size={16} style={{ color: '#F59E0B' }} />;
+      case UserRole.Cashier:
+        return <User size={16} style={{ color: '#10B981' }} />;
+    }
+  };
+
+  return (
+    <aside className={`sidebar-container ${isCollapsed ? 'collapsed' : ''}`}>
+      {/* Sidebar Header & Brand */}
+      <div className="sidebar-brand">
+        <div className="brand-logo">
+          <Layers size={22} />
+        </div>
+        {!isCollapsed && (
+          <div className="brand-text">
+            <h2 className="brand-name">SteelTrack</h2>
+            <div className="brand-tagline">Enterprise RBAC Hub</div>
+          </div>
+        )}
+        <button
+          className="sidebar-toggle-btn"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+        >
+          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+      </div>
+
+      {/* Role Badge Indicator */}
+      {!isCollapsed && (
+        <div className="sidebar-role-badge">
+          {getRoleIcon()}
+          <span className="role-label">{userSession.role} Workspace</span>
+        </div>
+      )}
+
+      {/* Owner Branch Switcher Widget */}
+      {!isCollapsed && userSession.role === UserRole.Owner && (
+        <div className="sidebar-branch-widget">
+          <label className="widget-label">Branch Scope Context:</label>
+          <select
+            value={selectedBranch}
+            onChange={(e) => onSelectBranch(e.target.value)}
+            className="branch-select"
+          >
+            <option value="All">All 4 Branches Combined</option>
+            <option value={BranchLocation.Davao}>Davao Branch (South Yard)</option>
+            <option value={BranchLocation.Makati}>Makati Branch (Capital Hub)</option>
+            <option value={BranchLocation.Mandaue}>Mandaue Branch (Visayas)</option>
+            <option value={BranchLocation.Cebu}>Cebu Branch (Port Yard)</option>
+          </select>
+        </div>
+      )}
+
+      {/* Navigation Menu Links */}
+      <nav className="sidebar-nav">
+        <div className="nav-section-title">{!isCollapsed && 'MENU NAVIGATION'}</div>
+
+        {/* OWNER MENU */}
+        {userSession.role === UserRole.Owner && (
+          <>
+            <button
+              className={`sidebar-nav-item ${activeTab === 'inventory' ? 'active' : ''}`}
+              onClick={() => onSelectTab('inventory')}
+              title="Inventory Dashboard"
+            >
+              <Layers size={18} />
+              {!isCollapsed && <span>Inventory & Batches</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'forecast' ? 'active' : ''}`}
+              onClick={() => onSelectTab('forecast')}
+              title="LSTM Demand Forecast"
+            >
+              <TrendingUp size={18} />
+              {!isCollapsed && <span>LSTM AI Demand Forecast</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'transfers' ? 'active' : ''}`}
+              onClick={() => onSelectTab('transfers')}
+              title="Inter-Branch Transfers"
+            >
+              <ArrowRightLeft size={18} />
+              {!isCollapsed && <span>Inter-Branch Transfers</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+              onClick={() => onSelectTab('analytics')}
+              title="Cross-Branch Analytics"
+            >
+              <BarChart3 size={18} />
+              {!isCollapsed && <span>Cross-Branch Analytics</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'system' ? 'active' : ''}`}
+              onClick={() => onSelectTab('system')}
+              title="System Settings"
+            >
+              <Sliders size={18} />
+              {!isCollapsed && <span>System Management</span>}
+            </button>
+          </>
+        )}
+
+        {/* BRANCH MANAGER MENU */}
+        {userSession.role === UserRole.BranchManager && (
+          <>
+            <button
+              className={`sidebar-nav-item ${activeTab === 'inventory' ? 'active' : ''}`}
+              onClick={() => onSelectTab('inventory')}
+              title="Branch Inventory"
+            >
+              <Layers size={18} />
+              {!isCollapsed && <span>Branch Inventory</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'transfers' ? 'active' : ''}`}
+              onClick={() => onSelectTab('transfers')}
+              title="Stock Transfers & Approvals"
+            >
+              <ArrowRightLeft size={18} />
+              {!isCollapsed && <span>Transfers & Approvals</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'approvals' ? 'active' : ''}`}
+              onClick={() => onSelectTab('approvals')}
+              title="Branch Quality Approvals"
+            >
+              <ClipboardCheck size={18} />
+              {!isCollapsed && <span>Quality & Approvals</span>}
+            </button>
+          </>
+        )}
+
+        {/* CASHIER MENU */}
+        {userSession.role === UserRole.Cashier && (
+          <>
+            <button
+              className={`sidebar-nav-item ${activeTab === 'pos' ? 'active' : ''}`}
+              onClick={() => onSelectTab('pos')}
+              title="Point of Sale (POS)"
+            >
+              <ShoppingCart size={18} />
+              {!isCollapsed && <span>Point of Sale (POS)</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'inventory' ? 'active' : ''}`}
+              onClick={() => onSelectTab('inventory')}
+              title="Branch Stock Lookup"
+            >
+              <Layers size={18} />
+              {!isCollapsed && <span>Available Stock Lookup</span>}
+            </button>
+          </>
+        )}
+      </nav>
+
+      {/* Sidebar Footer User Profile Card */}
+      <div className="sidebar-footer">
+        {!isCollapsed ? (
+          <div className="user-profile-card">
+            <div className="profile-info">
+              <div className="user-avatar-sm">{userSession.name.charAt(0)}</div>
+              <div className="user-details">
+                <div className="user-fullname">{userSession.name}</div>
+                <div className="user-sub">
+                  {userSession.branch ? `${userSession.branch} Branch` : 'All Branches (Owner)'}
+                </div>
+              </div>
+            </div>
+
+            <div className="profile-actions">
+              <div className={`status-dot-pill ${isLiveBackend ? 'online' : 'offline'}`} title="Backend API status">
+                <Server size={12} />
+                {isLiveBackend ? 'C# Web API' : 'Mock'}
+              </div>
+
+              <button className="btn-icon" onClick={onRefresh} title="Sync Server Data">
+                <RefreshCw size={14} />
+              </button>
+
+              <button className="btn-icon logout" onClick={onLogout} title="Sign Out">
+                <LogOut size={14} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn-icon logout centered" onClick={onLogout} title="Sign Out">
+            <LogOut size={18} />
+          </button>
+        )}
+      </div>
+    </aside>
+  );
+}

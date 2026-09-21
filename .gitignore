@@ -1,0 +1,19 @@
+# .NET build output
+bin/
+obj/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Node / Vite build output
+node_modules/
+dist/
+.vite/
+*.log
+
+# IDE & OS
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
