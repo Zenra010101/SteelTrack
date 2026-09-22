@@ -129,13 +129,28 @@ let mockTransactions: PosTransaction[] = [
     branch: BranchLocation.Davao,
     cashierName: 'Juan Dela Cruz',
     customerName: 'Mindanao Steelworks Corp.',
-    batchId: '11111111-1111-1111-1111-111111111111',
-    heatNumber: 'HT-2026-8841',
-    grade: 'A36_Structural',
-    tonnageSold: 4.5,
-    pricePerTonUSD: 850,
-    totalAmountUSD: 3825,
+    customerTin: '241-890-112-000',
+    items: [
+      {
+        id: 'cart-1',
+        batchId: '11111111-1111-1111-1111-111111111111',
+        heatNumber: 'HT-2026-8841',
+        grade: 'A36_Structural',
+        dimensions: '12mm x 1500mm x 6000mm',
+        location: 'Yard A - Bay 02',
+        availableTons: 14.5,
+        quantityTons: 4.5,
+        pricePerTonUSD: 850,
+        lineTotalUSD: 3825,
+      },
+    ],
+    totalTonnage: 4.5,
+    subtotalUSD: 3825,
+    taxUSD: 459,
+    discountUSD: 0,
+    totalAmountUSD: 4284,
     paymentMethod: 'Bank Transfer',
+    referenceNumber: 'BDO-TRX-992014',
     createdAt: new Date(Date.now() - 4 * 3600000).toISOString(),
   },
 ];
@@ -335,6 +350,22 @@ export async function processPosSale(
     invoiceNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
     createdAt: new Date().toISOString(),
   };
+
+  // Deduct tonnage from inventory batches
+  if (newTx.items && newTx.items.length > 0) {
+    for (const item of newTx.items) {
+      const bIdx = mockBatches.findIndex((b) => b.id === item.batchId);
+      if (bIdx !== -1) {
+        const remaining = Math.max(0, mockBatches[bIdx].weightInTons - item.quantityTons);
+        mockBatches[bIdx] = {
+          ...mockBatches[bIdx],
+          weightInTons: Number(remaining.toFixed(2)),
+          status: remaining <= 0.05 ? 'Shipped' : mockBatches[bIdx].status,
+        };
+      }
+    }
+  }
+
   mockTransactions.unshift(newTx);
   return newTx;
 }

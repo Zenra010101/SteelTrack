@@ -50,76 +50,80 @@ export function AddBatchModal({
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Assigned Branch Location</label>
-            <select
-              value={branch}
-              onChange={(e) => setBranch(e.target.value as BranchLocation)}
-            >
-              <option value={BranchLocation.Davao}>Davao Branch (Yard South)</option>
-              <option value={BranchLocation.Makati}>Makati Branch (Capital Hub)</option>
-              <option value={BranchLocation.Mandaue}>Mandaue Branch (Visayas Logistics)</option>
-              <option value={BranchLocation.Cebu}>Cebu Branch (Port Yard)</option>
-            </select>
-          </div>
+          <div className="modal-body">
+            <div className="form-group">
+              <label>Assigned Branch Location</label>
+              <select
+                value={branch}
+                onChange={(e) => setBranch(e.target.value as BranchLocation)}
+              >
+                <option value={BranchLocation.Davao}>Davao Branch (Yard South)</option>
+                <option value={BranchLocation.Makati}>Makati Branch (Capital Hub)</option>
+                <option value={BranchLocation.Mandaue}>Mandaue Branch (Visayas Logistics)</option>
+                <option value={BranchLocation.Cebu}>Cebu Branch (Port Yard)</option>
+              </select>
+            </div>
 
-          <div className="form-group">
-            <label>Heat Number (optional auto-generate)</label>
-            <input
-              type="text"
-              placeholder="e.g. HT-2026-9901"
-              value={heatNumber}
-              onChange={(e) => setHeatNumber(e.target.value)}
-            />
-          </div>
+            <div className="form-group">
+              <label>Heat Number (optional auto-generate)</label>
+              <input
+                type="text"
+                placeholder="e.g. HT-2026-9901"
+                value={heatNumber}
+                onChange={(e) => setHeatNumber(e.target.value)}
+              />
+            </div>
 
-          <div className="form-group">
-            <label>Steel Grade</label>
-            <select
-              value={grade}
-              onChange={(e) => setGrade(e.target.value as SteelGrade)}
-            >
-              <option value="A36_Structural">A36 Structural Carbon</option>
-              <option value="A572_HighStrength">A572 High Strength Alloy</option>
-              <option value="SS304_Stainless">SS304 Stainless Steel</option>
-              <option value="SS316_Stainless">SS316 Stainless Steel</option>
-              <option value="AISI1045_Carbon">AISI 1045 Medium Carbon</option>
-              <option value="ToolSteel_D2">Tool Steel D2 High Chrome</option>
-            </select>
-          </div>
+            <div className="form-group">
+              <label>Steel Grade</label>
+              <select
+                value={grade}
+                onChange={(e) => setGrade(e.target.value as SteelGrade)}
+              >
+                <option value="A36_Structural">A36 Structural Carbon</option>
+                <option value="A572_HighStrength">A572 High Strength Alloy</option>
+                <option value="SS304_Stainless">SS304 Stainless Steel</option>
+                <option value="SS316_Stainless">SS316 Stainless Steel</option>
+                <option value="AISI1045_Carbon">AISI 1045 Medium Carbon</option>
+                <option value="ToolSteel_D2">Tool Steel D2 High Chrome</option>
+              </select>
+            </div>
 
-          <div className="form-group">
-            <label>Weight (Metric Tons)</label>
-            <input
-              type="number"
-              step="0.1"
-              min="0.1"
-              required
-              value={weightInTons}
-              onChange={(e) => setWeightInTons(parseFloat(e.target.value))}
-            />
-          </div>
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="form-group">
+                <label>Weight (Metric Tons)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  required
+                  value={weightInTons}
+                  onChange={(e) => setWeightInTons(parseFloat(e.target.value))}
+                />
+              </div>
 
-          <div className="form-group">
-            <label>Dimensions / Specifications</label>
-            <input
-              type="text"
-              required
-              placeholder="Thickness x Width x Length"
-              value={dimensions}
-              onChange={(e) => setDimensions(e.target.value)}
-            />
-          </div>
+              <div className="form-group">
+                <label>Yard / Mill Location</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Yard B - Bay 04"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+              </div>
+            </div>
 
-          <div className="form-group">
-            <label>Yard / Mill Location</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Yard B - Bay 04"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
+            <div className="form-group">
+              <label>Dimensions / Specifications</label>
+              <input
+                type="text"
+                required
+                placeholder="Thickness x Width x Length"
+                value={dimensions}
+                onChange={(e) => setDimensions(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="modal-footer">

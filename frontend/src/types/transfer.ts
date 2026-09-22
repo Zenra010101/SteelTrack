@@ -1,4 +1,5 @@
 import { BranchLocation } from './auth';
+export * from './pos';
 
 export type TransferStatus = 'Pending' | 'Approved' | 'InTransit' | 'Completed' | 'Rejected';
 
@@ -14,21 +15,5 @@ export interface StockTransferRequest {
   approvedBy?: string;
   status: TransferStatus;
   notes?: string;
-  createdAt: string;
-}
-
-export interface PosTransaction {
-  id: string;
-  invoiceNumber: string;
-  branch: BranchLocation;
-  cashierName: string;
-  customerName: string;
-  batchId: string;
-  heatNumber: string;
-  grade: string;
-  tonnageSold: number;
-  pricePerTonUSD: number;
-  totalAmountUSD: number;
-  paymentMethod: 'Bank Transfer' | 'Cash' | 'Credit Line';
   createdAt: string;
 }

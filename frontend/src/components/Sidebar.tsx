@@ -85,7 +85,7 @@ export function Sidebar({
       {/* Owner Branch Switcher Widget */}
       {!isCollapsed && userSession.role === UserRole.Owner && (
         <div className="sidebar-branch-widget">
-          <label className="widget-label">Branch Scope Context:</label>
+          <label className="widget-label">Executive Scope (All Branches):</label>
           <select
             value={selectedBranch}
             onChange={(e) => onSelectBranch(e.target.value)}
@@ -97,6 +97,17 @@ export function Sidebar({
             <option value={BranchLocation.Mandaue}>Mandaue Branch (Visayas)</option>
             <option value={BranchLocation.Cebu}>Cebu Branch (Port Yard)</option>
           </select>
+        </div>
+      )}
+
+      {/* Branch User Restricted Scope Indicator */}
+      {!isCollapsed && userSession.role !== UserRole.Owner && (
+        <div className="sidebar-branch-widget">
+          <label className="widget-label">Dedicated Branch Scope:</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.45rem 0.6rem', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600, color: '#0369A1' }}>
+            <Building2 size={14} style={{ color: '#0284C7' }} />
+            <span>{userSession.branch} Branch (Isolated)</span>
+          </div>
         </div>
       )}
 

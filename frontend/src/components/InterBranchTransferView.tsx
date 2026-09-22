@@ -37,7 +37,7 @@ export function InterBranchTransferView({
   const loadTransfersAndInventory = useCallback(async () => {
     const [trList, invResult] = await Promise.all([
       fetchTransfers(currentBranch),
-      fetchInventory(),
+      fetchInventory(undefined, undefined, undefined, currentBranch),
     ]);
     setTransfers(trList);
     setBatches(invResult.data);

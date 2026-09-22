@@ -64,13 +64,13 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
           <tbody>
             {approvals.map((app) => (
               <tr key={app.id}>
-                <td style={{ fontFamily: 'monospace', color: '#38BDF8', fontWeight: 600 }}>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0284C7', fontWeight: 600 }}>
                   {app.id}
                 </td>
                 <td style={{ fontWeight: 600 }}>{app.heatNumber}</td>
                 <td>{app.grade.replace('_', ' ')}</td>
-                <td style={{ color: '#CBD5E1' }}>{app.inspectionType}</td>
-                <td style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{app.inspector}</td>
+                <td style={{ color: '#334155' }}>{app.inspectionType}</td>
+                <td style={{ color: '#64748B', fontSize: '0.85rem' }}>{app.inspector}</td>
                 <td>
                   {app.status === 'Approved' ? (
                     <span className="badge badge-available">
@@ -92,7 +92,7 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
                       <ClipboardCheck size={14} /> Sign & Approve Batch
                     </button>
                   ) : (
-                    <span style={{ fontSize: '0.8rem', color: '#10B981', fontWeight: 500 }}>
+                    <span style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 600 }}>
                       Approved by {managerName}
                     </span>
                   )}

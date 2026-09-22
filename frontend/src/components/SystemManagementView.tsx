@@ -31,7 +31,7 @@ export function SystemManagementView() {
             {PRESET_USERS.map((user) => (
               <tr key={user.id}>
                 <td style={{ fontWeight: 600 }}>{user.name}</td>
-                <td style={{ fontFamily: 'monospace', color: '#94A3B8' }}>{user.username}</td>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#64748B' }}>{user.username}</td>
                 <td>
                   <span className="badge badge-qualitycheck">{user.role}</span>
                 </td>
@@ -40,9 +40,9 @@ export function SystemManagementView() {
                     {user.branch ? `${user.branch} Branch` : 'All Branches (Owner)'}
                   </span>
                 </td>
-                <td style={{ fontSize: '0.85rem', color: '#CBD5E1' }}>{user.description}</td>
+                <td style={{ fontSize: '0.85rem', color: '#334155' }}>{user.description}</td>
                 <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10B981', fontSize: '0.8rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#059669', fontSize: '0.8rem', fontWeight: 600 }}>
                     <Lock size={12} /> Active Policy
                   </div>
                 </td>

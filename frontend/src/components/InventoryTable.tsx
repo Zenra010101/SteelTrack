@@ -62,17 +62,17 @@ export function InventoryTable({
                 <td>
                   <span className="branch-tag highlight">{b.branch || 'Davao'}</span>
                 </td>
-                <td style={{ fontFamily: 'monospace', fontWeight: 600, color: '#F8FAFC' }}>
+                <td style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: '#0F172A' }}>
                   {b.heatNumber}
                 </td>
                 <td>
-                  <span style={{ color: '#38BDF8', fontWeight: 500 }}>
+                  <span style={{ color: '#0284C7', fontWeight: 600 }}>
                     {formatGrade(b.grade)}
                   </span>
                 </td>
                 <td style={{ fontWeight: 600 }}>{b.weightInTons} t</td>
-                <td style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{b.dimensions}</td>
-                <td style={{ color: '#CBD5E1' }}>{b.location}</td>
+                <td style={{ color: '#64748B', fontSize: '0.85rem' }}>{b.dimensions}</td>
+                <td style={{ color: '#475569' }}>{b.location}</td>
                 <td>
                   <span className={`badge ${getBadgeClass(b.status)}`}>
                     {b.status}

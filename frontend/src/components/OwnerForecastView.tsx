@@ -80,7 +80,7 @@ export function OwnerForecastView() {
                 y1={y}
                 x2="780"
                 y2={y}
-                stroke="#1E293B"
+                stroke="#E2E8F0"
                 strokeDasharray="4 4"
               />
             ))}
@@ -105,7 +105,7 @@ export function OwnerForecastView() {
               return (
                 <polygon
                   points={`${topPath} L ${botPath} Z`}
-                  fill="rgba(56, 189, 248, 0.12)"
+                  fill="rgba(2, 132, 199, 0.12)"
                 />
               );
             })()}
@@ -124,7 +124,7 @@ export function OwnerForecastView() {
                 <path
                   d={`M ${points}`}
                   fill="none"
-                  stroke="#38BDF8"
+                  stroke="#0284C7"
                   strokeWidth="3"
                   strokeDasharray="6 4"
                 />
@@ -146,7 +146,7 @@ export function OwnerForecastView() {
                 <path
                   d={`M ${points}`}
                   fill="none"
-                  stroke="#10B981"
+                  stroke="#059669"
                   strokeWidth="3"
                 />
               );
@@ -167,14 +167,14 @@ export function OwnerForecastView() {
                       y1="10"
                       x2={x - 42}
                       y2="260"
-                      stroke="#F59E0B"
+                      stroke="#D97706"
                       strokeDasharray="4 2"
                     />
                   )}
 
                   {/* Actual dot */}
                   {yAct !== null && (
-                    <circle cx={x} cy={yAct} r="5" fill="#10B981" />
+                    <circle cx={x} cy={yAct} r="5" fill="#059669" />
                   )}
 
                   {/* Predicted dot */}
@@ -182,8 +182,8 @@ export function OwnerForecastView() {
                     cx={x}
                     cy={yPred}
                     r="5"
-                    fill="#38BDF8"
-                    stroke="#0B0F19"
+                    fill="#0284C7"
+                    stroke="#FFFFFF"
                     strokeWidth="2"
                   />
 
@@ -192,9 +192,9 @@ export function OwnerForecastView() {
                     x={x}
                     y={yPred - 12}
                     textAnchor="middle"
-                    fill={d.isForecast ? '#38BDF8' : '#94A3B8'}
+                    fill={d.isForecast ? '#0284C7' : '#475569'}
                     fontSize="11"
-                    fontWeight="600"
+                    fontWeight="700"
                   >
                     {d.predictedDemandTons}T
                   </text>
@@ -204,8 +204,9 @@ export function OwnerForecastView() {
                     x={x}
                     y="275"
                     textAnchor="middle"
-                    fill={d.isForecast ? '#F59E0B' : '#94A3B8'}
+                    fill={d.isForecast ? '#D97706' : '#64748B'}
                     fontSize="11"
+                    fontWeight="600"
                   >
                     {d.month}
                   </text>
