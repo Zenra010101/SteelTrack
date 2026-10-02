@@ -132,7 +132,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
             ? {
                 ...item,
                 quantityTons: Number(maxAdd.toFixed(2)),
-                lineTotalUSD: Number((maxAdd * item.pricePerTonUSD).toFixed(2)),
+                lineTotalPHP: Number((maxAdd * item.pricePerTonPHP).toFixed(2)),
               }
             : item
         )
@@ -149,8 +149,8 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
         location: batch.location,
         availableTons: batch.weightInTons,
         quantityTons: Number(initialQty.toFixed(2)),
-        pricePerTonUSD: unitPrice,
-        lineTotalUSD: Number((initialQty * unitPrice).toFixed(2)),
+        pricePerTonPHP: unitPrice,
+        lineTotalPHP: Number((initialQty * unitPrice).toFixed(2)),
       };
       setCart((prev) => [...prev, newItem]);
     }
@@ -165,7 +165,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
           return {
             ...item,
             quantityTons: Number(clamped.toFixed(2)),
-            lineTotalUSD: Number((clamped * item.pricePerTonUSD).toFixed(2)),
+            lineTotalPHP: Number((clamped * item.pricePerTonPHP).toFixed(2)),
           };
         }
         return item;
@@ -184,30 +184,30 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   };
 
   // Financial Computations
-  const subtotalUSD = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.lineTotalUSD, 0);
+  const subtotalPHP = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.lineTotalPHP, 0);
   }, [cart]);
 
   const totalTonnage = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.quantityTons, 0);
   }, [cart]);
 
-  const taxUSD = useMemo(() => {
-    return applyVat ? Number((subtotalUSD * 0.12).toFixed(2)) : 0;
-  }, [subtotalUSD, applyVat]);
+  const taxPHP = useMemo(() => {
+    return applyVat ? Number((subtotalPHP * 0.12).toFixed(2)) : 0;
+  }, [subtotalPHP, applyVat]);
 
-  const grandTotalUSD = useMemo(() => {
-    return Math.max(0, Number((subtotalUSD + taxUSD - discountAmount).toFixed(2)));
-  }, [subtotalUSD, taxUSD, discountAmount]);
+  const grandTotalPHP = useMemo(() => {
+    return Math.max(0, Number((subtotalPHP + taxPHP - discountAmount).toFixed(2)));
+  }, [subtotalPHP, taxPHP, discountAmount]);
 
-  const changeDueUSD = useMemo(() => {
-    if (paymentMethod !== 'Cash' || amountTendered < grandTotalUSD) return 0;
-    return Number((amountTendered - grandTotalUSD).toFixed(2));
-  }, [paymentMethod, amountTendered, grandTotalUSD]);
+  const changeDuePHP = useMemo(() => {
+    if (paymentMethod !== 'Cash' || amountTendered < grandTotalPHP) return 0;
+    return Number((amountTendered - grandTotalPHP).toFixed(2));
+  }, [paymentMethod, amountTendered, grandTotalPHP]);
 
   // Quick Shift Metrics
-  const shiftSalesUSD = useMemo(() => {
-    return transactions.reduce((acc, tx) => acc + tx.totalAmountUSD, 0);
+  const shiftSalesPHP = useMemo(() => {
+    return transactions.reduce((acc, tx) => acc + (tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0), 0);
   }, [transactions]);
 
   const shiftTonnageSold = useMemo(() => {
@@ -229,13 +229,13 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
       customerTin: foundTin,
       items: [...cart],
       totalTonnage: Number(totalTonnage.toFixed(2)),
-      subtotalUSD: Number(subtotalUSD.toFixed(2)),
-      taxUSD,
-      discountUSD: discountAmount,
-      totalAmountUSD: grandTotalUSD,
+      subtotalPHP: Number(subtotalPHP.toFixed(2)),
+      taxPHP,
+      discountPHP: discountAmount,
+      totalAmountPHP: grandTotalPHP,
       paymentMethod,
-      amountTenderedUSD: paymentMethod === 'Cash' ? amountTendered : undefined,
-      changeDueUSD: paymentMethod === 'Cash' ? changeDueUSD : undefined,
+      amountTenderedPHP: paymentMethod === 'Cash' ? amountTendered : undefined,
+      changeDuePHP: paymentMethod === 'Cash' ? changeDuePHP : undefined,
       referenceNumber: referenceNumber || undefined,
     });
 
@@ -274,7 +274,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
         <div className="pos-shift-metrics">
           <div className="pos-mini-stat">
             <span className="label">Today's Sales</span>
-            <span className="val green">${shiftSalesUSD.toLocaleString()}</span>
+            <span className="val green">₱{shiftSalesPHP.toLocaleString()}</span>
           </div>
 
           <div className="pos-mini-stat">
@@ -339,7 +339,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                       <span className="badge badge-available">{tx.paymentMethod}</span>
                     </td>
                     <td style={{ fontWeight: 700, fontFamily: 'Outfit' }}>
-                      ${tx.totalAmountUSD.toLocaleString()}
+                      ₱{(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0).toLocaleString()}
                     </td>
                     <td>
                       <button
@@ -447,7 +447,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                     <div>
                       <div className="card-stock-row">
                         <span className="stock-pill">{batch.weightInTons.toFixed(1)}T in stock</span>
-                        <span className="price-pill">${unitPrice}/T</span>
+                        <span className="price-pill">₱{unitPrice.toLocaleString()}/T</span>
                       </div>
 
                       <button
@@ -568,7 +568,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                     </div>
 
                     <div className="cart-item-total">
-                      ${item.lineTotalUSD.toLocaleString()}
+                      ₱{(item.lineTotalPHP ?? item.lineTotalUSD ?? 0).toLocaleString()}
                     </div>
 
                     <button
@@ -593,7 +593,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
               <div className="summary-row">
                 <span>Subtotal (Steel):</span>
-                <span>${subtotalUSD.toLocaleString()}</span>
+                <span>₱{subtotalPHP.toLocaleString()}</span>
               </div>
 
               <div className="summary-row">
@@ -605,11 +605,11 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   />
                   <span>Standard Value Added Tax (12% VAT):</span>
                 </label>
-                <span>${taxUSD.toLocaleString()}</span>
+                <span>₱{taxPHP.toLocaleString()}</span>
               </div>
 
               <div className="summary-row">
-                <span>Enterprise Volume Discount ($):</span>
+                <span>Enterprise Volume Discount (₱):</span>
                 <input
                   type="number"
                   min={0}
@@ -622,7 +622,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
               <div className="summary-row total">
                 <span>Grand Total Due:</span>
-                <span className="summary-total-amount">${grandTotalUSD.toLocaleString()}</span>
+                <span className="summary-total-amount">₱{grandTotalPHP.toLocaleString()}</span>
               </div>
             </div>
 
@@ -647,7 +647,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                     onClick={() => {
                       setPaymentMethod(pm.key);
                       if (pm.key === 'Cash' && amountTendered === 0) {
-                        setAmountTendered(grandTotalUSD);
+                        setAmountTendered(grandTotalPHP);
                       }
                     }}
                   >
@@ -662,7 +662,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 <div className="cash-tender-box">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#166534' }}>
-                      Cash Amount Tendered ($):
+                      Cash Amount Tendered (₱):
                     </label>
                     <input
                       type="number"
@@ -684,13 +684,13 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                         className="denom-btn"
                         onClick={() => setAmountTendered(amt)}
                       >
-                        ${amt.toLocaleString()}
+                        ₱{amt.toLocaleString()}
                       </button>
                     ))}
                     <button
                       type="button"
                       className="denom-btn"
-                      onClick={() => setAmountTendered(grandTotalUSD)}
+                      onClick={() => setAmountTendered(grandTotalPHP)}
                     >
                       Exact
                     </button>
@@ -699,7 +699,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   <div className="change-due-banner">
                     <span>Change Due to Customer:</span>
                     <span style={{ fontSize: '1.1rem', fontFamily: 'Outfit' }}>
-                      ${changeDueUSD.toLocaleString()}
+                      ₱{changeDuePHP.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -798,7 +798,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                     <tr>
                       <th>Steel Grade / Heat</th>
                       <th style={{ textAlign: 'center' }}>Tons</th>
-                      <th style={{ textAlign: 'right' }}>$/Ton</th>
+                      <th style={{ textAlign: 'right' }}>₱/Ton</th>
                       <th style={{ textAlign: 'right' }}>Total</th>
                     </tr>
                   </thead>
@@ -810,9 +810,9 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                           <div style={{ fontSize: '0.68rem', color: '#64748B' }}>{item.heatNumber}</div>
                         </td>
                         <td style={{ textAlign: 'center' }}>{item.quantityTons}T</td>
-                        <td style={{ textAlign: 'right' }}>${item.pricePerTonUSD}</td>
+                        <td style={{ textAlign: 'right' }}>₱{(item.pricePerTonPHP ?? item.pricePerTonUSD ?? 0).toLocaleString()}</td>
                         <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                          ${item.lineTotalUSD.toLocaleString()}
+                          ₱{(item.lineTotalPHP ?? item.lineTotalUSD ?? 0).toLocaleString()}
                         </td>
                       </tr>
                     ))}
@@ -828,12 +828,12 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
                 <div className="receipt-row">
                   <span>Subtotal:</span>
-                  <span>${activeReceipt.subtotalUSD.toLocaleString()}</span>
+                  <span>₱{(activeReceipt.subtotalPHP ?? activeReceipt.subtotalUSD ?? 0).toLocaleString()}</span>
                 </div>
 
                 <div className="receipt-row">
                   <span>VAT (12%):</span>
-                  <span>${activeReceipt.taxUSD.toLocaleString()}</span>
+                  <span>₱{(activeReceipt.taxPHP ?? activeReceipt.taxUSD ?? 0).toLocaleString()}</span>
                 </div>
 
                 <div className="receipt-divider" />
@@ -841,7 +841,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 <div className="receipt-row total">
                   <span>TOTAL PAID:</span>
                   <span style={{ color: '#059669', fontSize: '1.2rem' }}>
-                    ${activeReceipt.totalAmountUSD.toLocaleString()}
+                    ₱{(activeReceipt.totalAmountPHP ?? activeReceipt.totalAmountUSD ?? 0).toLocaleString()}
                   </span>
                 </div>
 
@@ -850,15 +850,15 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   <span>{activeReceipt.paymentMethod}</span>
                 </div>
 
-                {activeReceipt.amountTenderedUSD !== undefined && (
+                {(activeReceipt.amountTenderedPHP !== undefined || activeReceipt.amountTenderedUSD !== undefined) && (
                   <>
                     <div className="receipt-row">
                       <span>Amount Tendered:</span>
-                      <span>${activeReceipt.amountTenderedUSD.toLocaleString()}</span>
+                      <span>₱{((activeReceipt.amountTenderedPHP ?? activeReceipt.amountTenderedUSD) || 0).toLocaleString()}</span>
                     </div>
                     <div className="receipt-row">
                       <span>Change Due:</span>
-                      <span>${(activeReceipt.changeDueUSD || 0).toLocaleString()}</span>
+                      <span>₱{((activeReceipt.changeDuePHP ?? activeReceipt.changeDueUSD) || 0).toLocaleString()}</span>
                     </div>
                   </>
                 )}

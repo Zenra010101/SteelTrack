@@ -2,7 +2,8 @@ namespace SteelTrack.Domain.Enums;
 
 public enum UserRole
 {
-    Owner,
-    BranchManager,
-    Cashier
+    Owner = 0,
+    BranchManager = 1,
+    Cashier = 2,
+    Admin = 3
 }

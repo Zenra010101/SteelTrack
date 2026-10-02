@@ -12,19 +12,22 @@ SteelTrack Enterprise is an industrial multi-branch steel inventory tracking and
   - **Cashier**: Scoped to assigned branch counter, Point of Sale (POS) checkout terminal, official invoice/receipt generation.
 
 - **🏢 Multi-Branch Support**:
-  - **Davao Branch** (Yard South)
-  - **Makati Branch** (Capital Hub)
-  - **Mandaue Branch** (Visayas Logistics)
-  - **Cebu Branch** (Port Yard)
+  - **Davao Branch** 
+  - **Makati Branch** 
+  - **Mandaue Branch** 
+  - **Cebu Branch**
 
-- **📈 Mock LSTM Demand Forecasting Engine**:
-  - Visual interactive forecasting chart comparing 6-month historical steel batch demand against 3-month AI projected demand with 95% confidence bounds and reorder alerts (ready for Python PyTorch/TensorFlow backend connection).
+- **📊 Complete 30-Table Data Dictionary Schema**:
+  - Full relational PostgreSQL database covering **Audit Logs**, **Categories**, **Customers**, **Roles**, **Store Settings**, **Suppliers**, **Products**, **Users**, **Inventory Adjustments**, **Sales**, **Stock Receivings**, **Customer Receivables**, **Goods Return Slips**, **Sale Cheques**, **Sale Items**, **Sale Payments**, **Inventory Transactions**, **Receivable Payments**, **Return Slip Items**, **Sales Return Deductions**, **Bounced Cheques**, **Goods Exchanges**, **Product Batches**, and **Sales Report Verifications**.
+
+- **📈 LSTM Demand Forecasting Engine**:
+  - Visual interactive forecasting chart comparing historical steel batch demand against AI projected demand with confidence bounds and reorder alerts.
 
 - **🚚 Inter-Branch Stock Transfer Logistics**:
   - Request, approve, dispatch, and track stock transfers across branches with full audit status (`Pending` → `Approved` → `InTransit` → `Completed`).
 
 - **🛒 Cashier POS & Printable Receipt Terminal**:
-  - Daily counter checkout terminal for selling inventory batches, calculating unit rates ($/Ton), and printing itemized industrial invoices.
+  - Daily counter checkout terminal for selling inventory batches, calculating unit rates, and printing itemized industrial invoices.
 
 ---
 
@@ -35,39 +38,25 @@ SteelTrack/
 ├── SteelTrack.slnx                     # .NET Solution file
 ├── README.md                           # Main Project Documentation & Changelog
 ├── backend/                            # C# Backend (Clean Architecture)
-│   ├── Domain/                         # Entities & Enums
-│   │   ├── Entities/SteelBatch.cs
-│   │   └── Enums/
-│   │       ├── BatchStatus.cs
-│   │       ├── SteelGrade.cs
-│   │       ├── UserRole.cs             # (Owner, BranchManager, Cashier)
-│   │       └── BranchLocation.cs       # (Davao, Makati, Mandaue, Cebu)
+│   ├── Domain/                         # Entities & Enums (30 Data Dictionary Entities)
+│   │   ├── Entities/                   # Product, Sale, Customer, User, StockReceiving, etc.
+│   │   └── Enums/                      # UserRole, PaymentMethod, TaxMode, AdjustmentType, etc.
 │   ├── Application/                    # DTOs, Service Contracts & Use Cases
-│   │   ├── DTOs/SteelBatchDto.cs
-│   │   ├── Interfaces/IInventoryService.cs
-│   │   └── Services/InventoryService.cs
-│   ├── Infrastructure/                 # EF Core, PostgreSQL DbContext & Repositories
+│   │   ├── DTOs/
+│   │   ├── Interfaces/
+│   │   └── Services/
+│   ├── Infrastructure/                 # EF Core 10, PostgreSQL DbContext, Migrations & Configurations
+│   │   ├── Migrations/                 # Consolidated EF Core Migration (InitialDataDictionarySchema)
+│   │   ├── Persistence/
+│   │   │   ├── Configurations/         # Entity Fluent API Configurations (varchar & numeric(18,2))
+│   │   │   └── SteelTrackDbContext.cs  # DbContext with global varchar convention
+│   │   └── Repositories/
 │   └── API/                            # ASP.NET Core Web API Controllers & OpenAPI
 └── frontend/                           # React + TypeScript + Vite Frontend
     ├── src/
-    │   ├── components/                 # UI Component Library
-    │   │   ├── Sidebar.tsx             # Collapsible Role-Specific Navigation Sidebar
-    │   │   ├── Header.tsx              # Sticky Topbar Breadcrumb & Status Indicator
-    │   │   ├── LoginScreen.tsx         # Dark Glassmorphic Login & Demo Role Presets
-    │   │   ├── MetricsOverview.tsx     # Inventory KPI Cards
-    │   │   ├── InventoryTable.tsx      # Batch Inventory Data Grid
-    │   │   ├── OwnerForecastView.tsx   # LSTM Demand Forecasting Engine
-    │   │   ├── InterBranchTransferView.tsx # Inter-Branch Stock Transfers
-    │   │   ├── CashierPosView.tsx      # Cashier POS Checkout & Invoice Generator
-    │   │   ├── OwnerAnalyticsView.tsx  # Executive Cross-Branch Reporting
-    │   │   ├── BranchApprovalsView.tsx # Branch Quality Control & Sign-offs
-    │   │   └── SystemManagementView.tsx# User Roles & System Access Control
-    │   ├── services/
-    │   │   └── api.ts                  # API Integration & Mock State Layer
-    │   ├── types/
-    │   │   ├── auth.ts                 # UserRole & BranchLocation Enums
-    │   │   ├── steel.ts                # SteelBatch & DTO Types
-    │   │   └── transfer.ts             # StockTransferRequest & PosTransaction Types
+    │   ├── components/                 # UI Component Library (Sidebar, Header, POS, Analytics, etc.)
+    │   ├── services/                   # API Integration & Service Layer
+    │   ├── types/                      # TypeScript Interfaces & Enums
     │   ├── App.tsx                     # Main App Shell & RBAC View Router
     │   └── index.css                   # Industrial Dark Theme Design System
     └── vite.config.ts                  # Vite Dev Server & API Proxy Configuration
@@ -75,11 +64,28 @@ SteelTrack/
 
 ---
 
-## ⚙️ Getting Started
+## ⚙️ Getting Started & Database Setup
 
-### 1. Run Backend (C# ASP.NET Core Web API)
+### 1. Database Migrations (PostgreSQL)
 
-> **Database Configuration**: Default connection string in `backend/API/appsettings.json` is configured for PostgreSQL (`Host=localhost;Port=5432;Database=SteelTrackDb;Username=postgres;Password=12345`).
+> **Database Configuration**: The connection string is configured in `backend/API/appsettings.json` for PostgreSQL (`Host=localhost;Port=5432;Database=SteelTrackDb;Username=postgres;Password=12345`).
+
+To create and update the PostgreSQL database schema:
+
+```powershell
+cd backend
+
+# Apply the consolidated 30-table migration to PostgreSQL
+dotnet ef database update --project Infrastructure --startup-project API
+```
+
+*(Optional)* To reset or re-generate migrations from scratch:
+```powershell
+# Generate a new migration
+dotnet ef migrations add InitialDataDictionarySchema --project Infrastructure --startup-project API
+```
+
+### 2. Run Backend (C# ASP.NET Core Web API)
 
 ```bash
 cd backend/API
@@ -88,7 +94,7 @@ dotnet run --urls "http://localhost:5000"
 The Web API will start at:
 - **Swagger Interactive API Docs**: [`http://localhost:5000/swagger`](http://localhost:5000/swagger)
 
-### 2. Run Frontend (React + TypeScript + Vite)
+### 3. Run Frontend (React + TypeScript + Vite)
 
 ```bash
 cd frontend
@@ -118,7 +124,11 @@ The React development server will start at:
 
 ## 📝 Recent Change History
 
+- **v1.3.0**:
+  - **Full 30-Table Data Dictionary Migration**: Implemented all entities, enums, and EF Core configurations for Tables 4–33 in the specification.
+  - **PostgreSQL Data Type Conventions**: Configured global `varchar` string data type mapping convention and explicit `numeric(18,2)` currency precision across all financial columns.
+  - **Clean Consolidated Migration**: Consolidated all migrations into a single clean migration `InitialDataDictionarySchema` in [`backend/Infrastructure/Migrations`](file:///d:/It_Project/Capstone/SteelTrack/backend/Infrastructure/Migrations).
 - **v1.2.1**: Updated PostgreSQL connection string in [`appsettings.json`](file:///d:/It_Project/Capstone/SteelTrack/backend/API/appsettings.json) and [`appsettings.Development.json`](file:///d:/It_Project/Capstone/SteelTrack/backend/API/appsettings.Development.json) with `Password=12345`.
-- **v1.2.0**: Added **Role-Specific Collapsible Sidebars** ([`Sidebar.tsx`](file:///d:/It_Project/Capstone/SteelTrack/frontend/src/components/Sidebar.tsx)) with App Shell layout, role badge indicators, branch context switcher, and tab protection. Added `OwnerAnalyticsView`, `BranchApprovalsView`, and `SystemManagementView`.
+- **v1.2.0**: Added **Role-Specific Collapsible Sidebars** with App Shell layout, role badge indicators, branch context switcher, and tab protection. Added `OwnerAnalyticsView`, `BranchApprovalsView`, and `SystemManagementView`.
 - **v1.1.0**: Added **Multi-Role Login System** (**Owner**, **Branch Manager**, **Cashier**), **4 Branch Locations** (**Davao**, **Makati**, **Mandaue**, **Cebu**), C# & TypeScript `UserRole` and `BranchLocation` enums, **Mock LSTM Demand Forecasting**, **Inter-Branch Transfers**, and **Cashier POS Terminal**.
 - **v1.0.0**: Initial Clean Architecture ASP.NET Core Web API + React Vite dashboard baseline.

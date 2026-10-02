@@ -4,14 +4,14 @@ import { BranchLocation } from '../types/auth';
 
 export function OwnerAnalyticsView() {
   const branchData = useMemo(() => [
-    { name: BranchLocation.Makati, tonnage: 168.5, percentage: 38, activeBatches: 24, revenueUSD: 143225 },
-    { name: BranchLocation.Davao, tonnage: 124.0, percentage: 28, activeBatches: 18, revenueUSD: 105400 },
-    { name: BranchLocation.Cebu, tonnage: 89.2, percentage: 20, activeBatches: 12, revenueUSD: 75820 },
-    { name: BranchLocation.Mandaue, tonnage: 62.1, percentage: 14, activeBatches: 9, revenueUSD: 52785 },
+    { name: BranchLocation.Makati, tonnage: 168.5, percentage: 38, activeBatches: 24, revenuePHP: 143225 },
+    { name: BranchLocation.Davao, tonnage: 124.0, percentage: 28, activeBatches: 18, revenuePHP: 105400 },
+    { name: BranchLocation.Cebu, tonnage: 89.2, percentage: 20, activeBatches: 12, revenuePHP: 75820 },
+    { name: BranchLocation.Mandaue, tonnage: 62.1, percentage: 14, activeBatches: 9, revenuePHP: 52785 },
   ], []);
 
   const totalTonnage = branchData.reduce((sum, b) => sum + b.tonnage, 0);
-  const totalRevenue = branchData.reduce((sum, b) => sum + b.revenueUSD, 0);
+  const totalRevenue = branchData.reduce((sum, b) => sum + b.revenuePHP, 0);
 
   return (
     <div className="analytics-container">
@@ -43,7 +43,7 @@ export function OwnerAnalyticsView() {
         <div className="metric-card">
           <div>
             <div className="metric-label">Network Inventory Valuation</div>
-            <div className="metric-value">${totalRevenue.toLocaleString()}</div>
+            <div className="metric-value">₱{totalRevenue.toLocaleString()}</div>
             <div className="metric-sub">Based on current steel market spot rates</div>
           </div>
           <div className="metric-icon-box green">
@@ -74,7 +74,7 @@ export function OwnerAnalyticsView() {
               <th>Total Stock Tonnage</th>
               <th>Tonnage Distribution %</th>
               <th>Active Batches</th>
-              <th>Valuation ($ USD)</th>
+              <th>Valuation (₱ PHP)</th>
             </tr>
           </thead>
           <tbody>
@@ -106,7 +106,7 @@ export function OwnerAnalyticsView() {
                 </td>
                 <td>{branch.activeBatches} Batches</td>
                 <td style={{ fontWeight: 700, color: '#059669', fontFamily: 'Outfit, sans-serif' }}>
-                  ${branch.revenueUSD.toLocaleString()}
+                  ₱{branch.revenuePHP.toLocaleString()}
                 </td>
               </tr>
             ))}

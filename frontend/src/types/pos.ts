@@ -9,8 +9,11 @@ export interface PosCartItem {
   location: string;
   availableTons: number;
   quantityTons: number;
-  pricePerTonUSD: number;
-  lineTotalUSD: number;
+  pricePerTonPHP: number;
+  lineTotalPHP: number;
+  /** Backward compatibility */
+  pricePerTonUSD?: number;
+  lineTotalUSD?: number;
 }
 
 export type SteelCategory =
@@ -30,13 +33,20 @@ export interface PosTransaction {
   customerTin?: string;
   items: PosCartItem[];
   totalTonnage: number;
-  subtotalUSD: number;
-  taxUSD: number;
-  discountUSD: number;
-  totalAmountUSD: number;
+  subtotalPHP: number;
+  taxPHP: number;
+  discountPHP: number;
+  totalAmountPHP: number;
   paymentMethod: 'Cash' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque';
-  amountTenderedUSD?: number;
-  changeDueUSD?: number;
+  amountTenderedPHP?: number;
+  changeDuePHP?: number;
   referenceNumber?: string;
   createdAt: string;
+  /** Backward compatibility */
+  subtotalUSD?: number;
+  taxUSD?: number;
+  discountUSD?: number;
+  totalAmountUSD?: number;
+  amountTenderedUSD?: number;
+  changeDueUSD?: number;
 }
