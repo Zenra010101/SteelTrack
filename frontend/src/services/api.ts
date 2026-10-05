@@ -6,6 +6,18 @@ import type {
 } from '../types/steel';
 import { BranchLocation } from '../types/auth';
 import type { StockTransferRequest, PosTransaction, TransferStatus } from '../types/transfer';
+import type {
+  CustomerReceivable,
+  ReceivablePaymentDto,
+  SaleChequeItem,
+  ReceivableStats,
+  ChequeStatusType,
+} from '../types/receivables';
+import type {
+  GoodsReturnSlip,
+  GoodsReturnSlipItem,
+  CreateGrsDto,
+} from '../types/returns';
 
 const API_BASE_URL = '/api/inventory';
 
@@ -404,3 +416,443 @@ export function fetchLstmDemandForecast(
     };
   });
 }
+
+// ----------------------------------------------------
+// Customer Receivables (A/R) & Post-Dated Cheques (PDC)
+// ----------------------------------------------------
+let mockReceivables: CustomerReceivable[] = [
+  {
+    id: 'rec-001',
+    customerId: 'cust-101',
+    customerName: 'Mindanao Steelworks Corp.',
+    companyName: 'Mindanao Steelworks Corporation',
+    tin: '241-890-112-000',
+    creditLimitPHP: 5000000,
+    totalOutstandingPHP: 1450000,
+    currentBalancePHP: 850000,
+    days30BalancePHP: 400000,
+    days60BalancePHP: 200000,
+    days90PlusBalancePHP: 0,
+    lastPaymentDate: new Date(Date.now() - 3 * 86400000).toISOString(),
+    lastPaymentAmountPHP: 150000,
+    status: 'Good Standing',
+    branch: BranchLocation.Davao,
+  },
+  {
+    id: 'rec-002',
+    customerId: 'cust-102',
+    customerName: 'Apex Industrial Builders',
+    companyName: 'Apex Construction & Industrial Inc.',
+    tin: '109-443-887-001',
+    creditLimitPHP: 3000000,
+    totalOutstandingPHP: 2850000,
+    currentBalancePHP: 600000,
+    days30BalancePHP: 950000,
+    days60BalancePHP: 800000,
+    days90PlusBalancePHP: 500000,
+    lastPaymentDate: new Date(Date.now() - 25 * 86400000).toISOString(),
+    lastPaymentAmountPHP: 80000,
+    status: 'Credit Warning',
+    branch: BranchLocation.Makati,
+  },
+  {
+    id: 'rec-003',
+    customerId: 'cust-103',
+    customerName: 'Visayas Shipyard Yard',
+    companyName: 'Visayas Heavy Industries Corp.',
+    tin: '334-112-990-000',
+    creditLimitPHP: 4000000,
+    totalOutstandingPHP: 4200000,
+    currentBalancePHP: 1000000,
+    days30BalancePHP: 1200000,
+    days60BalancePHP: 1000000,
+    days90PlusBalancePHP: 1000000,
+    lastPaymentDate: new Date(Date.now() - 60 * 86400000).toISOString(),
+    lastPaymentAmountPHP: 50000,
+    status: 'Credit Blocked',
+    branch: BranchLocation.Cebu,
+  },
+  {
+    id: 'rec-004',
+    customerId: 'cust-104',
+    customerName: 'Mandaue Heavy Equipment',
+    companyName: 'Mandaue Fabrication & Supply',
+    tin: '556-991-002-000',
+    creditLimitPHP: 2500000,
+    totalOutstandingPHP: 920000,
+    currentBalancePHP: 620000,
+    days30BalancePHP: 300000,
+    days60BalancePHP: 0,
+    days90PlusBalancePHP: 0,
+    lastPaymentDate: new Date(Date.now() - 7 * 86400000).toISOString(),
+    lastPaymentAmountPHP: 200000,
+    status: 'Good Standing',
+    branch: BranchLocation.Mandaue,
+  },
+];
+
+let mockCheques: SaleChequeItem[] = [
+  {
+    id: 'chq-5001',
+    chequeNumber: 'BDO-0098412',
+    bankName: 'BDO Unibank',
+    customerName: 'Mindanao Steelworks Corp.',
+    invoiceNumber: 'INV-2026-0041',
+    amountPHP: 450000,
+    issueDate: new Date(Date.now() - 10 * 86400000).toISOString().split('T')[0],
+    maturityDate: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
+    status: 'Pending',
+    branch: BranchLocation.Davao,
+  },
+  {
+    id: 'chq-5002',
+    chequeNumber: 'BPI-8871092',
+    bankName: 'Bank of the Philippine Islands (BPI)',
+    customerName: 'Apex Industrial Builders',
+    invoiceNumber: 'INV-2026-0019',
+    amountPHP: 800000,
+    issueDate: new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0],
+    maturityDate: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
+    status: 'Deposited',
+    depositedDate: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
+    branch: BranchLocation.Makati,
+  },
+  {
+    id: 'chq-5003',
+    chequeNumber: 'MBTC-3329011',
+    bankName: 'Metrobank',
+    customerName: 'Visayas Shipyard Yard',
+    invoiceNumber: 'INV-2026-0008',
+    amountPHP: 500000,
+    issueDate: new Date(Date.now() - 45 * 86400000).toISOString().split('T')[0],
+    maturityDate: new Date(Date.now() - 15 * 86400000).toISOString().split('T')[0],
+    status: 'Bounced',
+    depositedDate: new Date(Date.now() - 14 * 86400000).toISOString().split('T')[0],
+    bouncedDate: new Date(Date.now() - 10 * 86400000).toISOString().split('T')[0],
+    bounceReason: 'Drawn Against Insufficient Funds (DAIF)',
+    bouncedNoticeSent: true,
+    branch: BranchLocation.Cebu,
+  },
+  {
+    id: 'chq-5004',
+    chequeNumber: 'LBP-7740192',
+    bankName: 'Landbank of the Philippines',
+    customerName: 'Mandaue Heavy Equipment',
+    invoiceNumber: 'INV-2026-0033',
+    amountPHP: 300000,
+    issueDate: new Date(Date.now() - 20 * 86400000).toISOString().split('T')[0],
+    maturityDate: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0],
+    status: 'Cleared',
+    depositedDate: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0],
+    clearedDate: new Date(Date.now() - 1 * 86400000).toISOString().split('T')[0],
+    branch: BranchLocation.Mandaue,
+  },
+];
+
+export async function fetchReceivables(branch?: BranchLocation): Promise<CustomerReceivable[]> {
+  if (!branch) return mockReceivables;
+  return mockReceivables.filter((r) => r.branch === branch);
+}
+
+export async function fetchReceivableStats(branch?: BranchLocation): Promise<ReceivableStats> {
+  const list = branch ? mockReceivables.filter((r) => r.branch === branch) : mockReceivables;
+  const cheques = branch ? mockCheques.filter((c) => c.branch === branch) : mockCheques;
+
+  const totalReceivablesPHP = list.reduce((acc, r) => acc + r.totalOutstandingPHP, 0);
+  const totalCurrentPHP = list.reduce((acc, r) => acc + r.currentBalancePHP, 0);
+  const totalOverduePHP = list.reduce(
+    (acc, r) => acc + r.days30BalancePHP + r.days60BalancePHP + r.days90PlusBalancePHP,
+    0
+  );
+
+  const pendingPdcs = cheques.filter((c) => c.status === 'Pending');
+  const bouncedPdcs = cheques.filter((c) => c.status === 'Bounced');
+
+  return {
+    totalReceivablesPHP,
+    totalCurrentPHP,
+    totalOverduePHP,
+    pendingPdcAmountPHP: pendingPdcs.reduce((acc, c) => acc + c.amountPHP, 0),
+    pendingPdcCount: pendingPdcs.length,
+    bouncedCount: bouncedPdcs.length,
+  };
+}
+
+export async function recordReceivablePayment(dto: ReceivablePaymentDto): Promise<CustomerReceivable | null> {
+  const index = mockReceivables.findIndex((r) => r.id === dto.receivableId);
+  if (index !== -1) {
+    const r = mockReceivables[index];
+    const newTotal = Math.max(0, r.totalOutstandingPHP - dto.amountPaidPHP);
+    
+    // Deduct from oldest bucket first
+    let paidRemaining = dto.amountPaidPHP;
+    let d90 = r.days90PlusBalancePHP;
+    let d60 = r.days60BalancePHP;
+    let d30 = r.days30BalancePHP;
+    let curr = r.currentBalancePHP;
+
+    if (paidRemaining > 0 && d90 > 0) {
+      const ded = Math.min(paidRemaining, d90);
+      d90 -= ded;
+      paidRemaining -= ded;
+    }
+    if (paidRemaining > 0 && d60 > 0) {
+      const ded = Math.min(paidRemaining, d60);
+      d60 -= ded;
+      paidRemaining -= ded;
+    }
+    if (paidRemaining > 0 && d30 > 0) {
+      const ded = Math.min(paidRemaining, d30);
+      d30 -= ded;
+      paidRemaining -= ded;
+    }
+    if (paidRemaining > 0 && curr > 0) {
+      const ded = Math.min(paidRemaining, curr);
+      curr -= ded;
+      paidRemaining -= ded;
+    }
+
+    let status: 'Good Standing' | 'Credit Warning' | 'Credit Blocked' = 'Good Standing';
+    if (newTotal > r.creditLimitPHP * 0.95 || d90 > 0) {
+      status = 'Credit Blocked';
+    } else if (newTotal > r.creditLimitPHP * 0.75 || d60 > 0) {
+      status = 'Credit Warning';
+    }
+
+    mockReceivables[index] = {
+      ...r,
+      totalOutstandingPHP: newTotal,
+      currentBalancePHP: curr,
+      days30BalancePHP: d30,
+      days60BalancePHP: d60,
+      days90PlusBalancePHP: d90,
+      lastPaymentDate: new Date().toISOString(),
+      lastPaymentAmountPHP: dto.amountPaidPHP,
+      status,
+    };
+
+    // If payment was made by cheque, add to cheque register
+    if (dto.paymentMethod === 'Cheque' && dto.chequeNumber) {
+      mockCheques.unshift({
+        id: `chq-${Math.floor(5000 + Math.random() * 1000)}`,
+        chequeNumber: dto.chequeNumber,
+        bankName: dto.bankName || 'Partner Bank',
+        customerName: r.customerName,
+        invoiceNumber: `PAY-${Date.now().toString().slice(-4)}`,
+        amountPHP: dto.amountPaidPHP,
+        issueDate: new Date().toISOString().split('T')[0],
+        maturityDate: dto.chequeDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        status: 'Pending',
+        branch: r.branch,
+      });
+    }
+
+    return mockReceivables[index];
+  }
+  return null;
+}
+
+export async function fetchCheques(branch?: BranchLocation, status?: ChequeStatusType): Promise<SaleChequeItem[]> {
+  let filtered = [...mockCheques];
+  if (branch) filtered = filtered.filter((c) => c.branch === branch);
+  if (status) filtered = filtered.filter((c) => c.status === status);
+  return filtered;
+}
+
+export async function updateChequeStatus(
+  id: string,
+  newStatus: ChequeStatusType,
+  bounceReason?: string
+): Promise<SaleChequeItem | null> {
+  const index = mockCheques.findIndex((c) => c.id === id);
+  if (index !== -1) {
+    const today = new Date().toISOString().split('T')[0];
+    const c = mockCheques[index];
+
+    let updated: SaleChequeItem = {
+      ...c,
+      status: newStatus,
+    };
+
+    if (newStatus === 'Deposited') {
+      updated.depositedDate = today;
+    } else if (newStatus === 'Cleared') {
+      updated.clearedDate = today;
+    } else if (newStatus === 'Bounced') {
+      updated.bouncedDate = today;
+      updated.bounceReason = bounceReason || 'Drawn Against Insufficient Funds (DAIF)';
+      updated.bouncedNoticeSent = true;
+
+      // Update customer receivable standing if cheque bounced
+      const rIdx = mockReceivables.findIndex((r) => r.customerName === c.customerName);
+      if (rIdx !== -1) {
+        mockReceivables[rIdx] = {
+          ...mockReceivables[rIdx],
+          totalOutstandingPHP: mockReceivables[rIdx].totalOutstandingPHP + c.amountPHP,
+          days90PlusBalancePHP: mockReceivables[rIdx].days90PlusBalancePHP + c.amountPHP,
+          status: 'Credit Blocked',
+        };
+      }
+    }
+
+    mockCheques[index] = updated;
+    return updated;
+  }
+  return null;
+}
+
+// ----------------------------------------------------
+// Goods Return Slips (GRS) & Product Exchanges API
+// ----------------------------------------------------
+let mockGoodsReturns: GoodsReturnSlip[] = [
+  {
+    id: 'grs-9001',
+    grsNumber: 'GRS-2026-0104',
+    invoiceNumber: 'INV-2026-0041',
+    customerName: 'Mindanao Steelworks Corp.',
+    branch: BranchLocation.Davao,
+    status: 'Pending_Approval',
+    totalReturnValuePHP: 127500,
+    requestedBy: 'Juan Dela Cruz (Cashier)',
+    createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+    notes: 'Surface oxidation observed on outer bundle edge during unloading.',
+    items: [
+      {
+        id: 'grs-item-1',
+        returnSlipId: 'grs-9001',
+        batchId: '11111111-1111-1111-1111-111111111111',
+        heatNumber: 'HT-2026-8841',
+        grade: 'A36_Structural',
+        dimensions: '12mm x 1500mm x 6000mm',
+        quantityReturnedTons: 1.5,
+        unitPricePerTonPHP: 85000,
+        subtotalPHP: 127500,
+        reason: 'Quality_Defect_Rust',
+        restockEligible: false,
+      },
+    ],
+  },
+  {
+    id: 'grs-9002',
+    grsNumber: 'GRS-2026-0088',
+    invoiceNumber: 'INV-2026-0019',
+    customerName: 'Apex Industrial Builders',
+    branch: BranchLocation.Makati,
+    status: 'Approved',
+    totalReturnValuePHP: 240000,
+    creditNoteNumber: 'CN-2026-0033',
+    requestedBy: 'Makati Counter Staff',
+    approvedBy: 'Carlos Reyes (Branch Manager)',
+    createdAt: new Date(Date.now() - 8 * 86400000).toISOString(),
+    approvedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+    notes: 'Customer ordered 8mm plates instead of 10mm plates. Restocked to Yard B.',
+    items: [
+      {
+        id: 'grs-item-2',
+        returnSlipId: 'grs-9002',
+        batchId: '66666666-6666-6666-6666-666666666666',
+        heatNumber: 'HT-2026-1049',
+        grade: 'A36_Structural',
+        dimensions: '16mm x 2000mm x 12000mm',
+        quantityReturnedTons: 3.0,
+        unitPricePerTonPHP: 80000,
+        subtotalPHP: 240000,
+        reason: 'Incorrect_Specification',
+        restockEligible: true,
+      },
+    ],
+  },
+];
+
+export async function fetchGoodsReturns(branch?: BranchLocation): Promise<GoodsReturnSlip[]> {
+  if (!branch) return mockGoodsReturns;
+  return mockGoodsReturns.filter((g) => g.branch === branch);
+}
+
+export async function createGoodsReturn(dto: CreateGrsDto): Promise<GoodsReturnSlip> {
+  const grsId = `grs-${Math.floor(9000 + Math.random() * 1000)}`;
+  const totalVal = dto.items.reduce(
+    (acc, i) => acc + i.quantityReturnedTons * i.unitPricePerTonPHP,
+    0
+  );
+
+  const items: GoodsReturnSlipItem[] = dto.items.map((i, idx) => ({
+    id: `grs-item-${Date.now()}-${idx}`,
+    returnSlipId: grsId,
+    batchId: i.batchId,
+    heatNumber: i.heatNumber,
+    grade: i.grade,
+    dimensions: i.dimensions,
+    quantityReturnedTons: i.quantityReturnedTons,
+    unitPricePerTonPHP: i.unitPricePerTonPHP,
+    subtotalPHP: i.quantityReturnedTons * i.unitPricePerTonPHP,
+    reason: i.reason,
+    restockEligible: i.restockEligible,
+  }));
+
+  const newGrs: GoodsReturnSlip = {
+    id: grsId,
+    grsNumber: `GRS-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    invoiceNumber: dto.invoiceNumber,
+    customerName: dto.customerName,
+    branch: dto.branch,
+    status: 'Pending_Approval',
+    totalReturnValuePHP: totalVal,
+    requestedBy: dto.requestedBy,
+    createdAt: new Date().toISOString(),
+    notes: dto.notes,
+    items,
+  };
+
+  mockGoodsReturns.unshift(newGrs);
+  return newGrs;
+}
+
+export async function approveGoodsReturn(
+  id: string,
+  approverName: string
+): Promise<GoodsReturnSlip | null> {
+  const index = mockGoodsReturns.findIndex((g) => g.id === id);
+  if (index !== -1) {
+    const grs = mockGoodsReturns[index];
+    const creditNoteNum = `CN-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    mockGoodsReturns[index] = {
+      ...grs,
+      status: 'Approved',
+      approvedBy: approverName,
+      approvedAt: new Date().toISOString(),
+      creditNoteNumber: creditNoteNum,
+    };
+
+    // Restock inventory for items marked as restockEligible
+    for (const item of grs.items) {
+      if (item.restockEligible) {
+        const bIdx = mockBatches.findIndex((b) => b.id === item.batchId);
+        if (bIdx !== -1) {
+          mockBatches[bIdx] = {
+            ...mockBatches[bIdx],
+            weightInTons: Number((mockBatches[bIdx].weightInTons + item.quantityReturnedTons).toFixed(2)),
+            status: 'Available',
+          };
+        }
+      }
+    }
+
+    // Deduct return total from customer receivable balance if customer account exists
+    const rIdx = mockReceivables.findIndex((r) => r.customerName === grs.customerName);
+    if (rIdx !== -1) {
+      const newTotal = Math.max(0, mockReceivables[rIdx].totalOutstandingPHP - grs.totalReturnValuePHP);
+      mockReceivables[rIdx] = {
+        ...mockReceivables[rIdx],
+        totalOutstandingPHP: newTotal,
+        currentBalancePHP: Math.max(0, mockReceivables[rIdx].currentBalancePHP - grs.totalReturnValuePHP),
+      };
+    }
+
+    return mockGoodsReturns[index];
+  }
+  return null;
+}
+
+

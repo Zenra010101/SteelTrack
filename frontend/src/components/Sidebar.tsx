@@ -15,6 +15,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
+  DollarSign,
+  CreditCard,
+  RotateCcw,
+  Truck,
+  Users,
+  FileCode,
 } from 'lucide-react';
 import { UserRole, BranchLocation, type UserSession } from '../types/auth';
 
@@ -92,22 +98,11 @@ export function Sidebar({
             className="branch-select"
           >
             <option value="All">All 4 Branches Combined</option>
-            <option value={BranchLocation.Davao}>Davao Branch (South Yard)</option>
-            <option value={BranchLocation.Makati}>Makati Branch (Capital Hub)</option>
-            <option value={BranchLocation.Mandaue}>Mandaue Branch (Visayas)</option>
-            <option value={BranchLocation.Cebu}>Cebu Branch (Port Yard)</option>
+            <option value={BranchLocation.Davao}>Davao Branch</option>
+            <option value={BranchLocation.Makati}>Makati Branch</option>
+            <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
+            <option value={BranchLocation.Cebu}>Cebu Branch</option>
           </select>
-        </div>
-      )}
-
-      {/* Branch User Restricted Scope Indicator */}
-      {!isCollapsed && userSession.role !== UserRole.Owner && (
-        <div className="sidebar-branch-widget">
-          <label className="widget-label">Dedicated Branch Scope:</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.45rem 0.6rem', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600, color: '#0369A1' }}>
-            <Building2 size={14} style={{ color: '#0284C7' }} />
-            <span>{userSession.branch} Branch (Isolated)</span>
-          </div>
         </div>
       )}
 
@@ -125,6 +120,60 @@ export function Sidebar({
             >
               <Layers size={18} />
               {!isCollapsed && <span>Inventory & Batches</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'receivables' ? 'active' : ''}`}
+              onClick={() => onSelectTab('receivables')}
+              title="Accounts Receivable"
+            >
+              <DollarSign size={18} />
+              {!isCollapsed && <span>Accounts Receivable (A/R)</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'cheques' ? 'active' : ''}`}
+              onClick={() => onSelectTab('cheques')}
+              title="PDC Cheque Register"
+            >
+              <CreditCard size={18} />
+              {!isCollapsed && <span>Cheques & PDC</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'returns' ? 'active' : ''}`}
+              onClick={() => onSelectTab('returns')}
+              title="Goods Return Slips (GRS)"
+            >
+              <RotateCcw size={18} />
+              {!isCollapsed && <span>Goods Returns (GRS)</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'suppliers' ? 'active' : ''}`}
+              onClick={() => onSelectTab('suppliers')}
+              title="Suppliers & Certifications"
+            >
+              <Truck size={18} />
+              {!isCollapsed && <span>Suppliers & MTC</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'customers' ? 'active' : ''}`}
+              onClick={() => onSelectTab('customers')}
+              title="Customer Directory"
+            >
+              <Users size={18} />
+              {!isCollapsed && <span>Customer Directory</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'audit' ? 'active' : ''}`}
+              onClick={() => onSelectTab('audit')}
+              title="Audit Logs & Diffs"
+            >
+              <FileCode size={18} />
+              {!isCollapsed && <span>Audit Logs & Diffs</span>}
             </button>
 
             <button
@@ -175,6 +224,24 @@ export function Sidebar({
             >
               <Layers size={18} />
               {!isCollapsed && <span>Branch Inventory</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'receivables' ? 'active' : ''}`}
+              onClick={() => onSelectTab('receivables')}
+              title="Branch Accounts Receivable"
+            >
+              <DollarSign size={18} />
+              {!isCollapsed && <span>Branch A/R & Credit</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'cheques' ? 'active' : ''}`}
+              onClick={() => onSelectTab('cheques')}
+              title="PDC Cheque Register"
+            >
+              <CreditCard size={18} />
+              {!isCollapsed && <span>Cheques & PDC</span>}
             </button>
 
             <button
@@ -238,7 +305,7 @@ export function Sidebar({
             <div className="profile-actions">
               <div className={`status-dot-pill ${isLiveBackend ? 'online' : 'offline'}`} title="Backend API status">
                 <Server size={12} />
-                {isLiveBackend ? 'C# Web API' : 'Mock'}
+                {isLiveBackend ? 'Online' : 'Offline'}
               </div>
 
               <button className="btn-icon" onClick={onRefresh} title="Sync Server Data">

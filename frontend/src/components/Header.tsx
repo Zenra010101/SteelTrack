@@ -32,7 +32,7 @@ export function Header({
         <div className={`status-pill ${isLiveBackend ? '' : 'offline'}`}>
           <div className="dot" />
           <Server size={14} />
-          {isLiveBackend ? 'C# API Connected' : 'Client State Mode'}
+          {isLiveBackend ? 'Connected' : 'Offline'}
         </div>
 
         <button className="btn-secondary" onClick={onRefresh} title="Sync Server Data">

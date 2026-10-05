@@ -11,12 +11,14 @@ import {
   Building,
   RotateCcw,
   Boxes,
-  Check
+  Check,
+  Calculator,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { PosTransaction, PosCartItem, SteelCategory } from '../types/pos';
 import type { SteelBatch } from '../types/steel';
 import { fetchInventory, fetchPosTransactions, processPosSale } from '../services/api';
+import { SalesReportVerificationModal } from './SalesReportVerificationModal';
 
 interface CashierPosViewProps {
   branch: BranchLocation;
@@ -67,6 +69,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
   // Show Recent Sales Drawer
   const [showHistory, setShowHistory] = useState<boolean>(false);
+  const [isEodModalOpen, setIsEodModalOpen] = useState<boolean>(false);
 
   // Strict Branch Data Loading: only loads data for THIS branch!
   const loadData = useCallback(async () => {
@@ -266,7 +269,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               {branch} Branch Counter Sales Terminal
             </h3>
             <div style={{ fontSize: '0.8rem', color: '#64748B' }}>
-              Cashier on Duty: <strong>{cashierName}</strong> • Data strictly isolated to {branch} Branch
+              Cashier on Duty: <strong>{cashierName}</strong> • {branch} Branch
             </div>
           </div>
         </div>
@@ -294,6 +297,15 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
           >
             <Receipt size={16} />
             {showHistory ? 'Hide Sales' : 'Sales History'}
+          </button>
+
+          <button
+            className="btn-primary"
+            onClick={() => setIsEodModalOpen(true)}
+            title="Perform End-of-Day Drawer Reconciliation"
+            style={{ background: '#0284C7', border: 'none' }}
+          >
+            <Calculator size={16} /> EOD Balancing
           </button>
         </div>
       </div>
@@ -900,6 +912,18 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
           </div>
         </div>
       )}
+
+      {/* END-OF-DAY BALANCING MODAL */}
+      <SalesReportVerificationModal
+        isOpen={isEodModalOpen}
+        branch={branch}
+        cashierName={cashierName}
+        systemTotalPHP={shiftSalesPHP}
+        onClose={() => setIsEodModalOpen(false)}
+        onSubmitVerification={({ actualCashPHP, variancePHP, notes }) => {
+          alert(`EOD Verification Submitted for ${branch} Counter!\nActual Cash: ₱${actualCashPHP.toLocaleString()}\nVariance: ₱${variancePHP.toLocaleString()}\nNotes: ${notes || 'None'}`);
+        }}
+      />
     </div>
   );
 }

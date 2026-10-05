@@ -94,7 +94,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   <div className="node-dot" />
                   <div>
                     <div className="node-name">Davao Branch</div>
-                    <div className="node-status">Yard South Active</div>
+                    <div className="node-status">Davao Node Active</div>
                   </div>
                 </div>
 
@@ -102,7 +102,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   <div className="node-dot" />
                   <div>
                     <div className="node-name">Makati Branch</div>
-                    <div className="node-status">Capital Hub Active</div>
+                    <div className="node-status">Makati Node Active</div>
                   </div>
                 </div>
 
@@ -110,7 +110,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   <div className="node-dot" />
                   <div>
                     <div className="node-name">Mandaue Branch</div>
-                    <div className="node-status">Visayas Line Active</div>
+                    <div className="node-status">Mandaue Node Active</div>
                   </div>
                 </div>
 
@@ -118,7 +118,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   <div className="node-dot" />
                   <div>
                     <div className="node-name">Cebu Branch</div>
-                    <div className="node-status">Port Yard Active</div>
+                    <div className="node-status">Cebu Node Active</div>
                   </div>
                 </div>
               </div>

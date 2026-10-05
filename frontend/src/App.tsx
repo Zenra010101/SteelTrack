@@ -12,6 +12,12 @@ import { CashierPosView } from './components/CashierPosView';
 import { OwnerAnalyticsView } from './components/OwnerAnalyticsView';
 import { BranchApprovalsView } from './components/BranchApprovalsView';
 import { SystemManagementView } from './components/SystemManagementView';
+import { ReceivablesView } from './components/ReceivablesView';
+import { ChequeManagementView } from './components/ChequeManagementView';
+import { GoodsReturnView } from './components/GoodsReturnView';
+import { SupplierManagementView } from './components/SupplierManagementView';
+import { CustomerManagementView } from './components/CustomerManagementView';
+import { AuditLogView } from './components/AuditLogView';
 
 import {
   fetchInventory,
@@ -104,6 +110,24 @@ export function App() {
         return userSession.role === UserRole.Owner
           ? 'All Branches Steel Inventory'
           : `${userSession.branch} Branch Inventory Supervision`;
+      case 'receivables':
+        return `Accounts Receivable & Credit Control — ${
+          userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
+        }`;
+      case 'cheques':
+        return `Post-Dated Cheque (PDC) Register — ${
+          userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
+        }`;
+      case 'returns':
+        return `Goods Return Slips (GRS) & Restock — ${
+          userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
+        }`;
+      case 'suppliers':
+        return 'Supplier Master Directory & Mill Test Certificates (MTC)';
+      case 'customers':
+        return 'Corporate Customer Directory & Credit Control';
+      case 'audit':
+        return 'System Audit Logs & Visual JSON Diff Inspection';
       case 'forecast':
         return 'LSTM Neural Network Steel Demand Forecast';
       case 'transfers':
@@ -225,6 +249,44 @@ export function App() {
               currentBranch={userSession.branch}
               currentUserName={userSession.name}
             />
+          )}
+
+          {/* TAB: ACCOUNTS RECEIVABLE (OWNER & MANAGER) */}
+          {activeTab === 'receivables' && userSession.role !== UserRole.Cashier && (
+            <ReceivablesView
+              currentBranch={userSession.role === UserRole.Owner ? (selectedBranch === 'All' ? undefined : (selectedBranch as BranchLocation)) : userSession.branch}
+              currentUserName={userSession.name}
+            />
+          )}
+
+          {/* TAB: CHEQUES & PDC REGISTER (OWNER & MANAGER) */}
+          {activeTab === 'cheques' && userSession.role !== UserRole.Cashier && (
+            <ChequeManagementView
+              currentBranch={userSession.role === UserRole.Owner ? (selectedBranch === 'All' ? undefined : (selectedBranch as BranchLocation)) : userSession.branch}
+            />
+          )}
+
+          {/* TAB: GOODS RETURN SLIPS & EXCHANGES (OWNER & MANAGER) */}
+          {activeTab === 'returns' && userSession.role !== UserRole.Cashier && (
+            <GoodsReturnView
+              currentBranch={userSession.role === UserRole.Owner ? (selectedBranch === 'All' ? undefined : (selectedBranch as BranchLocation)) : userSession.branch}
+              currentUserName={userSession.name}
+            />
+          )}
+
+          {/* TAB: SUPPLIER DIRECTORY (OWNER & MANAGER) */}
+          {activeTab === 'suppliers' && userSession.role !== UserRole.Cashier && (
+            <SupplierManagementView />
+          )}
+
+          {/* TAB: CUSTOMER DIRECTORY (OWNER & MANAGER) */}
+          {activeTab === 'customers' && userSession.role !== UserRole.Cashier && (
+            <CustomerManagementView />
+          )}
+
+          {/* TAB: AUDIT LOGS & DIFF INSPECTION (OWNER ONLY) */}
+          {activeTab === 'audit' && userSession.role === UserRole.Owner && (
+            <AuditLogView />
           )}
 
           {/* TAB 4: MOCK LSTM DEMAND FORECASTING (OWNER ONLY) */}

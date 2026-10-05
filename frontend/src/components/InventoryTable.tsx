@@ -1,16 +1,25 @@
+import { useState } from 'react';
+import { Tag, Sliders } from 'lucide-react';
 import type { SteelBatch, BatchStatus } from '../types/steel';
+import { BarcodePrintModal } from './BarcodePrintModal';
+import { StockAdjustmentModal } from './StockAdjustmentModal';
 
 interface InventoryTableProps {
   batches: SteelBatch[];
   loading: boolean;
   onUpdateStatus: (id: string, newStatus: BatchStatus) => void;
+  onAdjustStock?: (id: string, newTons: number, reason: string) => Promise<void>;
 }
 
 export function InventoryTable({
   batches,
   loading,
   onUpdateStatus,
+  onAdjustStock,
 }: InventoryTableProps) {
+  const [selectedBarcodeBatch, setSelectedBarcodeBatch] = useState<SteelBatch | null>(null);
+  const [selectedAdjustmentBatch, setSelectedAdjustmentBatch] = useState<SteelBatch | null>(null);
+
   const getBadgeClass = (status: string) => {
     switch (status) {
       case 'InProduction':
@@ -29,7 +38,7 @@ export function InventoryTable({
   };
 
   const formatGrade = (gradeStr: string) => {
-    return gradeStr.replace('_', ' ');
+    return gradeStr.replace(/_/g, ' ');
   };
 
   return (
@@ -53,7 +62,7 @@ export function InventoryTable({
               <th>Dimensions</th>
               <th>Yard Location</th>
               <th>Status</th>
-              <th>Action</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -78,26 +87,63 @@ export function InventoryTable({
                     {b.status}
                   </span>
                 </td>
-                <td>
-                  <select
-                    value={b.status}
-                    onChange={(e) =>
-                      onUpdateStatus(b.id, e.target.value as BatchStatus)
-                    }
-                    style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
-                  >
-                    <option value="InProduction">InProduction</option>
-                    <option value="QualityCheck">QualityCheck</option>
-                    <option value="Available">Available</option>
-                    <option value="Reserved">Reserved</option>
-                    <option value="Shipped">Shipped</option>
-                  </select>
+                <td style={{ textAlign: 'right' }}>
+                  <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <button
+                      className="btn-secondary"
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                      title="Print Industrial Barcode Tag"
+                      onClick={() => setSelectedBarcodeBatch(b)}
+                    >
+                      <Tag size={12} /> Tag
+                    </button>
+
+                    <button
+                      className="btn-secondary"
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+                      title="Adjust Physical Tonnage"
+                      onClick={() => setSelectedAdjustmentBatch(b)}
+                    >
+                      <Sliders size={12} /> Adjust
+                    </button>
+
+                    <select
+                      value={b.status}
+                      onChange={(e) =>
+                        onUpdateStatus(b.id, e.target.value as BatchStatus)
+                      }
+                      style={{ fontSize: '0.75rem', padding: '0.25rem 0.4rem', borderRadius: '4px' }}
+                    >
+                      <option value="InProduction">InProduction</option>
+                      <option value="QualityCheck">QualityCheck</option>
+                      <option value="Available">Available</option>
+                      <option value="Reserved">Reserved</option>
+                      <option value="Shipped">Shipped</option>
+                    </select>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      {/* BARCODE MODAL */}
+      <BarcodePrintModal
+        isOpen={Boolean(selectedBarcodeBatch)}
+        batch={selectedBarcodeBatch}
+        onClose={() => setSelectedBarcodeBatch(null)}
+      />
+
+      {/* ADJUSTMENT MODAL */}
+      <StockAdjustmentModal
+        isOpen={Boolean(selectedAdjustmentBatch)}
+        batch={selectedAdjustmentBatch}
+        onClose={() => setSelectedAdjustmentBatch(null)}
+        onSubmitAdjustment={async (id, adjustedTons, reason) => {
+          if (onAdjustStock) await onAdjustStock(id, adjustedTons, reason);
+        }}
+      />
     </div>
   );
 }
