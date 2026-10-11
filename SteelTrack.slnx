@@ -12,4 +12,12 @@
   <Folder Name="/backend/Infrastructure/">
     <Project Path="backend/Infrastructure/SteelTrack.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/frontend/">
+    <File Path="frontend/package.json" />
+    <File Path="frontend/vite.config.ts" />
+    <File Path="frontend/tsconfig.json" />
+    <File Path="frontend/index.html" />
+    <File Path="frontend/src/App.tsx" />
+    <File Path="frontend/src/main.tsx" />
+  </Folder>
 </Solution>

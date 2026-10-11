@@ -38,7 +38,7 @@ export function OwnerForecastView() {
           >
             <option value="All">All Branches Combined</option>
             <option value={BranchLocation.Davao}>Davao Branch</option>
-            <option value={BranchLocation.Makati}>Makati Branch</option>
+            <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
             <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
             <option value={BranchLocation.Cebu}>Cebu Branch</option>
           </select>

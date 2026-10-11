@@ -1,6 +1,7 @@
 # .NET build output
 bin/
 obj/
+publish/
 *.user
 *.userosscache
 *.sln.docstates
@@ -17,3 +18,9 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Credentials & Secrets
+[uU][sS][eE][rR]_[cC][rR][eE][dD][eE][nN][tT][iI][aA][lL][sS].*
+USER_CREDENTIALS.*
+user_credentials.*
+

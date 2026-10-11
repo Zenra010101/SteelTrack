@@ -11,6 +11,7 @@ public class SteelTrackDbContext : DbContext
     }
 
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Role> Roles => Set<Role>();

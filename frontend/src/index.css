@@ -553,6 +553,88 @@ h1, h2, h3, h4, .brand-font {
   border-color: var(--border-strong);
 }
 
+/* ==========================================================================
+   TABLE ACTION BUTTONS - CURSOR HOVER SOLID FILL EFFECTS
+   ========================================================================== */
+
+table button,
+.table-container button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+table .btn-secondary:hover,
+.table-container button.btn-secondary:hover {
+  background: #0284C7 !important;
+  color: #FFFFFF !important;
+  border-color: #0284C7 !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4) !important;
+}
+
+table .btn-primary:hover,
+.table-container button.btn-primary:hover {
+  background: #0369A1 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.5) !important;
+}
+
+.btn-table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #FFFFFF;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-table-success {
+  color: #059669;
+  border: 1px solid #059669;
+}
+.btn-table-success:hover {
+  background: #059669 !important;
+  color: #FFFFFF !important;
+  border-color: #059669 !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35) !important;
+}
+
+.btn-table-danger {
+  color: #DC2626;
+  border: 1px solid #DC2626;
+}
+.btn-table-danger:hover {
+  background: #DC2626 !important;
+  color: #FFFFFF !important;
+  border-color: #DC2626 !important;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35) !important;
+}
+
+.btn-table-info {
+  color: #0284C7;
+  border: 1px solid #0284C7;
+}
+.btn-table-info:hover {
+  background: #0284C7 !important;
+  color: #FFFFFF !important;
+  border-color: #0284C7 !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35) !important;
+}
+
+.btn-table-warning {
+  color: #D97706;
+  border: 1px solid #D97706;
+}
+.btn-table-warning:hover {
+  background: #D97706 !important;
+  color: #FFFFFF !important;
+  border-color: #D97706 !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35) !important;
+}
+
 .controls-bar {
   display: flex;
   align-items: center;

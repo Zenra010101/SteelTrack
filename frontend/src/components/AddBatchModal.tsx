@@ -58,7 +58,7 @@ export function AddBatchModal({
                 onChange={(e) => setBranch(e.target.value as BranchLocation)}
               >
                 <option value={BranchLocation.Davao}>Davao Branch (Yard South)</option>
-                <option value={BranchLocation.Makati}>Makati Branch (Capital Hub)</option>
+                <option value={BranchLocation.Cagayan}>Cagayan Branch (Northern Mindanao Hub)</option>
                 <option value={BranchLocation.Mandaue}>Mandaue Branch (Visayas Logistics)</option>
                 <option value={BranchLocation.Cebu}>Cebu Branch (Port Yard)</option>
               </select>

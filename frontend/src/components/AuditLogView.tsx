@@ -48,7 +48,7 @@ const INITIAL_AUDIT_LOGS: AuditRecord[] = [
     timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
     userName: 'System Admin',
     userRole: 'Owner',
-    branch: 'Makati',
+    branch: 'Cagayan',
     action: 'UPDATE',
     entityName: 'CustomerReceivable',
     entityId: 'rec-003',

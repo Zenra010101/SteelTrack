@@ -8,9 +8,9 @@ export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 export const BranchLocation = {
   Davao: 'Davao',
-  Makati: 'Makati',
   Mandaue: 'Mandaue',
   Cebu: 'Cebu',
+  Cagayan: 'Cagayan',
 } as const;
 
 export type BranchLocation = (typeof BranchLocation)[keyof typeof BranchLocation];
@@ -58,22 +58,22 @@ export const REGISTERED_USERS: PresetAccount[] = [
     branch: BranchLocation.Davao,
     description: 'Davao Head Cashier — Front-counter terminal sales & billing for Davao Branch.',
   },
-  // Makati Branch Accounts
+  // Cagayan Branch Accounts
   {
-    id: 'bm-makati',
+    id: 'bm-cagayan',
     name: 'Carlos Reyes',
-    username: 'manager.makati@steeltrack.com',
+    username: 'manager.cagayan@steeltrack.com',
     role: UserRole.BranchManager,
-    branch: BranchLocation.Makati,
-    description: 'Makati Central Hub Manager — Oversees NCR inventory, logistics & procurement.',
+    branch: BranchLocation.Cagayan,
+    description: 'Cagayan Regional Hub Manager — Oversees Northern Mindanao inventory & logistics.',
   },
   {
-    id: 'cashier-makati',
+    id: 'cashier-cagayan',
     name: 'Ana Patricia Gonzales',
-    username: 'cashier.makati@steeltrack.com',
+    username: 'cashier.cagayan@steeltrack.com',
     role: UserRole.Cashier,
-    branch: BranchLocation.Makati,
-    description: 'Makati Front-Desk Cashier — Daily corporate sales counter checkout.',
+    branch: BranchLocation.Cagayan,
+    description: 'Cagayan Front-Desk Cashier — Daily corporate sales counter checkout.',
   },
   // Mandaue Branch Accounts
   {

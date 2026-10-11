@@ -25,10 +25,10 @@ export function InterBranchTransferView({
 
   // Transfer Form State
   const [sourceBranch, setSourceBranch] = useState<BranchLocation>(
-    currentBranch || BranchLocation.Makati
+    currentBranch || BranchLocation.Cagayan
   );
   const [destinationBranch, setDestinationBranch] = useState<BranchLocation>(
-    currentBranch === BranchLocation.Davao ? BranchLocation.Makati : BranchLocation.Davao
+    currentBranch === BranchLocation.Davao ? BranchLocation.Cagayan : BranchLocation.Davao
   );
   const [selectedBatchId, setSelectedBatchId] = useState<string>('');
   const [transferWeight, setTransferWeight] = useState<number>(10);
@@ -114,7 +114,7 @@ export function InterBranchTransferView({
             Inter-Branch Stock Transfer System
           </h3>
           <p style={{ fontSize: '0.85rem', color: '#94A3B8' }}>
-            Coordinate stock transfers across Davao, Makati, Mandaue, and Cebu branches
+            Coordinate stock transfers across Davao, Mandaue, Cebu, and Cagayan branches
           </p>
         </div>
 
@@ -168,8 +168,7 @@ export function InterBranchTransferView({
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       {tr.status === 'Pending' && (
                         <button
-                          className="btn-secondary"
-                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', color: '#10B981', borderColor: 'rgba(16,185,129,0.3)' }}
+                          className="btn-table-action btn-table-success"
                           onClick={() => handleStatusChange(tr.id, 'Approved')}
                         >
                           Approve
@@ -177,8 +176,7 @@ export function InterBranchTransferView({
                       )}
                       {tr.status === 'Approved' && (
                         <button
-                          className="btn-secondary"
-                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', color: '#38BDF8', borderColor: 'rgba(56,189,248,0.3)' }}
+                          className="btn-table-action btn-table-info"
                           onClick={() => handleStatusChange(tr.id, 'InTransit')}
                         >
                           Dispatch
@@ -186,8 +184,7 @@ export function InterBranchTransferView({
                       )}
                       {tr.status === 'InTransit' && (
                         <button
-                          className="btn-secondary"
-                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', color: '#6EE7B7', borderColor: 'rgba(16,185,129,0.3)' }}
+                          className="btn-table-action btn-table-success"
                           onClick={() => handleStatusChange(tr.id, 'Completed')}
                         >
                           Confirm Receipt
@@ -224,7 +221,7 @@ export function InterBranchTransferView({
                   onChange={(e) => setSourceBranch(e.target.value as BranchLocation)}
                 >
                   <option value={BranchLocation.Davao}>Davao Branch</option>
-                  <option value={BranchLocation.Makati}>Makati Branch</option>
+                  <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
                   <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
                   <option value={BranchLocation.Cebu}>Cebu Branch</option>
                 </select>
@@ -237,7 +234,7 @@ export function InterBranchTransferView({
                   onChange={(e) => setDestinationBranch(e.target.value as BranchLocation)}
                 >
                   <option value={BranchLocation.Davao}>Davao Branch</option>
-                  <option value={BranchLocation.Makati}>Makati Branch</option>
+                  <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
                   <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
                   <option value={BranchLocation.Cebu}>Cebu Branch</option>
                 </select>

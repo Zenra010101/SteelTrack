@@ -88,7 +88,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             </div>
 
             <div className="hero-telemetry">
-              <div className="telemetry-title">CONNECTED BRANCH NETWORK NODES</div>
+              <div className="telemetry-title">BRANCH NETWORK NODES</div>
               <div className="branch-nodes-grid">
                 <div className="branch-node">
                   <div className="node-dot" />
@@ -101,8 +101,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 <div className="branch-node">
                   <div className="node-dot" />
                   <div>
-                    <div className="node-name">Makati Branch</div>
-                    <div className="node-status">Makati Node Active</div>
+                    <div className="node-name">Cagayan Branch</div>
+                    <div className="node-status">Cagayan Node Active</div>
                   </div>
                 </div>
 
@@ -196,7 +196,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                     onChange={(e) => setCustomBranch(e.target.value as BranchLocation)}
                   >
                     <option value={BranchLocation.Davao}>Davao Branch</option>
-                    <option value={BranchLocation.Makati}>Makati Branch</option>
+                    <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
                     <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
                     <option value={BranchLocation.Cebu}>Cebu Branch</option>
                   </select>

@@ -9,7 +9,6 @@ import {
   Building2,
   User,
   LogOut,
-  RefreshCw,
   Server,
   Sliders,
   ChevronLeft,
@@ -31,7 +30,7 @@ interface SidebarProps {
   selectedBranch: string;
   onSelectBranch: (branch: string) => void;
   isLiveBackend: boolean;
-  onRefresh: () => void;
+  onRefresh?: () => void;
   onLogout: () => void;
 }
 
@@ -42,7 +41,6 @@ export function Sidebar({
   selectedBranch,
   onSelectBranch,
   isLiveBackend,
-  onRefresh,
   onLogout,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -99,7 +97,7 @@ export function Sidebar({
           >
             <option value="All">All 4 Branches Combined</option>
             <option value={BranchLocation.Davao}>Davao Branch</option>
-            <option value={BranchLocation.Makati}>Makati Branch</option>
+            <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
             <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
             <option value={BranchLocation.Cebu}>Cebu Branch</option>
           </select>
@@ -305,12 +303,8 @@ export function Sidebar({
             <div className="profile-actions">
               <div className={`status-dot-pill ${isLiveBackend ? 'online' : 'offline'}`} title="Backend API status">
                 <Server size={12} />
-                {isLiveBackend ? 'Online' : 'Offline'}
+                {isLiveBackend ? 'Live' : 'Offline'}
               </div>
-
-              <button className="btn-icon" onClick={onRefresh} title="Sync Server Data">
-                <RefreshCw size={14} />
-              </button>
 
               <button className="btn-icon logout" onClick={onLogout} title="Sign Out">
                 <LogOut size={14} />

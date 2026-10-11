@@ -4,6 +4,7 @@ import {
   Search,
   Phone,
   ShieldAlert,
+  CheckCircle2,
   X,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
@@ -28,18 +29,18 @@ const INITIAL_CUSTOMERS: CustomerMaster[] = [
   },
   {
     id: 'cust-102',
-    customerCode: 'CUST-MAK-004',
+    customerCode: 'CUST-CGY-004',
     customerName: 'Apex Industrial Builders',
     companyName: 'Apex Construction & Industrial Inc.',
     tin: '109-443-887-001',
-    address: 'Ayala Avenue, Makati City',
+    address: 'CM Recto Ave, Cagayan de Oro City',
     contactPerson: 'Clarissa Tan',
-    contactPhone: '+63 2 8812 9000',
+    contactPhone: '+63 88 856 9000',
     contactEmail: 'ctan@apexbuilders.ph',
     creditLimitPHP: 3000000,
     termsDays: 30,
     status: 'Active',
-    assignedBranch: BranchLocation.Makati,
+    assignedBranch: BranchLocation.Cagayan,
     createdAt: '2025-12-01',
   },
   {
@@ -175,8 +176,8 @@ export function CustomerManagementView() {
 
                 <td style={{ padding: '0.85rem 1rem' }}>
                   {c.status === 'Active' && (
-                    <span style={{ background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
-                      Active Account
+                    <span style={{ background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <CheckCircle2 size={12} /> Active Account
                     </span>
                   )}
                   {c.status === 'Blocked' && (
@@ -234,7 +235,7 @@ export function CustomerManagementView() {
                     style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
                   >
                     <option value={BranchLocation.Davao}>Davao Branch</option>
-                    <option value={BranchLocation.Makati}>Makati Branch</option>
+                    <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
                     <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
                     <option value={BranchLocation.Cebu}>Cebu Branch</option>
                   </select>

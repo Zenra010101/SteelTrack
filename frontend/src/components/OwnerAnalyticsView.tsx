@@ -4,7 +4,7 @@ import { BranchLocation } from '../types/auth';
 
 export function OwnerAnalyticsView() {
   const branchData = useMemo(() => [
-    { name: BranchLocation.Makati, tonnage: 168.5, percentage: 38, activeBatches: 24, revenuePHP: 143225 },
+    { name: BranchLocation.Cagayan, tonnage: 168.5, percentage: 38, activeBatches: 24, revenuePHP: 143225 },
     { name: BranchLocation.Davao, tonnage: 124.0, percentage: 28, activeBatches: 18, revenuePHP: 105400 },
     { name: BranchLocation.Cebu, tonnage: 89.2, percentage: 20, activeBatches: 12, revenuePHP: 75820 },
     { name: BranchLocation.Mandaue, tonnage: 62.1, percentage: 14, activeBatches: 9, revenuePHP: 52785 },
@@ -22,7 +22,7 @@ export function OwnerAnalyticsView() {
           </div>
           <h2 className="section-title">Cross-Branch Analytics & Revenue Breakdown</h2>
           <p className="section-sub">
-            Real-time multi-branch inventory distribution, total tonnage, and sales metrics across Davao, Makati, Mandaue, and Cebu.
+            Real-time multi-branch inventory distribution, total tonnage, and sales metrics across Davao, Mandaue, Cebu, and Cagayan.
           </p>
         </div>
       </div>

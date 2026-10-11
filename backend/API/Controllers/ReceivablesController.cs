@@ -47,7 +47,7 @@ public class ReceivablesController : ControllerBase
                 Days60BalancePHP = 800000m,
                 Days90PlusBalancePHP = 500000m,
                 Status = "CreditWarning",
-                Branch = "Makati"
+                Branch = "Cagayan"
             }
         };
 

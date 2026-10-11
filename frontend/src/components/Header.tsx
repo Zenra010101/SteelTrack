@@ -1,18 +1,17 @@
-import { Server, RefreshCw, Layers } from 'lucide-react';
+import { Server, Layers } from 'lucide-react';
 import type { UserSession } from '../types/auth';
 
 interface HeaderProps {
   isLiveBackend: boolean;
   userSession: UserSession;
   activeTabTitle: string;
-  onRefresh: () => void;
+  onRefresh?: () => void;
 }
 
 export function Header({
   isLiveBackend,
   userSession,
   activeTabTitle,
-  onRefresh,
 }: HeaderProps) {
   return (
     <header className="header-topbar">
@@ -32,13 +31,8 @@ export function Header({
         <div className={`status-pill ${isLiveBackend ? '' : 'offline'}`}>
           <div className="dot" />
           <Server size={14} />
-          {isLiveBackend ? 'Connected' : 'Offline'}
+          {isLiveBackend ? 'Active' : 'Offline'}
         </div>
-
-        <button className="btn-secondary" onClick={onRefresh} title="Sync Server Data">
-          <RefreshCw size={14} />
-          Sync
-        </button>
       </div>
     </header>
   );

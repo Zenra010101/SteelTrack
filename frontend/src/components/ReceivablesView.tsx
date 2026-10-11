@@ -298,17 +298,17 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
 
                     <td style={{ padding: '0.85rem 1rem' }}>
                       {item.status === 'Good Standing' && (
-                        <span style={{ background: '#064E3B', color: '#34D399', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
-                          Good Standing
+                        <span style={{ background: '#064E3B', color: '#34D399', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
+                          <CheckCircle2 size={12} /> Good Standing
                         </span>
                       )}
                       {item.status === 'Credit Warning' && (
-                        <span style={{ background: '#78350F', color: '#FBBF24', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
-                          Credit Warning
+                        <span style={{ background: '#78350F', color: '#FBBF24', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
+                          <AlertTriangle size={12} /> Credit Warning
                         </span>
                       )}
                       {item.status === 'Credit Blocked' && (
-                        <span style={{ background: '#7F1D1D', color: '#F87171', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <span style={{ background: '#7F1D1D', color: '#F87171', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
                           <ShieldAlert size={12} /> Credit Blocked
                         </span>
                       )}
@@ -388,7 +388,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                 >
                   <option value="Cash">Cash Payment</option>
                   <option value="Cheque">Post-Dated / Dated Cheque (PDC)</option>
-                  <option value="Bank Transfer">Bank Wire / Online Transfer</option>
+                  <option value="Bank Transfer">Bank Wire / Electronic Transfer</option>
                   <option value="Credit Note">Credit Note Deduction</option>
                 </select>
               </div>

@@ -210,16 +210,7 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
                     <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
                       {c.status === 'Pending' && (
                         <button
-                          style={{
-                            padding: '0.35rem 0.7rem',
-                            fontSize: '0.75rem',
-                            background: '#FFFFFF',
-                            color: '#2563EB',
-                            border: '1px solid #2563EB',
-                            borderRadius: '6px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
+                          className="btn-table-action btn-table-info"
                           onClick={() => handleDeposit(c.id)}
                         >
                           Mark Deposited
@@ -229,31 +220,13 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
                       {c.status === 'Deposited' && (
                         <>
                           <button
-                            style={{
-                              padding: '0.35rem 0.7rem',
-                              fontSize: '0.75rem',
-                              background: '#FFFFFF',
-                              color: '#059669',
-                              border: '1px solid #059669',
-                              borderRadius: '6px',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                            }}
+                            className="btn-table-action btn-table-success"
                             onClick={() => handleClear(c.id)}
                           >
                             Mark Cleared
                           </button>
                           <button
-                            style={{
-                              padding: '0.35rem 0.7rem',
-                              fontSize: '0.75rem',
-                              background: '#FFFFFF',
-                              color: '#DC2626',
-                              border: '1px solid #DC2626',
-                              borderRadius: '6px',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                            }}
+                            className="btn-table-action btn-table-danger"
                             onClick={() => setSelectedChequeForBounce(c)}
                           >
                             Flag Bounced
@@ -263,19 +236,8 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
 
                       {c.status === 'Bounced' && (
                         <button
-                          style={{
-                            padding: '0.35rem 0.7rem',
-                            fontSize: '0.75rem',
-                            background: '#FFFFFF',
-                            color: '#0F172A',
-                            border: '1px solid #CBD5E1',
-                            borderRadius: '6px',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                          }}
+                          className="btn-secondary"
+                          style={{ padding: '0.35rem 0.7rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                           onClick={() => setNoticeCheque(c)}
                         >
                           <Printer size={12} /> Notice

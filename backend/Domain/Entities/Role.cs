@@ -8,5 +8,8 @@ public class Role
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
+    public string? BranchId { get; set; }
+    public Branch? Branch { get; set; }
+
     public ICollection<User> Users { get; set; } = new List<User>();
 }

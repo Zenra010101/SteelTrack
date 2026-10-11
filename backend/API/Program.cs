@@ -2,6 +2,8 @@ using System.Text.Json.Serialization;
 using SteelTrack.Application.Interfaces;
 using SteelTrack.Application.Services;
 using SteelTrack.Infrastructure;
+using SteelTrack.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Persistence.Seeders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,8 +56,59 @@ if (app.Environment.IsDevelopment() || true) // Enable Swagger in all dev/test m
 
 app.UseCors("AllowFrontend");
 
+// Ensure wwwroot directory exists to avoid middleware warning in local dev
+var wwwrootPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+if (!Directory.Exists(wwwrootPath))
+{
+    Directory.CreateDirectory(wwwrootPath);
+}
+
+// Serve frontend SPA static files (HTML, CSS, JS, Assets) from wwwroot
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapFallbackToFile("index.html");
+
+// Seeder command line and API hooks
+if (args.Contains("--seed") || args.Contains("--seed-only"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetService<SteelTrackDbContext>();
+    if (db != null)
+    {
+        var counts = await DatabaseSeeder.SeedAsync(db);
+        Console.WriteLine("Database seeded successfully.");
+    }
+    else
+    {
+        Console.WriteLine("ERROR: SteelTrackDbContext could not be resolved. Please verify connection string in appsettings.json.");
+    }
+
+    if (args.Contains("--seed-only"))
+    {
+        return;
+    }
+
+    Console.WriteLine("Continuing to launch SteelTrack web server...");
+}
+
+app.MapGet("/api/admin/seed", async (IServiceProvider sp) =>
+{
+    var db = sp.GetService<SteelTrackDbContext>();
+    if (db == null) return Results.BadRequest(new { error = "Database context not configured or unavailable." });
+    var counts = await DatabaseSeeder.SeedAsync(db);
+    return Results.Ok(new { message = "SteelTrack database seeded successfully.", counts });
+});
+
+app.MapPost("/api/admin/seed", async (IServiceProvider sp) =>
+{
+    var db = sp.GetService<SteelTrackDbContext>();
+    if (db == null) return Results.BadRequest(new { error = "Database context not configured or unavailable." });
+    var counts = await DatabaseSeeder.SeedAsync(db);
+    return Results.Ok(new { message = "SteelTrack database seeded successfully.", counts });
+});
 
 app.Run();

@@ -21,7 +21,7 @@ import type {
 
 const API_BASE_URL = '/api/inventory';
 
-// Initial Mock Inventory dataset tagged with Davao, Makati, Mandaue, and Cebu branches
+// Initial Mock Inventory dataset tagged with Davao, Cagayan, Mandaue, and Cebu branches
 let mockBatches: SteelBatch[] = [
   {
     id: '11111111-1111-1111-1111-111111111111',
@@ -42,7 +42,7 @@ let mockBatches: SteelBatch[] = [
     dimensions: '6mm x 1220mm x 3000mm',
     status: 'QualityCheck',
     location: 'Testing Lab B',
-    branch: BranchLocation.Makati,
+    branch: BranchLocation.Cagayan,
     createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
   },
   {
@@ -86,7 +86,7 @@ let mockBatches: SteelBatch[] = [
     dimensions: '16mm x 2000mm x 12000mm',
     status: 'Available',
     location: 'Central Storage Bay 4',
-    branch: BranchLocation.Makati,
+    branch: BranchLocation.Cagayan,
     createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
   },
   {
@@ -106,14 +106,14 @@ let mockBatches: SteelBatch[] = [
 let mockTransfers: StockTransferRequest[] = [
   {
     id: 'tr-101',
-    sourceBranch: BranchLocation.Makati,
+    sourceBranch: BranchLocation.Cagayan,
     destinationBranch: BranchLocation.Davao,
     batchId: '66666666-6666-6666-6666-666666666666',
     heatNumber: 'HT-2026-1049',
     grade: 'A36_Structural',
     weightInTons: 15.0,
     requestedBy: 'Maria Santos (Davao Manager)',
-    approvedBy: 'Carlos Reyes (Makati Manager)',
+    approvedBy: 'Carlos Reyes (Cagayan Manager)',
     status: 'InTransit',
     notes: 'Urgent structural beams required for Davao Port Expansion project.',
     createdAt: new Date(Date.now() - 24 * 3600000).toISOString(),
@@ -399,7 +399,7 @@ export function fetchLstmDemandForecast(
   // Baseline data curve with realistic seasonal steel demand patterns
   const months = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr (Forecast)', 'May (Forecast)', 'Jun (Forecast)'];
   const gradeFactor = grade === 'A572_HighStrength' ? 1.25 : grade === 'SS304_Stainless' ? 0.75 : 1.0;
-  const baseTonnage = (branch === BranchLocation.Makati ? 140 : branch === BranchLocation.Davao ? 110 : 95) * gradeFactor;
+  const baseTonnage = (branch === BranchLocation.Cagayan ? 140 : branch === BranchLocation.Davao ? 110 : 95) * gradeFactor;
 
   return months.map((m, idx) => {
     const isForecast = idx >= 6;
@@ -453,7 +453,7 @@ let mockReceivables: CustomerReceivable[] = [
     lastPaymentDate: new Date(Date.now() - 25 * 86400000).toISOString(),
     lastPaymentAmountPHP: 80000,
     status: 'Credit Warning',
-    branch: BranchLocation.Makati,
+    branch: BranchLocation.Cagayan,
   },
   {
     id: 'rec-003',
@@ -515,7 +515,7 @@ let mockCheques: SaleChequeItem[] = [
     maturityDate: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
     status: 'Deposited',
     depositedDate: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
-    branch: BranchLocation.Makati,
+    branch: BranchLocation.Cagayan,
   },
   {
     id: 'chq-5003',
@@ -737,11 +737,11 @@ let mockGoodsReturns: GoodsReturnSlip[] = [
     grsNumber: 'GRS-2026-0088',
     invoiceNumber: 'INV-2026-0019',
     customerName: 'Apex Industrial Builders',
-    branch: BranchLocation.Makati,
+    branch: BranchLocation.Cagayan,
     status: 'Approved',
     totalReturnValuePHP: 240000,
     creditNoteNumber: 'CN-2026-0033',
-    requestedBy: 'Makati Counter Staff',
+    requestedBy: 'Cagayan Counter Staff',
     approvedBy: 'Carlos Reyes (Branch Manager)',
     createdAt: new Date(Date.now() - 8 * 86400000).toISOString(),
     approvedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
@@ -851,6 +851,95 @@ export async function approveGoodsReturn(
     }
 
     return mockGoodsReturns[index];
+  }
+  return null;
+}
+
+// ----------------------------------------------------
+// Branch Network Management API & Live State
+// ----------------------------------------------------
+import type { BranchRecord, UpdateBranchDto } from '../types/branch';
+
+let mockBranches: BranchRecord[] = [
+  {
+    id: 'branch-dvo',
+    code: 'DVO',
+    name: 'Davao',
+    address: 'J.P. Laurel Ave, Bajada, Davao City',
+    contactNumber: '(082) 221-4900',
+    managerName: 'Maria Santos',
+    isActive: true,
+    createdAt: new Date(Date.now() - 180 * 86400000).toISOString(),
+  },
+  {
+    id: 'branch-mnd',
+    code: 'MND',
+    name: 'Mandaue',
+    address: 'A.C. Cortes Ave, Mandaue City, Cebu',
+    contactNumber: '(032) 345-8120',
+    managerName: 'Rodrigo Tan',
+    isActive: true,
+    createdAt: new Date(Date.now() - 180 * 86400000).toISOString(),
+  },
+  {
+    id: 'branch-ceb',
+    code: 'CEB',
+    name: 'Cebu',
+    address: 'North Reclamation Area, Cebu City',
+    contactNumber: '(032) 231-7788',
+    managerName: 'Mateo Lim',
+    isActive: true,
+    createdAt: new Date(Date.now() - 180 * 86400000).toISOString(),
+  },
+  {
+    id: 'branch-cgy',
+    code: 'CGY',
+    name: 'Cagayan',
+    address: 'CM Recto Ave, Lapasan, Cagayan de Oro City',
+    contactNumber: '(088) 856-3200',
+    managerName: 'Carlos Reyes',
+    isActive: true,
+    createdAt: new Date(Date.now() - 180 * 86400000).toISOString(),
+  },
+];
+
+export async function fetchBranches(): Promise<BranchRecord[]> {
+  try {
+    const res = await fetch('/api/branches');
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // fallback to local mock
+  }
+  return [...mockBranches];
+}
+
+export async function updateBranch(id: string, dto: UpdateBranchDto): Promise<BranchRecord | null> {
+  try {
+    const res = await fetch(`/api/branches/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const idx = mockBranches.findIndex((b) => b.id === id);
+      if (idx !== -1) mockBranches[idx] = data;
+      return data;
+    }
+  } catch {
+    // fallback
+  }
+
+  const idx = mockBranches.findIndex((b) => b.id === id);
+  if (idx !== -1) {
+    mockBranches[idx] = {
+      ...mockBranches[idx],
+      ...dto,
+      updatedAt: new Date().toISOString(),
+    };
+    return mockBranches[idx];
   }
   return null;
 }
