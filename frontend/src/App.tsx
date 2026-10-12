@@ -9,6 +9,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { OwnerForecastView } from './components/OwnerForecastView';
 import { InterBranchTransferView } from './components/InterBranchTransferView';
 import { CashierPosView } from './components/CashierPosView';
+import { CashierSalesHistoryView } from './components/CashierSalesHistoryView';
 import { OwnerAnalyticsView } from './components/OwnerAnalyticsView';
 import { BranchApprovalsView } from './components/BranchApprovalsView';
 import { SystemManagementView } from './components/SystemManagementView';
@@ -134,6 +135,8 @@ export function App() {
         return 'Inter-Branch Stock Transfer System';
       case 'pos':
         return `Point of Sale (POS) Terminal — ${userSession.branch} Branch`;
+      case 'sales-history':
+        return `Sales History & Receipt Journal — ${userSession.branch} Branch`;
       case 'analytics':
         return 'Cross-Branch Financial & Inventory Analytics';
       case 'approvals':
@@ -172,6 +175,14 @@ export function App() {
           {/* TAB 1: POS VIEW (CASHIER ONLY) */}
           {activeTab === 'pos' && (
             <CashierPosView
+              branch={userSession.branch || BranchLocation.Davao}
+              cashierName={userSession.name}
+            />
+          )}
+
+          {/* TAB: SALES HISTORY (CASHIER ONLY) */}
+          {activeTab === 'sales-history' && (
+            <CashierSalesHistoryView
               branch={userSession.branch || BranchLocation.Davao}
               cashierName={userSession.name}
             />

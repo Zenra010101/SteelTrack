@@ -4,6 +4,7 @@ import {
   TrendingUp,
   ArrowRightLeft,
   ShoppingCart,
+  Receipt,
   BarChart3,
   ShieldCheck,
   Building2,
@@ -272,6 +273,15 @@ export function Sidebar({
             >
               <ShoppingCart size={18} />
               {!isCollapsed && <span>Point of Sale (POS)</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'sales-history' ? 'active' : ''}`}
+              onClick={() => onSelectTab('sales-history')}
+              title="Sales History & Receipts"
+            >
+              <Receipt size={18} />
+              {!isCollapsed && <span>Sales History</span>}
             </button>
 
             <button

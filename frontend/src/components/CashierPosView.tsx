@@ -12,13 +12,11 @@ import {
   RotateCcw,
   Boxes,
   Check,
-  Calculator,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { PosTransaction, PosCartItem, SteelCategory } from '../types/pos';
 import type { SteelBatch } from '../types/steel';
-import { fetchInventory, fetchPosTransactions, processPosSale } from '../services/api';
-import { SalesReportVerificationModal } from './SalesReportVerificationModal';
+import { fetchInventory, processPosSale } from '../services/api';
 
 interface CashierPosViewProps {
   branch: BranchLocation;
@@ -45,7 +43,6 @@ const COMMON_CUSTOMERS = [
 
 export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   const [batches, setBatches] = useState<SteelBatch[]>([]);
-  const [transactions, setTransactions] = useState<PosTransaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Search & Category Filters
@@ -67,25 +64,17 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   // Active Receipt Modal
   const [activeReceipt, setActiveReceipt] = useState<PosTransaction | null>(null);
 
-  // Show Recent Sales Drawer
-  const [showHistory, setShowHistory] = useState<boolean>(false);
-  const [isEodModalOpen, setIsEodModalOpen] = useState<boolean>(false);
-
   // Strict Branch Data Loading: only loads data for THIS branch!
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [invResult, txList] = await Promise.all([
-        fetchInventory(undefined, undefined, undefined, branch),
-        fetchPosTransactions(branch),
-      ]);
+      const invResult = await fetchInventory(undefined, undefined, undefined, branch);
 
       // Only batches marked 'Available' at THIS branch can be sold
       const available = invResult.data.filter(
         (b) => b.branch === branch && (b.status === 'Available' || b.status === 'QualityCheck') && b.weightInTons > 0
       );
       setBatches(available);
-      setTransactions(txList);
     } catch (err) {
       console.error('Failed loading POS data:', err);
     } finally {
@@ -208,14 +197,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
     return Number((amountTendered - grandTotalPHP).toFixed(2));
   }, [paymentMethod, amountTendered, grandTotalPHP]);
 
-  // Quick Shift Metrics
-  const shiftSalesPHP = useMemo(() => {
-    return transactions.reduce((acc, tx) => acc + (tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0), 0);
-  }, [transactions]);
 
-  const shiftTonnageSold = useMemo(() => {
-    return transactions.reduce((acc, tx) => acc + tx.totalTonnage, 0);
-  }, [transactions]);
 
   // Checkout Execution
   const handleCheckout = async (e: React.FormEvent) => {
@@ -258,119 +240,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
   return (
     <div className="pos-container">
-      {/* 1. TOP SHIFT STATUS & CASHIER BAR */}
-      <div className="pos-shift-banner">
-        <div className="pos-shift-info">
-          <div className="breadcrumb-icon" style={{ background: '#E0F2FE', color: '#0369A1' }}>
-            <ShoppingCart size={20} />
-          </div>
-          <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>
-              {branch} Branch Counter Sales Terminal
-            </h3>
-            <div style={{ fontSize: '0.8rem', color: '#64748B' }}>
-              Cashier on Duty: <strong>{cashierName}</strong> • {branch} Branch
-            </div>
-          </div>
-        </div>
-
-        <div className="pos-shift-metrics">
-          <div className="pos-mini-stat">
-            <span className="label">Today's Sales</span>
-            <span className="val green">₱{shiftSalesPHP.toLocaleString()}</span>
-          </div>
-
-          <div className="pos-mini-stat">
-            <span className="label">Total Tonnage Sold</span>
-            <span className="val">{shiftTonnageSold.toFixed(1)} Tons</span>
-          </div>
-
-          <div className="pos-mini-stat">
-            <span className="label">Receipts Issued</span>
-            <span className="val">{transactions.length}</span>
-          </div>
-
-          <button
-            className="btn-secondary"
-            onClick={() => setShowHistory(!showHistory)}
-            title="View today's transaction log"
-          >
-            <Receipt size={16} />
-            {showHistory ? 'Hide Sales' : 'Sales History'}
-          </button>
-
-          <button
-            className="btn-primary"
-            onClick={() => setIsEodModalOpen(true)}
-            title="Perform End-of-Day Drawer Reconciliation"
-            style={{ background: '#0284C7', border: 'none' }}
-          >
-            <Calculator size={16} /> EOD Balancing
-          </button>
-        </div>
-      </div>
-
-      {/* 2. RECENT SALES DRAWER (IF TOGGLED) */}
-      {showHistory && (
-        <div className="table-container" style={{ marginBottom: '1.5rem' }}>
-          <div style={{ padding: '0.75rem 1rem', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>Today's Counter Receipts ({branch} Branch)</span>
-            <button className="btn-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }} onClick={() => setShowHistory(false)}>Close</button>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Invoice #</th>
-                <th>Time</th>
-                <th>Customer</th>
-                <th>Items Sold</th>
-                <th>Tonnage</th>
-                <th>Payment</th>
-                <th>Total</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.length === 0 ? (
-                <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', color: '#94A3B8', padding: '1.5rem' }}>
-                    No counter sales recorded yet today at {branch} Branch.
-                  </td>
-                </tr>
-              ) : (
-                transactions.map((tx) => (
-                  <tr key={tx.id}>
-                    <td style={{ fontFamily: 'JetBrains Mono', fontWeight: 600, color: '#0284C7' }}>
-                      {tx.invoiceNumber}
-                    </td>
-                    <td>{new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                    <td style={{ fontWeight: 600 }}>{tx.customerName}</td>
-                    <td>{tx.items?.length || 1} line item(s)</td>
-                    <td>{tx.totalTonnage} Tons</td>
-                    <td>
-                      <span className="badge badge-available">{tx.paymentMethod}</span>
-                    </td>
-                    <td style={{ fontWeight: 700, fontFamily: 'Outfit' }}>
-                      ₱{(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0).toLocaleString()}
-                    </td>
-                    <td>
-                      <button
-                        className="btn-secondary"
-                        style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem' }}
-                        onClick={() => setActiveReceipt(tx)}
-                      >
-                        <Printer size={12} /> Reprint
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* 3. MAIN WORKSTATION: CATALOG (LEFT) & REGISTER CART (RIGHT) */}
+      {/* PURE POS WORKSTATION: PRODUCT CATALOG (LEFT) & REGISTER CART (RIGHT) */}
       <div className="pos-layout-grid">
         {/* LEFT: PRODUCT CATALOG WITH SEARCH & CATEGORIES */}
         <div className="pos-catalog-panel">
@@ -913,17 +783,6 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
         </div>
       )}
 
-      {/* END-OF-DAY BALANCING MODAL */}
-      <SalesReportVerificationModal
-        isOpen={isEodModalOpen}
-        branch={branch}
-        cashierName={cashierName}
-        systemTotalPHP={shiftSalesPHP}
-        onClose={() => setIsEodModalOpen(false)}
-        onSubmitVerification={({ actualCashPHP, variancePHP, notes }) => {
-          alert(`EOD Verification Submitted for ${branch} Counter!\nActual Cash: ₱${actualCashPHP.toLocaleString()}\nVariance: ₱${variancePHP.toLocaleString()}\nNotes: ${notes || 'None'}`);
-        }}
-      />
     </div>
   );
 }

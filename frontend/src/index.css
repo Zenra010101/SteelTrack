@@ -1622,6 +1622,12 @@ tbody td {
   overflow: hidden;
 }
 
+.login-container.single-card {
+  display: block;
+  max-width: 460px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(226, 232, 240, 0.9);
+}
+
 @media (max-width: 840px) {
   .login-container {
     grid-template-columns: 1fr;
