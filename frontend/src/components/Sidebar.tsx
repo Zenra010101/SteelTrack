@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Layers,
+  Package,
   TrendingUp,
   ArrowRightLeft,
   ShoppingCart,
@@ -122,6 +123,15 @@ export function Sidebar({
             </button>
 
             <button
+              className={`sidebar-nav-item ${activeTab === 'products' ? 'active' : ''}`}
+              onClick={() => onSelectTab('products')}
+              title="Products Master Catalog"
+            >
+              <Package size={18} />
+              {!isCollapsed && <span>Products Catalog</span>}
+            </button>
+
+            <button
               className={`sidebar-nav-item ${activeTab === 'receivables' ? 'active' : ''}`}
               onClick={() => onSelectTab('receivables')}
               title="Accounts Receivable"
@@ -223,6 +233,15 @@ export function Sidebar({
             >
               <Layers size={18} />
               {!isCollapsed && <span>Branch Inventory</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'products' ? 'active' : ''}`}
+              onClick={() => onSelectTab('products')}
+              title="Products Catalog & Specs"
+            >
+              <Package size={18} />
+              {!isCollapsed && <span>Products Catalog</span>}
             </button>
 
             <button

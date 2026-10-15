@@ -602,6 +602,38 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   />
                 </div>
               )}
+
+              {/* Cheque Details input */}
+              {paymentMethod === 'Cheque' && (
+                <div style={{ marginBottom: '1rem', background: '#F8FAFC', padding: '0.75rem', borderRadius: '6px', border: '1px solid #CBD5E1' }}>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '0.25rem' }}>
+                    Cheque # & Drawee Bank:
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. MBTC-992014 (Metrobank)"
+                    value={referenceNumber}
+                    onChange={(e) => setReferenceNumber(e.target.value)}
+                    required
+                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.85rem' }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '0.3rem' }}>
+                    Automatically tracked in Cheques & PDC Management ledger as 'Pending'.
+                  </div>
+                </div>
+              )}
+
+              {/* Corporate Credit Line info */}
+              {paymentMethod === 'Corporate Credit Line' && (
+                <div style={{ marginBottom: '1rem', background: '#EFF6FF', padding: '0.75rem', borderRadius: '6px', border: '1px solid #BFDBFE' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <CreditCard size={14} /> Corporate Account Receivable
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#1E3A8A', marginTop: '0.25rem' }}>
+                    Net 30-day payment term. This charge will be posted to the customer's Accounts Receivable balance.
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Checkout & Submit */}
@@ -626,6 +658,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Transaction Confirmed</h3>
               </div>
               <button
+                className="no-print"
                 style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '1.25rem' }}
                 onClick={() => setActiveReceipt(null)}
               >
@@ -763,17 +796,17 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               </div>
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer no-print">
               <button
                 type="button"
-                className="btn-secondary"
+                className="btn-secondary no-print"
                 onClick={() => window.print()}
               >
                 <Printer size={16} /> Print Receipt (Thermal)
               </button>
               <button
                 type="button"
-                className="btn-primary"
+                className="btn-primary no-print"
                 onClick={() => setActiveReceipt(null)}
               >
                 New Transaction

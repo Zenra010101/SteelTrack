@@ -19,6 +19,7 @@ import { GoodsReturnView } from './components/GoodsReturnView';
 import { SupplierManagementView } from './components/SupplierManagementView';
 import { CustomerManagementView } from './components/CustomerManagementView';
 import { AuditLogView } from './components/AuditLogView';
+import { ProductsManagementView } from './components/ProductsManagementView';
 
 import {
   fetchInventory,
@@ -30,37 +31,89 @@ import type { SteelBatch, InventoryStats, BatchStatus, CreateSteelBatchDto } fro
 import { UserRole, BranchLocation, type UserSession } from './types/auth';
 
 export function App() {
-  const [userSession, setUserSession] = useState<UserSession | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('inventory');
+  const [userSession, setUserSession] = useState<UserSession | null>(() => {
+    try {
+      const saved = localStorage.getItem('steeltrack_user_session');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    try {
+      const savedTab = localStorage.getItem('steeltrack_active_tab');
+      if (savedTab) return savedTab;
+    } catch {}
+    return 'inventory';
+  });
 
   // Inventory State
   const [batches, setBatches] = useState<SteelBatch[]>([]);
   const [stats, setStats] = useState<InventoryStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isLiveBackend, setIsLiveBackend] = useState<boolean>(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
 
   // Filters
-  const [selectedBranch, setSelectedBranch] = useState<string>('All');
+  const [selectedBranch, setSelectedBranch] = useState<string>(() => {
+    return localStorage.getItem('steeltrack_selected_branch') || 'All';
+  });
   const [search, setSearch] = useState<string>('');
   const [gradeFilter, setGradeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // Set default active tab based on role when logging in
-  useEffect(() => {
-    if (userSession) {
-      if (userSession.role === UserRole.Cashier) {
-        setActiveTab('pos');
-        if (userSession.branch) setSelectedBranch(userSession.branch);
-      } else if (userSession.role === UserRole.BranchManager) {
-        setActiveTab('inventory');
-        if (userSession.branch) setSelectedBranch(userSession.branch);
-      } else {
-        setActiveTab('inventory');
-        setSelectedBranch('All');
-      }
+  const handleLogin = (session: UserSession) => {
+    try {
+      localStorage.setItem('steeltrack_user_session', JSON.stringify(session));
+    } catch (err) {
+      console.warn('Failed saving session to localStorage:', err);
     }
-  }, [userSession]);
+    setUserSession(session);
+
+    // Set initial branch
+    if (session.branch) {
+      setSelectedBranch(session.branch);
+      localStorage.setItem('steeltrack_selected_branch', session.branch);
+    } else {
+      setSelectedBranch('All');
+      localStorage.setItem('steeltrack_selected_branch', 'All');
+    }
+
+    // Set appropriate initial tab if none stored
+    const existingTab = localStorage.getItem('steeltrack_active_tab');
+    if (!existingTab) {
+      const defaultTab = session.role === UserRole.Cashier ? 'pos' : 'inventory';
+      setActiveTab(defaultTab);
+      localStorage.setItem('steeltrack_active_tab', defaultTab);
+    }
+  };
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('steeltrack_user_session');
+      localStorage.removeItem('steeltrack_active_tab');
+      localStorage.removeItem('steeltrack_selected_branch');
+    } catch (err) {
+      console.warn('Failed clearing session from localStorage:', err);
+    }
+    setUserSession(null);
+  };
+
+  const handleSelectTab = (tab: string) => {
+    setActiveTab(tab);
+    try {
+      localStorage.setItem('steeltrack_active_tab', tab);
+    } catch {}
+  };
+
+  const handleSelectBranch = (branch: string) => {
+    setSelectedBranch(branch);
+    try {
+      localStorage.setItem('steeltrack_selected_branch', branch);
+    } catch {}
+  };
 
   const effectiveBranch = userSession?.role === UserRole.Owner
     ? (selectedBranch === 'All' ? undefined : selectedBranch)
@@ -76,6 +129,7 @@ export function App() {
       setBatches(invResult.data);
       setIsLiveBackend(invResult.isLiveBackend);
       setStats(statsData);
+      setLastRefreshedAt(new Date());
     } catch (err) {
       console.error('Failed loading inventory data:', err);
     } finally {
@@ -89,6 +143,16 @@ export function App() {
     }
   }, [userSession, loadData]);
 
+  // Auto-refresh stock lookup at 20-second interval when on inventory tab
+  useEffect(() => {
+    if (userSession && activeTab === 'inventory') {
+      const timer = setInterval(() => {
+        loadData();
+      }, 20000);
+      return () => clearInterval(timer);
+    }
+  }, [userSession, activeTab, loadData]);
+
   const handleCreateBatch = async (dto: CreateSteelBatchDto) => {
     await createBatch(dto);
     await loadData();
@@ -101,7 +165,7 @@ export function App() {
 
   // Render Login Screen if user is not authenticated
   if (!userSession) {
-    return <LoginScreen onLogin={setUserSession} />;
+    return <LoginScreen onLogin={handleLogin} />;
   }
 
   // Get current active tab human-readable title
@@ -111,6 +175,10 @@ export function App() {
         return userSession.role === UserRole.Owner
           ? 'All Branches Steel Inventory'
           : `${userSession.branch} Branch Inventory Supervision`;
+      case 'products':
+        return userSession.role === UserRole.Owner
+          ? 'Master Products Catalog & Specifications — All Categories'
+          : `Products Catalog & Specifications — ${userSession.branch} Branch`;
       case 'receivables':
         return `Accounts Receivable & Credit Control — ${
           userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
@@ -154,12 +222,12 @@ export function App() {
       <Sidebar
         userSession={userSession}
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onSelectTab={handleSelectTab}
         selectedBranch={selectedBranch}
-        onSelectBranch={setSelectedBranch}
+        onSelectBranch={handleSelectBranch}
         isLiveBackend={isLiveBackend}
         onRefresh={loadData}
-        onLogout={() => setUserSession(null)}
+        onLogout={handleLogout}
       />
 
       {/* Main Workspace Area */}
@@ -169,6 +237,7 @@ export function App() {
           userSession={userSession}
           activeTabTitle={getTabTitle()}
           onRefresh={loadData}
+          lastRefreshedAt={lastRefreshedAt}
         />
 
         <div className="main-content">
@@ -252,6 +321,11 @@ export function App() {
                 onUpdateStatus={handleUpdateStatus}
               />
             </>
+          )}
+
+          {/* TAB: PRODUCTS MASTER CATALOG (OWNER & MANAGER) */}
+          {activeTab === 'products' && userSession.role !== UserRole.Cashier && (
+            <ProductsManagementView userSession={userSession} />
           )}
 
           {/* TAB 3: INTER-BRANCH STOCK TRANSFERS (OWNER & MANAGER) */}

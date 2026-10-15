@@ -15,6 +15,8 @@ public class CreateSaleRequestDto
 {
     public string? CustomerId { get; set; }
     public string? CustomerName { get; set; }
+    public string? CustomerTin { get; set; }
+    public string? Branch { get; set; }
     public string UserId { get; set; } = string.Empty;
     public decimal SubTotal { get; set; }
     public decimal DiscountPercent { get; set; }
@@ -24,6 +26,9 @@ public class CreateSaleRequestDto
     public decimal AmountPaid { get; set; }
     public decimal ChangeAmount { get; set; }
     public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
+    public string? ChequeNumber { get; set; }
+    public string? ChequeBank { get; set; }
+    public DateTime? ChequeMaturityDate { get; set; }
     public string? Notes { get; set; }
     public List<CreateSaleItemDto> Items { get; set; } = new();
 }
@@ -32,6 +37,8 @@ public class CreateSaleItemDto
 {
     public string ProductId { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
+    public string? BatchId { get; set; }
+    public string? HeatNumber { get; set; }
     public int Quantity { get; set; } = 1;
     public decimal UnitPrice { get; set; }
     public decimal LineTotal { get; set; }
@@ -185,6 +192,34 @@ public class SalesController : ControllerBase
                 prod.StockQuantity = Math.Max(0, prod.StockQuantity - item.Quantity);
                 prod.UpdatedAt = DateTime.UtcNow;
             }
+
+            // Decrement steel batch if BatchId or HeatNumber is provided
+            if (!string.IsNullOrWhiteSpace(item.BatchId) && Guid.TryParse(item.BatchId, out var batchGuid))
+            {
+                var batch = await _dbContext.SteelBatches.FindAsync(batchGuid);
+                if (batch != null)
+                {
+                    batch.WeightInTons = Math.Max(0, batch.WeightInTons - (double)item.WeightInTons);
+                    if (batch.WeightInTons <= 0.05)
+                    {
+                        batch.Status = BatchStatus.Shipped;
+                    }
+                    batch.LastUpdated = DateTime.UtcNow;
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(item.HeatNumber))
+            {
+                var batch = await _dbContext.SteelBatches.FirstOrDefaultAsync(b => b.HeatNumber == item.HeatNumber);
+                if (batch != null)
+                {
+                    batch.WeightInTons = Math.Max(0, batch.WeightInTons - (double)item.WeightInTons);
+                    if (batch.WeightInTons <= 0.05)
+                    {
+                        batch.Status = BatchStatus.Shipped;
+                    }
+                    batch.LastUpdated = DateTime.UtcNow;
+                }
+            }
         }
 
         // Add payment record
@@ -195,6 +230,71 @@ public class SalesController : ControllerBase
             Amount = dto.AmountPaid > 0 ? dto.AmountPaid : dto.TotalAmount,
             Method = dto.PaymentMethod,
             DatePaid = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        // If payment method is Cheque, automatically record in SaleCheques
+        if (dto.PaymentMethod == PaymentMethod.Cheque)
+        {
+            var cheque = new SaleCheque
+            {
+                Id = Guid.NewGuid().ToString(),
+                SaleId = saleId,
+                ChequeNumber = !string.IsNullOrWhiteSpace(dto.ChequeNumber)
+                    ? dto.ChequeNumber
+                    : $"CHQ-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}",
+                BankName = !string.IsNullOrWhiteSpace(dto.ChequeBank) ? dto.ChequeBank : "Metrobank",
+                AccountName = dto.CustomerName ?? "Counter Customer",
+                Amount = dto.TotalAmount,
+                MaturityDate = dto.ChequeMaturityDate ?? DateTime.UtcNow.AddDays(30),
+                Branch = dto.Branch,
+                Status = 0, // Pending
+                Notes = dto.Notes,
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.SaleCheques.Add(cheque);
+        }
+        else if (dto.PaymentMethod == PaymentMethod.Charge)
+        {
+            // Corporate Credit Line: create customer receivable entry
+            var receivable = new CustomerReceivable
+            {
+                Id = Guid.NewGuid().ToString(),
+                SaleId = saleId,
+                CustomerId = dto.CustomerId,
+                CustomerName = dto.CustomerName ?? "Credit Line Customer",
+                TotalAmount = dto.TotalAmount,
+                PaidAmount = dto.AmountPaid,
+                RemainingBalance = Math.Max(0, dto.TotalAmount - dto.AmountPaid),
+                DueDate = DateTime.UtcNow.AddDays(30),
+                Status = ReceivableStatus.Pending,
+                Notes = $"POS Invoice #{sale.SaleNumber} charged to credit line. {dto.Notes}".Trim(),
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.CustomerReceivables.Add(receivable);
+        }
+
+        // Record immutable audit trace
+        _dbContext.AuditLogs.Add(new AuditLog
+        {
+            Id = Guid.NewGuid().ToString(),
+            UserId = dto.UserId,
+            UserEmail = dto.CustomerName,
+            Action = "SALE_COMPLETED",
+            EntityType = "Sale",
+            EntityId = sale.Id,
+            Details = $"POS invoice {sale.SaleNumber} created. Method: {dto.PaymentMethod}, Total: ₱{sale.TotalAmount:N2}, Items: {dto.Items.Count}.",
+            Status = "SUCCESS",
+            Category = 1,
+            NewValue = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                sale.SaleNumber,
+                dto.CustomerName,
+                dto.TotalAmount,
+                PaymentMethod = dto.PaymentMethod.ToString(),
+                dto.Branch,
+                ItemCount = dto.Items.Count
+            }),
             CreatedAt = DateTime.UtcNow
         });
 

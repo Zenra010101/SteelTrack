@@ -154,4 +154,61 @@ public class CustomersController : ControllerBase
         await _dbContext.SaveChangesAsync();
         return Ok(new { message = $"Customer '{existing.Name}' deleted successfully." });
     }
+
+    [HttpPatch("{id}/credit-limit")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateCreditLimit(string id, [FromBody] UpdateCreditLimitDto dto)
+    {
+        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
+        var existing = await _dbContext.Customers.FindAsync(id);
+        if (existing == null) return NotFound(new { message = $"Customer with ID '{id}' not found." });
+
+        existing.CreditLimit = dto.CreditLimitPHP;
+        if (!string.IsNullOrWhiteSpace(dto.Justification))
+        {
+            existing.Notes = (existing.Notes ?? "") + $" | Credit Limit updated to ₱{dto.CreditLimitPHP:N0} ({DateTime.UtcNow:yyyy-MM-dd}): {dto.Justification}";
+        }
+        existing.UpdatedAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
+        return Ok(existing);
+    }
+
+    [HttpPatch("{id}/status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateCustomerStatusDto dto)
+    {
+        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
+        var existing = await _dbContext.Customers.FindAsync(id);
+        if (existing == null) return NotFound(new { message = $"Customer with ID '{id}' not found." });
+
+        if (dto.Status == "Active")
+        {
+            existing.IsActive = true;
+            existing.IsBlocked = false;
+        }
+        else if (dto.Status == "Blocked")
+        {
+            existing.IsActive = false;
+            existing.IsBlocked = true;
+        }
+        else
+        {
+            existing.IsActive = false;
+            existing.IsBlocked = false;
+        }
+        existing.UpdatedAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
+        return Ok(existing);
+    }
+}
+
+public class UpdateCreditLimitDto
+{
+    public decimal CreditLimitPHP { get; set; }
+    public string? Justification { get; set; }
+}
+
+public class UpdateCustomerStatusDto
+{
+    public string Status { get; set; } = "Active"; // Active | On Hold | Blocked
 }

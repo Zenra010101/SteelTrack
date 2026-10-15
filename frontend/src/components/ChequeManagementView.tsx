@@ -335,23 +335,32 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
               </p>
             </div>
 
-            <div style={{ borderTop: '1px solid #CBD5E1', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            {/* FORMAL LETTER FOOTER AND SIGNATURES */}
+            <div style={{ borderTop: '1px solid #CBD5E1', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '1.5rem' }}>
               <div style={{ fontSize: '0.8rem', color: '#64748B' }}>
-                <div>Authorized Signatory:</div>
-                <div style={{ fontWeight: 700, marginTop: '2rem', color: '#0F172A' }}>SteelTrack Credit & Collection Officer</div>
+                <div>Authorized Signatory & Legal Officer:</div>
+                <div style={{ borderBottom: '1px solid #0F172A', width: '220px', height: '2rem', marginTop: '0.5rem' }}></div>
+                <div style={{ fontWeight: 700, marginTop: '0.35rem', color: '#0F172A' }}>SteelTrack Credit & Legal Recovery Counsel</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Regional Commercial Branch Office</div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+
+              {/* ACTION BUTTONS (EXCLUDED WHEN PRINTING) */}
+              <div className="no-print" style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
+                  type="button"
+                  className="btn-secondary no-print"
                   onClick={() => setNoticeCheque(null)}
-                  style={{ background: '#E2E8F0', border: 'none', color: '#0F172A', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}
+                  style={{ background: '#E2E8F0', border: 'none', color: '#0F172A', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
                 >
                   Close
                 </button>
                 <button
+                  type="button"
+                  className="btn-primary no-print"
                   onClick={() => window.print()}
-                  style={{ background: '#0F172A', border: 'none', color: '#FFFFFF', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  style={{ background: '#991B1B', border: 'none', color: '#FFFFFF', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}
                 >
-                  <Printer size={14} /> Print Notice
+                  <Printer size={14} /> Print Notice (PDF)
                 </button>
               </div>
             </div>

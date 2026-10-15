@@ -11,6 +11,9 @@ import {
   X,
   Building2,
   ShieldAlert,
+  History,
+  AlertCircle,
+  Receipt,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type {
@@ -35,7 +38,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
   const [stats, setStats] = useState<ReceivableStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>('');
-  const [agingFilter, setAgingFilter] = useState<string>('All');
+  const [agingFilter, setAgingFilter] = useState<string>('BalanceOnly');
 
   // Payment Modal State
   const [selectedReceivable, setSelectedReceivable] = useState<CustomerReceivable | null>(null);
@@ -46,9 +49,13 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
   const [bankName, setBankName] = useState<string>('');
   const [chequeDate, setChequeDate] = useState<string>('');
   const [paymentNotes, setPaymentNotes] = useState<string>('');
+  const [inputWarning, setInputWarning] = useState<string>('');
 
   // Statement of Account (SOA) Modal State
   const [soaCustomer, setSoaCustomer] = useState<CustomerReceivable | null>(null);
+
+  // Liquidation & Payment History Modal State
+  const [historyCustomer, setHistoryCustomer] = useState<CustomerReceivable | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -79,6 +86,32 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
     setBankName('');
     setChequeDate('');
     setPaymentNotes('');
+    setInputWarning('');
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawVal = e.target.value;
+
+    // Check if raw value contains illegal characters (letters, symbols other than dot)
+    if (/[^0-9.]/.test(rawVal)) {
+      setInputWarning('Strictly numbers only. Letters and special symbols are blocked.');
+    } else {
+      setInputWarning('');
+    }
+
+    // Sanitize: allow only numbers and a single decimal point
+    let sanitized = rawVal.replace(/[^0-9.]/g, '');
+    const parts = sanitized.split('.');
+    if (parts.length > 2) {
+      sanitized = parts[0] + '.' + parts.slice(1).join('');
+    }
+
+    setPaymentAmount(sanitized);
+
+    // Balance check warning
+    if (selectedReceivable && parseFloat(sanitized) > selectedReceivable.totalOutstandingPHP) {
+      setInputWarning(`Warning: Amount exceeds outstanding balance of ₱${selectedReceivable.totalOutstandingPHP.toLocaleString()}`);
+    }
   };
 
   const handleProcessPayment = async (e: React.FormEvent) => {
@@ -110,11 +143,19 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
 
     if (!matchesSearch) return false;
 
+    if (agingFilter === 'BalanceOnly') return r.totalOutstandingPHP > 0;
+    if (agingFilter === 'Settled') return r.totalOutstandingPHP === 0;
     if (agingFilter === 'Current') return r.days30BalancePHP === 0 && r.days60BalancePHP === 0 && r.days90PlusBalancePHP === 0;
     if (agingFilter === 'Days_30') return r.days30BalancePHP > 0;
     if (agingFilter === 'Days_60') return r.days60BalancePHP > 0;
     if (agingFilter === 'Days_90_Plus') return r.days90PlusBalancePHP > 0;
     return true;
+  }).sort((a, b) => {
+    // Default aging sort: prioritize accounts with active remaining balances
+    const aHasBal = a.totalOutstandingPHP > 0 ? 1 : 0;
+    const bHasBal = b.totalOutstandingPHP > 0 ? 1 : 0;
+    if (aHasBal !== bHasBal) return bHasBal - aHasBal;
+    return b.totalOutstandingPHP - a.totalOutstandingPHP;
   });
 
   return (
@@ -203,11 +244,13 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
             <Filter size={16} /> Aging:
           </div>
           <select value={agingFilter} onChange={(e) => setAgingFilter(e.target.value)}>
-            <option value="All">All Receivables</option>
-            <option value="Current">Current (On-Time)</option>
+            <option value="BalanceOnly">Active Debt / With Balance (Default)</option>
+            <option value="All">All Customer Accounts</option>
+            <option value="Current">Current (0-30 Days)</option>
             <option value="Days_30">30+ Days Overdue</option>
             <option value="Days_60">60+ Days Overdue</option>
             <option value="Days_90_Plus">90+ Days (Credit Blocked)</option>
+            <option value="Settled">Fully Settled (₱0 Debt)</option>
           </select>
         </div>
       </div>
@@ -315,20 +358,30 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
                         <button
                           className="btn-secondary"
-                          style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
+                          style={{ padding: '0.35rem 0.55rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                          onClick={() => setHistoryCustomer(item)}
+                          title="View Payment History & Liquidation Statement"
+                        >
+                          <Receipt size={13} /> History & Liquidation
+                        </button>
+                        <button
+                          className="btn-secondary"
+                          style={{ padding: '0.35rem 0.55rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                           onClick={() => setSoaCustomer(item)}
                         >
-                          <FileText size={14} /> SOA
+                          <FileText size={13} /> SOA
                         </button>
                         <button
                           className="btn-primary"
-                          style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
+                          style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                           onClick={() => handleOpenPayment(item)}
+                          disabled={item.totalOutstandingPHP <= 0}
+                          title={item.totalOutstandingPHP <= 0 ? 'Account is already fully settled' : 'Record Ledger Payment'}
                         >
-                          <DollarSign size={14} /> Record Payment
+                          <DollarSign size={13} /> Record Payment
                         </button>
                       </div>
                     </td>
@@ -364,17 +417,43 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
 
             <form onSubmit={handleProcessPayment}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
-                  Payment Amount (PHP)
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label style={{ color: '#94A3B8', fontSize: '0.85rem' }}>
+                    Payment Amount (PHP) <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <span style={{ fontSize: '0.75rem', color: '#38BDF8' }}>Strict Numeric Validation</span>
+                </div>
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
                   required
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                  onChange={handleAmountChange}
+                  onKeyDown={(e) => {
+                    const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', 'Enter'];
+                    if (allowed.includes(e.key)) return;
+                    if (!/^[0-9.]$/.test(e.key)) {
+                      e.preventDefault();
+                      setInputWarning('Illegal input blocked: letters and special symbols are strictly forbidden.');
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    background: '#0F172A',
+                    border: inputWarning ? '1px solid #EF4444' : '1px solid #334155',
+                    color: '#F8FAFC',
+                    padding: '0.6rem',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontFamily: 'monospace',
+                  }}
                 />
+                {inputWarning && (
+                  <div style={{ color: '#F87171', fontSize: '0.75rem', marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <AlertCircle size={14} /> {inputWarning}
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
@@ -539,18 +618,194 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
               <button
-                className="btn-secondary"
+                className="btn-secondary no-print"
                 onClick={() => setSoaCustomer(null)}
                 style={{ background: '#E2E8F0', color: '#0F172A', border: 'none', padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '4px' }}
               >
                 Close
               </button>
               <button
-                className="btn-primary"
+                className="btn-primary no-print"
                 onClick={() => window.print()}
                 style={{ background: '#0F172A', color: '#FFFFFF', border: 'none', padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
               >
                 <Printer size={16} /> Print SOA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOMER PAYMENT HISTORY & LIQUIDATION STATEMENT PRINT MODAL */}
+      {historyCustomer && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', width: '92%', maxWidth: '850px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+            {/* OFFICIAL DOCUMENT HEADER */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #0F172A', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.025em' }}>
+                  STEELTRACK ENTERPRISE
+                </h2>
+                <div style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 500 }}>
+                  Industrial Steel Logistics, Supply & Distribution
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#475569' }}>
+                  Regional Branch: {historyCustomer.branch} Commercial Office
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0284C7', fontWeight: 800 }}>
+                  OFFICIAL LIQUIDATION & PAYMENT STATEMENT
+                </h3>
+                <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '0.2rem' }}>
+                  Statement Ref: LIQ-{historyCustomer.id.toUpperCase()}-{new Date().getFullYear()}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#475569' }}>
+                  Date Issued: {new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+              </div>
+            </div>
+
+            {/* CUSTOMER DEBTOR PROFILE */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: '#F8FAFC', padding: '1rem', borderRadius: '6px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B', fontWeight: 700 }}>Customer Account</div>
+                <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#0F172A' }}>{historyCustomer.customerName}</div>
+                <div style={{ color: '#334155', fontSize: '0.9rem' }}>{historyCustomer.companyName}</div>
+                <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '0.25rem' }}>Tax Identification Number (TIN): {historyCustomer.tin}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B', fontWeight: 700 }}>Account Financial Standing</div>
+                <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '0.15rem' }}>
+                  Credit Limit: <span style={{ fontWeight: 600 }}>₱{historyCustomer.creditLimitPHP.toLocaleString()}</span>
+                </div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '0.25rem', color: historyCustomer.totalOutstandingPHP > 0 ? '#DC2626' : '#059669' }}>
+                  {historyCustomer.totalOutstandingPHP > 0 ? `Current Debt: ₱${historyCustomer.totalOutstandingPHP.toLocaleString()}` : 'STATUS: FULLY LIQUIDATED (₱0.00)'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                  Account Standing: <span style={{ fontWeight: 600, color: '#0F172A' }}>{historyCustomer.status}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* PAYMENT HISTORY & LIQUIDATION LEDGER */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#0F172A' }}>
+                  Itemized Payments & Settlement Ledger
+                </h4>
+                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                  {historyCustomer.payments && historyCustomer.payments.length > 0
+                    ? `${historyCustomer.payments.length} Transaction(s) on file`
+                    : 'No past recorded payments'}
+                </span>
+              </div>
+
+              {(!historyCustomer.payments || historyCustomer.payments.length === 0) ? (
+                <div style={{ padding: '2rem', textAlign: 'center', background: '#F8FAFC', borderRadius: '6px', border: '1px dashed #CBD5E1', color: '#64748B', fontSize: '0.9rem' }}>
+                  No payment transactions have been logged for this customer account yet.
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #CBD5E1', fontSize: '0.82rem' }}>
+                  <thead>
+                    <tr style={{ background: '#E2E8F0', color: '#334155', textAlign: 'left', fontWeight: 700 }}>
+                      <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}>Date & Time</th>
+                      <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}>Ref / OR #</th>
+                      <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}>Method</th>
+                      <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right' }}>Debt Before</th>
+                      <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right' }}>Amount Paid</th>
+                      <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right' }}>Debt Remaining</th>
+                      <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}>Collector / Officer</th>
+                      <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyCustomer.payments.map((p, idx) => (
+                      <tr key={p.id || idx} style={{ borderBottom: '1px solid #E2E8F0', background: idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }}>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', whiteSpace: 'nowrap' }}>
+                          {new Date(p.paymentDate).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </td>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontWeight: 600, color: '#0F172A' }}>
+                          {p.reference || 'N/A'}
+                        </td>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1' }}>
+                          <span style={{ background: '#E0F2FE', color: '#0369A1', padding: '0.15rem 0.35rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                            {p.paymentMethod || 'Payment'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', color: '#64748B' }}>
+                          ₱{p.balanceBefore.toLocaleString()}
+                        </td>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', fontWeight: 700, color: '#059669' }}>
+                          ₱{p.amount.toLocaleString()}
+                        </td>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', fontWeight: 600, color: '#0F172A' }}>
+                          ₱{p.balanceAfter.toLocaleString()}
+                        </td>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontSize: '0.75rem', color: '#475569' }}>
+                          {p.recordedByName || 'Authorized Officer'}
+                        </td>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontSize: '0.75rem', color: '#64748B' }}>
+                          {p.notes || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ background: '#F1F5F9', fontWeight: 700 }}>
+                      <td colSpan={4} style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right' }}>
+                        Total Cumulative Payments:
+                      </td>
+                      <td style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', color: '#059669', fontSize: '0.9rem' }}>
+                        ₱{historyCustomer.payments.reduce((acc, cur) => acc + cur.amount, 0).toLocaleString()}
+                      </td>
+                      <td colSpan={3} style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
+            </div>
+
+            {/* AUDIT & SIGNATURE ATTESTATION BLOCK */}
+            <div style={{ marginTop: '2rem', borderTop: '1px solid #CBD5E1', paddingTop: '1.25rem', fontSize: '0.8rem', color: '#475569' }}>
+              <p style={{ margin: '0 0 1.5rem 0', fontStyle: 'italic', color: '#64748B' }}>
+                Certification: I hereby certify that the ledger entries above represent genuine payments officially recorded and validated against the financial books of SteelTrack Enterprise.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', marginTop: '2rem', textAlign: 'center' }}>
+                <div>
+                  <div style={{ borderBottom: '1px solid #0F172A', height: '2rem', marginBottom: '0.35rem' }}></div>
+                  <div style={{ fontWeight: 700, color: '#0F172A' }}>{currentUserName}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Prepared By / Credit Officer</div>
+                </div>
+                <div>
+                  <div style={{ borderBottom: '1px solid #0F172A', height: '2rem', marginBottom: '0.35rem' }}></div>
+                  <div style={{ fontWeight: 700, color: '#0F172A' }}>Branch Treasury Controller</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Audited & Verified By</div>
+                </div>
+                <div>
+                  <div style={{ borderBottom: '1px solid #0F172A', height: '2rem', marginBottom: '0.35rem' }}></div>
+                  <div style={{ fontWeight: 700, color: '#0F172A' }}>{historyCustomer.customerName}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Customer Conforme / Authorized Representative</div>
+                </div>
+              </div>
+            </div>
+
+            {/* MODAL ACTION BUTTONS (NO PRINT) */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+              <button
+                className="btn-secondary no-print"
+                onClick={() => setHistoryCustomer(null)}
+                style={{ background: '#E2E8F0', color: '#0F172A', border: 'none', padding: '0.55rem 1.25rem', cursor: 'pointer', borderRadius: '4px', fontWeight: 600 }}
+              >
+                Close
+              </button>
+              <button
+                className="btn-primary no-print"
+                onClick={() => window.print()}
+                style={{ background: '#0284C7', color: '#FFFFFF', border: 'none', padding: '0.55rem 1.25rem', cursor: 'pointer', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}
+              >
+                <Printer size={16} /> Print Liquidation Statement (PDF)
               </button>
             </div>
           </div>

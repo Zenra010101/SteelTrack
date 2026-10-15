@@ -1,18 +1,34 @@
-import { Server, Layers } from 'lucide-react';
+import { useState } from 'react';
+import { Server, Layers, RefreshCw } from 'lucide-react';
 import type { UserSession } from '../types/auth';
 
 interface HeaderProps {
   isLiveBackend: boolean;
   userSession: UserSession;
   activeTabTitle: string;
-  onRefresh?: () => void;
+  onRefresh?: () => Promise<void> | void;
+  lastRefreshedAt?: Date;
 }
 
 export function Header({
   isLiveBackend,
   userSession,
   activeTabTitle,
+  onRefresh,
+  lastRefreshedAt,
 }: HeaderProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleManualRefresh = async () => {
+    if (!onRefresh || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
   return (
     <header className="header-topbar">
       <div className="topbar-breadcrumb">
@@ -27,11 +43,35 @@ export function Header({
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        {onRefresh && (
+          <button
+            onClick={handleManualRefresh}
+            className="btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.4rem 0.75rem',
+              fontSize: '0.78rem',
+              borderRadius: '6px',
+            }}
+            title="Refresh database records"
+          >
+            <RefreshCw size={13} className={isRefreshing ? 'spin-icon' : ''} />
+            <span>{isRefreshing ? 'Syncing...' : 'Sync Now'}</span>
+            {lastRefreshedAt && (
+              <span style={{ color: '#64748B', fontSize: '0.72rem', marginLeft: '0.2rem' }}>
+                ({lastRefreshedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })})
+              </span>
+            )}
+          </button>
+        )}
+
         <div className={`status-pill ${isLiveBackend ? '' : 'offline'}`}>
           <div className="dot" />
           <Server size={14} />
-          {isLiveBackend ? 'Active' : 'Offline'}
+          {isLiveBackend ? 'Active Database' : 'Offline Mode'}
         </div>
       </div>
     </header>

@@ -22,6 +22,7 @@ export function AddBatchModal({
   const [dimensions, setDimensions] = useState('12mm x 1500mm x 6000mm');
   const [location, setLocation] = useState('Yard A - Bay 01');
   const [branch, setBranch] = useState<BranchLocation>(defaultBranch);
+  const [receivedDate, setReceivedDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   if (!isOpen) return null;
 
@@ -34,6 +35,7 @@ export function AddBatchModal({
       dimensions: dimensions.trim(),
       location: location.trim(),
       branch,
+      createdAt: receivedDate ? new Date(receivedDate).toISOString() : new Date().toISOString(),
     });
     setHeatNumber('');
     onClose();
@@ -122,6 +124,16 @@ export function AddBatchModal({
                 placeholder="Thickness x Width x Length"
                 value={dimensions}
                 onChange={(e) => setDimensions(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Production / Received Date</label>
+              <input
+                type="date"
+                required
+                value={receivedDate}
+                onChange={(e) => setReceivedDate(e.target.value)}
               />
             </div>
           </div>

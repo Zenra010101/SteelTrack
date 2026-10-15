@@ -2023,3 +2023,51 @@ tbody td {
   line-height: 1.4;
 }
 
+/* ==========================================================================
+   ANIMATIONS & PRINT UTILITIES
+   ========================================================================== */
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+@media print {
+  .no-print,
+  .sidebar-container,
+  .header-topbar,
+  .controls-bar,
+  .btn,
+  .btn-primary,
+  .btn-secondary {
+    display: none !important;
+  }
+
+  body,
+  .app-shell,
+  .app-main,
+  .main-content {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .printable-document {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+}

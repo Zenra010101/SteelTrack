@@ -37,6 +37,9 @@ export interface GoodsReturnSlip {
   approvedBy?: string;
   createdAt: string;
   approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
   notes?: string;
 }
 
@@ -56,4 +59,17 @@ export interface CreateGrsDto {
     reason: ReturnReason;
     restockEligible: boolean;
   }[];
+}
+
+export interface HeatLookupResult {
+  heatNumber: string;
+  invoiceNumber: string;
+  customerName: string;
+  companyName?: string;
+  grade: string;
+  dimensions: string;
+  purchasedQtyTons: number;
+  purchasedQtyPieces?: number;
+  unitPricePerTonPHP: number;
+  maxReturnableTons: number;
 }

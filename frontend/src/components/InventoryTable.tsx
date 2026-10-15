@@ -61,6 +61,7 @@ export function InventoryTable({
               <th>Weight (Tons)</th>
               <th>Dimensions</th>
               <th>Yard Location</th>
+              <th>Date Added</th>
               <th>Status</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
@@ -82,6 +83,9 @@ export function InventoryTable({
                 <td style={{ fontWeight: 600 }}>{b.weightInTons} t</td>
                 <td style={{ color: '#64748B', fontSize: '0.85rem' }}>{b.dimensions}</td>
                 <td style={{ color: '#475569' }}>{b.location}</td>
+                <td style={{ color: '#64748B', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+                  {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                </td>
                 <td>
                   <span className={`badge ${getBadgeClass(b.status)}`}>
                     {b.status}

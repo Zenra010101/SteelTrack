@@ -35,6 +35,7 @@ export interface CreateSteelBatchDto {
   dimensions: string;
   location: string;
   branch?: BranchLocation;
+  createdAt?: string;
 }
 
 export interface UpdateBatchStatusDto {

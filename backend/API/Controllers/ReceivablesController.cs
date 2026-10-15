@@ -59,7 +59,9 @@ public class ReceivablesController : ControllerBase
         }
 
         var receivables = await query
-            .OrderByDescending(r => r.DueDate)
+            .OrderByDescending(r => r.RemainingBalance > 0)
+            .ThenByDescending(r => r.RemainingBalance)
+            .ThenByDescending(r => r.DueDate)
             .Select(r => new
             {
                 r.Id,
@@ -70,13 +72,26 @@ public class ReceivablesController : ControllerBase
                 CompanyName = r.Customer != null ? r.Customer.Name : r.CustomerName,
                 Tin = r.Customer != null ? r.Customer.CustomerCode : null,
                 CreditLimitPHP = r.Customer != null ? r.Customer.CreditLimit : 0m,
-                TotalOutstandingPHP = r.TotalAmount,
+                TotalOutstandingPHP = r.RemainingBalance,
                 CurrentBalancePHP = r.RemainingBalance,
                 PaidAmountPHP = r.PaidAmount,
                 DueDate = r.DueDate,
                 Status = r.Status.ToString(),
                 Notes = r.Notes,
-                CreatedAt = r.CreatedAt
+                CreatedAt = r.CreatedAt,
+                Payments = r.Payments.OrderByDescending(p => p.PaymentDate).Select(p => new
+                {
+                    p.Id,
+                    p.CustomerReceivableId,
+                    p.Amount,
+                    p.BalanceBefore,
+                    p.BalanceAfter,
+                    PaymentDate = p.PaymentDate.ToString("o"),
+                    p.Reference,
+                    p.Notes,
+                    PaymentMethod = "Payment",
+                    RecordedByName = p.RecordedByUserId
+                }).ToList()
             })
             .ToListAsync();
 
@@ -264,7 +279,23 @@ public class ReceivablesController : ControllerBase
             PaidAmountPHP = 600000m,
             DueDate = DateTime.UtcNow.AddDays(15),
             Status = "Pending",
-            Branch = "Davao"
+            Branch = "Davao",
+            Payments = new List<object>
+            {
+                new
+                {
+                    Id = "pmt-mock-01",
+                    CustomerReceivableId = "rec-001",
+                    Amount = 600000m,
+                    BalanceBefore = 1450000m,
+                    BalanceAfter = 850000m,
+                    PaymentDate = DateTime.UtcNow.AddDays(-14).ToString("o"),
+                    Reference = "OR-882910",
+                    Notes = "Partial settlement via BDO Manager's Cheque",
+                    PaymentMethod = "Cheque",
+                    RecordedByName = "Cashier - Davao"
+                }
+            }
         },
         new
         {
@@ -278,7 +309,8 @@ public class ReceivablesController : ControllerBase
             PaidAmountPHP = 0m,
             DueDate = DateTime.UtcNow.AddDays(-5),
             Status = "Overdue",
-            Branch = "Cagayan"
+            Branch = "Cagayan",
+            Payments = new List<object>()
         }
     };
 }

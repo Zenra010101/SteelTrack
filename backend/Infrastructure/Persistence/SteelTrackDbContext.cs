@@ -42,6 +42,7 @@ public class SteelTrackDbContext : DbContext
     public DbSet<GoodsExchangeLine> GoodsExchangeLines => Set<GoodsExchangeLine>();
     public DbSet<SalesReportVerification> SalesReportVerifications => Set<SalesReportVerification>();
     public DbSet<SteelBatch> SteelBatches => Set<SteelBatch>();
+    public DbSet<StockTransfer> StockTransfers => Set<StockTransfer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

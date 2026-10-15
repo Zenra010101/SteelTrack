@@ -6,6 +6,19 @@ export type ChequeStatusType = 'Pending' | 'Deposited' | 'Cleared' | 'Bounced' |
 
 export type AgingBucket = 'Current' | 'Days_30' | 'Days_60' | 'Days_90_Plus';
 
+export interface ReceivablePaymentRecord {
+  id: string;
+  customerReceivableId: string;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  paymentDate: string;
+  reference?: string;
+  notes?: string;
+  paymentMethod?: string;
+  recordedByName?: string;
+}
+
 export interface CustomerReceivable {
   id: string;
   customerId: string;
@@ -22,6 +35,7 @@ export interface CustomerReceivable {
   lastPaymentAmountPHP?: number;
   status: 'Good Standing' | 'Credit Warning' | 'Credit Blocked';
   branch: BranchLocation;
+  payments?: ReceivablePaymentRecord[];
 }
 
 export interface ReceivablePaymentDto {

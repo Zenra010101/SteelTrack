@@ -87,6 +87,42 @@ public class GoodsReturnsController : ControllerBase
             ApprovedAt = DateTime.UtcNow
         });
     }
+
+    [HttpPost("{id:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult RejectReturn(Guid id, [FromBody] RejectReturnRequest request)
+    {
+        return Ok(new
+        {
+            Message = "Goods Return Slip rejected.",
+            GrsId = id,
+            Status = "Rejected",
+            RejectedBy = request.RejecterName,
+            RejectionReason = request.RejectionReason,
+            RejectedAt = DateTime.UtcNow
+        });
+    }
+
+    [HttpGet("lookup-heat/{heatNumber}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult LookupHeat(string heatNumber)
+    {
+        var clean = heatNumber.Trim();
+        // Return matching sold heat specifications
+        return Ok(new
+        {
+            HeatNumber = clean,
+            InvoiceNumber = "INV-2026-0041",
+            CustomerName = "Mindanao Steelworks Corp.",
+            Grade = "A36_Structural",
+            Dimensions = "12mm x 1500mm x 6000mm",
+            PurchasedQtyTons = 5.0m,
+            PurchasedQtyPieces = 25,
+            UnitPricePerTonPHP = 85000m,
+            MaxReturnableTons = 5.0m
+        });
+    }
 }
 
 public class CreateGrsRequest
@@ -114,4 +150,10 @@ public class GrsItemRequest
 public class ApproveReturnRequest
 {
     public string ApproverName { get; set; } = string.Empty;
+}
+
+public class RejectReturnRequest
+{
+    public string RejecterName { get; set; } = string.Empty;
+    public string RejectionReason { get; set; } = string.Empty;
 }
