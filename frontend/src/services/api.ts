@@ -9,6 +9,7 @@ import type { StockTransferRequest, PosTransaction, TransferStatus } from '../ty
 import type {
   CustomerReceivable,
   ReceivablePaymentDto,
+  ReceivablePaymentRecord,
   SaleChequeItem,
   ReceivableStats,
   ChequeStatusType,
@@ -545,16 +546,13 @@ export async function processPosSale(
       id: `chq-${Date.now()}`,
       chequeNumber: dto.referenceNumber || `CHQ-${Math.floor(100000 + Math.random() * 900000)}`,
       bankName: 'Metrobank',
-      accountName: dto.customerName,
-      accountNumber: '**** **** 8821',
+      customerName: dto.customerName,
+      invoiceNumber: newTx.invoiceNumber,
       amountPHP: dto.totalAmountPHP,
       issueDate: new Date().toISOString(),
       maturityDate: new Date(Date.now() + 30 * 86400000).toISOString(),
       status: 'Pending',
-      type: 'Receivable_Customer',
       branch: dto.branch,
-      notes: `POS counter invoice #${newTx.invoiceNumber}`,
-      isPdc: true,
     });
   }
 
@@ -564,23 +562,26 @@ export async function processPosSale(
       (r) => r.customerName.toLowerCase() === dto.customerName.toLowerCase()
     );
     if (existingRecv) {
-      existingRecv.totalInvoicedPHP += dto.totalAmountPHP;
-      existingRecv.remainingBalancePHP += dto.totalAmountPHP;
+      existingRecv.totalOutstandingPHP += dto.totalAmountPHP;
+      existingRecv.currentBalancePHP += dto.totalAmountPHP;
       existingRecv.status =
-        existingRecv.remainingBalancePHP > (existingRecv.creditLimitPHP || 3000000)
+        existingRecv.totalOutstandingPHP > (existingRecv.creditLimitPHP || 3000000)
           ? 'Credit Warning'
-          : 'Active';
+          : 'Good Standing';
     } else {
       mockReceivables.unshift({
         id: `rec-${Date.now()}`,
+        customerId: `cust-${Date.now()}`,
         customerName: dto.customerName,
-        customerTin: dto.customerTin || '000-000-000-000',
+        companyName: dto.customerName,
+        tin: dto.customerTin || '000-000-000-000',
         creditLimitPHP: 3000000,
-        totalInvoicedPHP: dto.totalAmountPHP,
-        totalPaidPHP: 0,
-        remainingBalancePHP: dto.totalAmountPHP,
-        status: 'Active',
-        dueDate: new Date(Date.now() + 30 * 86400000).toISOString(),
+        totalOutstandingPHP: dto.totalAmountPHP,
+        currentBalancePHP: dto.totalAmountPHP,
+        days30BalancePHP: 0,
+        days60BalancePHP: 0,
+        days90PlusBalancePHP: 0,
+        status: 'Good Standing',
         branch: dto.branch,
       });
     }
@@ -1411,7 +1412,7 @@ export async function lookupHeatNumberForReturn(heatNumber: string): Promise<Hea
       grade: batch.grade,
       dimensions: batch.dimensions,
       purchasedQtyTons: batch.weightInTons,
-      unitPricePerTonPHP: batch.unitPricePHP,
+      unitPricePerTonPHP: (batch as any).unitPricePHP || 45000,
       maxReturnableTons: batch.weightInTons,
     };
   }

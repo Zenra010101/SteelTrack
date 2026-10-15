@@ -5,17 +5,13 @@ import {
   Eye,
   X,
   Clock,
-  ShieldCheck,
   ShieldAlert,
-  ArrowRight,
   Database,
   Lock,
-  UserCheck,
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
   Printer,
-  SlidersHorizontal,
 } from 'lucide-react';
 
 export interface AuditRecord {

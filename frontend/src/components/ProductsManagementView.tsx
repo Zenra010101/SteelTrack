@@ -3,9 +3,7 @@ import {
   Package,
   Plus,
   Search,
-  Filter,
   AlertTriangle,
-  CheckCircle2,
   Tag,
   Edit2,
   X,
@@ -15,7 +13,7 @@ import {
   Boxes,
 } from 'lucide-react';
 import type { ProductItem, CreateProductDto } from '../types/product';
-import { UserRole, type UserSession } from '../types/auth';
+import type { UserSession } from '../types/auth';
 import {
   fetchProducts,
   createProduct,
@@ -25,10 +23,10 @@ import {
 } from '../services/api';
 
 interface ProductsManagementViewProps {
-  userSession: UserSession;
+  userSession?: UserSession;
 }
 
-export function ProductsManagementView({ userSession }: ProductsManagementViewProps) {
+export function ProductsManagementView({ userSession: _userSession }: ProductsManagementViewProps) {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

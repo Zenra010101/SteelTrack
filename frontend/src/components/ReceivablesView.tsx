@@ -11,7 +11,6 @@ import {
   X,
   Building2,
   ShieldAlert,
-  History,
   AlertCircle,
   Receipt,
 } from 'lucide-react';

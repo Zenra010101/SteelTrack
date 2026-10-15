@@ -10,7 +10,6 @@ import {
   Globe,
   X,
   Upload,
-  Building,
   Check,
   Download,
   Trash2,

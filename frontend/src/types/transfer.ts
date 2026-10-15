@@ -5,6 +5,7 @@ export type TransferStatus = 'Pending' | 'Approved' | 'InTransit' | 'Completed' 
 
 export interface StockTransferRequest {
   id: string;
+  transferNumber?: string;
   sourceBranch: BranchLocation;
   destinationBranch: BranchLocation;
   batchId: string;

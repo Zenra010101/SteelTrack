@@ -5,12 +5,8 @@ import {
   CheckCircle,
   Clock,
   Truck,
-  Building2,
   X,
   AlertCircle,
-  Layers,
-  Scale,
-  FileText,
   Ban,
   Check,
 } from 'lucide-react';

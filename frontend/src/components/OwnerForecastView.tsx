@@ -10,10 +10,7 @@ import {
   ShieldAlert,
   Zap,
   Check,
-  Building,
   Star,
-  FileText,
-  Printer,
   X,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
@@ -84,7 +81,7 @@ export function OwnerForecastView() {
         requestedBy: 'AI Decision Support System',
         notes: `Automated Post-LSTM Allocation: Reallocating ${reallocQty}T ${selectedGrade} from ${reallocSource} to ${reallocDest} to avoid projected deficit.`,
       });
-      setTransferExecuted(res.transferNumber);
+      setTransferExecuted(res.transferNumber || res.id);
     } catch {
       setTransferExecuted('TR-2026-9042');
     }

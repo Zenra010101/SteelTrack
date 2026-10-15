@@ -11,7 +11,6 @@ import {
   Database,
   RefreshCw,
   AlertCircle,
-  Plus,
   UserPlus,
   ShieldAlert,
 } from 'lucide-react';
