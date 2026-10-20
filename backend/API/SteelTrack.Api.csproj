@@ -24,17 +24,6 @@
     <ProjectReference Include="..\Domain\SteelTrack.Domain.csproj" />
   </ItemGroup>
 
-  <!-- Include seed_data.sql and supabase_schema.sql in build & publish output for automated seeding -->
-  <ItemGroup>
-    <None Include="..\seed_data.sql" Link="seed_data.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
-    <None Include="..\supabase_schema.sql" Link="supabase_schema.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
-  </ItemGroup>
 
   <!-- Include Frontend files in Visual Studio Solution Explorer -->
   <ItemGroup>
