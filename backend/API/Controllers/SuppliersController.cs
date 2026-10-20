@@ -1,153 +1,153 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using GensanPOS.Application.Common;
+using GensanPOS.Application.DTOs.Suppliers;
+using GensanPOS.Application.Interfaces;
+using GensanPOS.Domain.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteelTrack.Domain.Entities;
-using SteelTrack.Infrastructure.Persistence;
 
-namespace SteelTrack.Api.Controllers;
+namespace GensanPOS.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/suppliers")]
+[Authorize]
 public class SuppliersController : ControllerBase
 {
-    private readonly SteelTrackDbContext? _dbContext;
+    private readonly ISupplierService _service;
+    private readonly ISupplierExportService _exportService;
 
-    public SuppliersController(SteelTrackDbContext? dbContext = null)
+    public SuppliersController(ISupplierService service, ISupplierExportService exportService)
     {
-        _dbContext = dbContext;
+        _service = service;
+        _exportService = exportService;
+    }
+
+    private Guid UserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private bool IsOwner => User.IsInRole(RoleNames.Owner);
+
+    [HttpGet("summary")]
+    [Authorize(Roles = RoleNames.Owner)]
+    public async Task<ActionResult<ApiResponse<SupplierSummaryDto>>> GetSummary(CancellationToken cancellationToken)
+    {
+        var summary = await _service.GetSummaryAsync(true, cancellationToken);
+        return Ok(ApiResponse<SupplierSummaryDto>.Ok(summary));
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] bool? includeInactive = false)
+    public async Task<ActionResult> Search(
+        [FromQuery] SupplierSearchQuery query,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return Ok(new List<object>());
-
-        var query = _dbContext.Suppliers.AsNoTracking().AsQueryable();
-
-        if (includeInactive != true)
+        if (query.Page > 0)
         {
-            query = query.Where(s => s.IsActive);
+            var paged = await _service.SearchPagedAsync(query, IsOwner, cancellationToken);
+            return Ok(ApiResponse<PagedResult<SupplierListItemDto>>.Ok(paged));
         }
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var q = search.Trim().ToLower();
-            query = query.Where(s =>
-                s.Name.ToLower().Contains(q) ||
-                (s.SupplierCode != null && s.SupplierCode.ToLower().Contains(q)) ||
-                (s.ContactPerson != null && s.ContactPerson.ToLower().Contains(q)) ||
-                (s.Phone != null && s.Phone.ToLower().Contains(q)) ||
-                (s.Email != null && s.Email.ToLower().Contains(q)));
-        }
-
-        var suppliers = await query
-            .OrderBy(s => s.Name)
-            .Select(s => new
-            {
-                s.Id,
-                s.SupplierCode,
-                s.Name,
-                s.ContactPerson,
-                s.Phone,
-                s.Email,
-                s.Address,
-                s.PaymentTerms,
-                s.CustomPaymentTerms,
-                s.IsActive,
-                s.Notes,
-                s.CreatedAt,
-                s.UpdatedAt
-            })
-            .ToListAsync();
-
-        return Ok(suppliers);
+        var list = await _service.SearchAsync(query, IsOwner, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<SupplierListItemDto>>.Ok(list));
     }
 
-    [HttpGet("{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(string id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ApiResponse<SupplierDetailDto>>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return NotFound();
+        var item = await _service.GetByIdAsync(id, IsOwner, cancellationToken);
+        return Ok(ApiResponse<SupplierDetailDto>.Ok(item));
+    }
 
-        var supplier = await _dbContext.Suppliers
-            .AsNoTracking()
-            .Include(s => s.Contacts)
-            .Include(s => s.Attachments)
-            .FirstOrDefaultAsync(s => s.Id == id);
+    [HttpGet("{id:guid}/cost-history")]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<SupplierCostHistoryDto>>>> GetCostHistory(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var history = await _service.GetCostHistoryAsync(id, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<SupplierCostHistoryDto>>.Ok(history));
+    }
 
-        if (supplier == null) return NotFound(new { message = $"Supplier with ID '{id}' not found." });
-
-        return Ok(supplier);
+    [HttpGet("next-code")]
+    public async Task<ActionResult<ApiResponse<NextSupplierCodeDto>>> GetNextCode(CancellationToken cancellationToken)
+    {
+        var code = await _service.GetNextSupplierCodeAsync(cancellationToken);
+        return Ok(ApiResponse<NextSupplierCodeDto>.Ok(new NextSupplierCodeDto { SupplierCode = code }));
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] Supplier supplier)
+    [Authorize(Roles = RoleNames.Owner)]
+    public async Task<ActionResult<ApiResponse<SupplierDetailDto>>> Create(
+        [FromBody] CreateSupplierRequest request,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        if (string.IsNullOrWhiteSpace(supplier.Name))
-        {
-            return BadRequest(new { message = "Supplier Name is required." });
-        }
-
-        if (string.IsNullOrWhiteSpace(supplier.Id))
-        {
-            supplier.Id = Guid.NewGuid().ToString();
-        }
-
-        supplier.CreatedAt = DateTime.UtcNow;
-        _dbContext.Suppliers.Add(supplier);
-        await _dbContext.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetById), new { id = supplier.Id }, supplier);
+        var supplier = await _service.CreateAsync(request, UserId, cancellationToken);
+        return Ok(ApiResponse<SupplierDetailDto>.Ok(supplier, "Supplier created"));
     }
 
-    [HttpPut("{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(string id, [FromBody] Supplier supplier)
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = RoleNames.Owner)]
+    public async Task<ActionResult<ApiResponse<SupplierDetailDto>>> Update(
+        Guid id,
+        [FromBody] UpdateSupplierRequest request,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        var existing = await _dbContext.Suppliers.FindAsync(id);
-        if (existing == null) return NotFound(new { message = $"Supplier with ID '{id}' not found." });
-
-        existing.Name = supplier.Name;
-        existing.SupplierCode = supplier.SupplierCode;
-        existing.ContactPerson = supplier.ContactPerson;
-        existing.Phone = supplier.Phone;
-        existing.Email = supplier.Email;
-        existing.Address = supplier.Address;
-        existing.PaymentTerms = supplier.PaymentTerms;
-        existing.CustomPaymentTerms = supplier.CustomPaymentTerms;
-        existing.IsActive = supplier.IsActive;
-        existing.Notes = supplier.Notes;
-        existing.UpdatedAt = DateTime.UtcNow;
-
-        await _dbContext.SaveChangesAsync();
-        return Ok(existing);
+        var supplier = await _service.UpdateAsync(id, request, UserId, cancellationToken);
+        return Ok(ApiResponse<SupplierDetailDto>.Ok(supplier, "Supplier updated"));
     }
 
-    [HttpDelete("{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(string id)
+    [HttpPost("{id:guid}/archive")]
+    [Authorize(Roles = RoleNames.Owner)]
+    public async Task<ActionResult<ApiResponse<SupplierDetailDto>>> Archive(
+        Guid id,
+        [FromBody] ArchiveSupplierRequest? request,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
+        var supplier = await _service.ArchiveAsync(id, request, UserId, cancellationToken);
+        return Ok(ApiResponse<SupplierDetailDto>.Ok(supplier, "Supplier archived — historical records preserved"));
+    }
 
-        var existing = await _dbContext.Suppliers.FindAsync(id);
-        if (existing == null) return NotFound(new { message = $"Supplier with ID '{id}' not found." });
+    [HttpPost("{id:guid}/attachments")]
+    [Authorize(Roles = RoleNames.Owner)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<ActionResult<ApiResponse<SupplierAttachmentDto>>> UploadAttachment(
+        Guid id,
+        IFormFile file,
+        [FromForm] string? description,
+        CancellationToken cancellationToken)
+    {
+        if (file.Length == 0)
+            return BadRequest(ApiResponse<object>.Fail("File is empty"));
 
-        _dbContext.Suppliers.Remove(existing);
-        await _dbContext.SaveChangesAsync();
-        return Ok(new { message = $"Supplier '{existing.Name}' deleted successfully." });
+        await using var stream = file.OpenReadStream();
+        var attachment = await _service.AddAttachmentAsync(
+            id, stream, file.FileName, file.ContentType, description, UserId, cancellationToken);
+        return Ok(ApiResponse<SupplierAttachmentDto>.Ok(attachment, "Attachment uploaded"));
+    }
+
+    [HttpGet("attachments/{attachmentId:guid}")]
+    public async Task<IActionResult> DownloadAttachment(Guid attachmentId, CancellationToken cancellationToken)
+    {
+        var file = await _service.GetAttachmentFileAsync(attachmentId, cancellationToken);
+        if (file is null) return NotFound();
+        return File(file.Value.Stream, file.Value.ContentType, file.Value.FileName);
+    }
+
+    [HttpGet("export")]
+    public async Task<IActionResult> Export(
+        [FromQuery] SupplierSearchQuery query,
+        [FromQuery] string format = "excel",
+        CancellationToken cancellationToken = default)
+    {
+        var isPdf = string.Equals(format, "pdf", StringComparison.OrdinalIgnoreCase);
+        var bytes = isPdf
+            ? await _exportService.ExportPdfAsync(query, IsOwner, cancellationToken)
+            : await _exportService.ExportExcelAsync(query, IsOwner, cancellationToken);
+        var ext = isPdf ? "pdf" : "xlsx";
+        var contentType = isPdf ? "application/pdf" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        return File(bytes, contentType, $"suppliers-{DateTime.UtcNow:yyyyMMdd}.{ext}");
+    }
+
+    [HttpGet("{id:guid}/report")]
+    public async Task<IActionResult> ExportProfileReport(Guid id, CancellationToken cancellationToken)
+    {
+        var bytes = await _exportService.ExportProfilePdfAsync(id, IsOwner, cancellationToken);
+        return File(bytes, "application/pdf", $"supplier-report-{id:N}.pdf");
     }
 }

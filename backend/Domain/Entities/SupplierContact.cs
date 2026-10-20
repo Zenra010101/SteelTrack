@@ -1,15 +1,15 @@
-namespace SteelTrack.Domain.Entities;
+using GensanPOS.Domain.Common;
+using GensanPOS.Domain.Enums;
 
-public class SupplierContact
+namespace GensanPOS.Domain.Entities;
+
+public class SupplierContact : BaseEntity
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
-    public string SupplierId { get; set; } = string.Empty;
+    public Guid SupplierId { get; set; }
     public Supplier Supplier { get; set; } = null!;
     public string Name { get; set; } = string.Empty;
-    public int Role { get; set; } = 0;
+    public SupplierContactRole Role { get; set; } = SupplierContactRole.General;
     public string? Phone { get; set; }
     public string? Email { get; set; }
-    public bool IsPrimary { get; set; } = false;
+    public bool IsPrimary { get; set; }
 }

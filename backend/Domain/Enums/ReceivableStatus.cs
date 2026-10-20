@@ -1,10 +1,9 @@
-namespace SteelTrack.Domain.Enums;
+namespace GensanPOS.Domain.Enums;
 
 public enum ReceivableStatus
 {
-    Pending = 0,
+    Unpaid = 0,
     Partial = 1,
     Paid = 2,
-    Overdue = 3,
-    Voided = 4
+    Overdue = 3
 }

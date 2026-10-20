@@ -1,10 +1,15 @@
-namespace SteelTrack.Domain.Enums;
+namespace GensanPOS.Domain.Enums;
 
 public enum AdjustmentType
 {
-    Audit = 0,
-    Damage = 1,
-    Loss = 2,
-    Return = 3,
-    Other = 4
+    CountingError = 0,
+    MissingStock = 1,
+    DamagedItems = 2,
+    ReturnedStock = 3,
+    ManualCorrection = 4,
+    ExpiredDefective = 5,
+    Other = 6,
+    Lost = 7,
+    ManagementRemoval = 8,
+    StockCountCorrection = 9
 }

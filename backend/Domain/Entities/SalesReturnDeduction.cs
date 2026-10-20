@@ -1,18 +1,20 @@
-namespace SteelTrack.Domain.Entities;
+using GensanPOS.Domain.Common;
 
-public class SalesReturnDeduction
+namespace GensanPOS.Domain.Entities;
+
+/// <summary>
+/// Explicit sales deduction tied to a GRS — amount reduces reports on <see cref="DeductionDate"/> (return date), not original sale date.
+/// </summary>
+public class SalesReturnDeduction : BaseEntity
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string GoodsReturnSlipId { get; set; } = string.Empty;
+    public Guid GoodsReturnSlipId { get; set; }
     public GoodsReturnSlip GoodsReturnSlip { get; set; } = null!;
-    public string OriginalSaleId { get; set; } = string.Empty;
+    public Guid OriginalSaleId { get; set; }
     public string OriginalInvoiceNumber { get; set; } = string.Empty;
-    public DateTime DeductionDate { get; set; } = DateTime.UtcNow;
-    public DateTime OriginalSaleDate { get; set; } = DateTime.UtcNow;
-    public decimal Amount { get; set; } = 0m;
-    public string ProcessedByUserId { get; set; } = string.Empty;
+    public DateTime DeductionDate { get; set; }
+    public DateTime OriginalSaleDate { get; set; }
+    public decimal Amount { get; set; }
+    public Guid ProcessedByUserId { get; set; }
     public User ProcessedByUser { get; set; } = null!;
-    public bool IsReversed { get; set; } = false;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
+    public bool IsReversed { get; set; }
 }

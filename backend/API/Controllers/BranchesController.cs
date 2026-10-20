@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SteelTrack.Domain.Entities;
-using SteelTrack.Infrastructure.Persistence;
+using GensanPOS.Domain.Entities;
+using GensanPOS.Infrastructure.Persistence;
 
 namespace SteelTrack.Api.Controllers;
 
@@ -14,60 +14,51 @@ namespace SteelTrack.Api.Controllers;
 [Route("api/[controller]")]
 public class BranchesController : ControllerBase
 {
-    private readonly SteelTrackDbContext? _dbContext;
+    private readonly AppDbContext? _dbContext;
 
-    // Fallback store for development/in-memory mode if DB is not actively running
     private static readonly List<Branch> _fallbackBranches = new()
     {
         new Branch
         {
-            Id = "branch-dvo",
+            Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             Code = "DVO",
             Name = "Davao",
             Address = "J.P. Laurel Ave, Bajada, Davao City",
-            ContactNumber = "(082) 221-4900",
-            ManagerName = "Maria Santos",
             IsActive = true,
             CreatedAt = DateTime.UtcNow.AddMonths(-6)
         },
         new Branch
         {
-            Id = "branch-mnd",
+            Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
             Code = "MND",
             Name = "Mandaue",
             Address = "A.C. Cortes Ave, Mandaue City, Cebu",
-            ContactNumber = "(032) 345-8120",
-            ManagerName = "Rodrigo Tan",
             IsActive = true,
             CreatedAt = DateTime.UtcNow.AddMonths(-6)
         },
         new Branch
         {
-            Id = "branch-ceb",
+            Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
             Code = "CEB",
             Name = "Cebu",
             Address = "North Reclamation Area, Cebu City",
-            ContactNumber = "(032) 231-7788",
-            ManagerName = "Mateo Lim",
             IsActive = true,
             CreatedAt = DateTime.UtcNow.AddMonths(-6)
         },
         new Branch
         {
-            Id = "branch-cgy",
+            Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
             Code = "CGY",
             Name = "Cagayan",
             Address = "CM Recto Ave, Lapasan, Cagayan de Oro City",
-            ContactNumber = "(088) 856-3200",
-            ManagerName = "Carlos Reyes",
             IsActive = true,
             CreatedAt = DateTime.UtcNow.AddMonths(-6)
         }
     };
 
-    public BranchesController(IServiceProvider serviceProvider)
+    public BranchesController(AppDbContext? dbContext = null)
     {
-        _dbContext = serviceProvider.GetService(typeof(SteelTrackDbContext)) as SteelTrackDbContext;
+        _dbContext = dbContext;
     }
 
     [HttpGet]
@@ -78,7 +69,7 @@ public class BranchesController : ControllerBase
         {
             try
             {
-                var dbBranches = await _dbContext.Branches.AsNoTracking().ToListAsync();
+                var dbBranches = await _dbContext.Branches.AsNoTracking().OrderBy(b => b.Name).ToListAsync();
                 if (dbBranches.Any()) return Ok(dbBranches);
             }
             catch
@@ -94,17 +85,17 @@ public class BranchesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(string id)
     {
-        if (_dbContext != null)
+        if (_dbContext != null && Guid.TryParse(id, out var branchGuid))
         {
             try
             {
-                var branch = await _dbContext.Branches.FindAsync(id);
+                var branch = await _dbContext.Branches.FindAsync(branchGuid);
                 if (branch != null) return Ok(branch);
             }
             catch { }
         }
 
-        var fallback = _fallbackBranches.FirstOrDefault(b => b.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        var fallback = _fallbackBranches.FirstOrDefault(b => b.Id.ToString().Equals(id, StringComparison.OrdinalIgnoreCase) || b.Code.Equals(id, StringComparison.OrdinalIgnoreCase));
         if (fallback == null) return NotFound(new { message = $"Branch with ID '{id}' not found." });
         return Ok(fallback);
     }
@@ -114,17 +105,15 @@ public class BranchesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(string id, [FromBody] UpdateBranchRequest request)
     {
-        if (_dbContext != null)
+        if (_dbContext != null && Guid.TryParse(id, out var branchGuid))
         {
             try
             {
-                var branch = await _dbContext.Branches.FindAsync(id);
+                var branch = await _dbContext.Branches.FindAsync(branchGuid);
                 if (branch != null)
                 {
                     if (!string.IsNullOrWhiteSpace(request.Name)) branch.Name = request.Name.Trim();
                     if (request.Address != null) branch.Address = request.Address.Trim();
-                    if (request.ContactNumber != null) branch.ContactNumber = request.ContactNumber.Trim();
-                    if (request.ManagerName != null) branch.ManagerName = request.ManagerName.Trim();
                     if (request.IsActive.HasValue) branch.IsActive = request.IsActive.Value;
                     branch.UpdatedAt = DateTime.UtcNow;
 
@@ -135,13 +124,11 @@ public class BranchesController : ControllerBase
             catch { }
         }
 
-        var fallback = _fallbackBranches.FirstOrDefault(b => b.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+        var fallback = _fallbackBranches.FirstOrDefault(b => b.Id.ToString().Equals(id, StringComparison.OrdinalIgnoreCase) || b.Code.Equals(id, StringComparison.OrdinalIgnoreCase));
         if (fallback == null) return NotFound(new { message = $"Branch with ID '{id}' not found." });
 
         if (!string.IsNullOrWhiteSpace(request.Name)) fallback.Name = request.Name.Trim();
         if (request.Address != null) fallback.Address = request.Address.Trim();
-        if (request.ContactNumber != null) fallback.ContactNumber = request.ContactNumber.Trim();
-        if (request.ManagerName != null) fallback.ManagerName = request.ManagerName.Trim();
         if (request.IsActive.HasValue) fallback.IsActive = request.IsActive.Value;
         fallback.UpdatedAt = DateTime.UtcNow;
 
@@ -160,12 +147,10 @@ public class BranchesController : ControllerBase
 
         var newBranch = new Branch
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             Code = request.Code.Trim().ToUpperInvariant(),
             Name = request.Name.Trim(),
             Address = request.Address?.Trim(),
-            ContactNumber = request.ContactNumber?.Trim(),
-            ManagerName = request.ManagerName?.Trim(),
             IsActive = request.IsActive ?? true,
             CreatedAt = DateTime.UtcNow
         };

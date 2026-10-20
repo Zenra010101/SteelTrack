@@ -1,198 +1,166 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using GensanPOS.Application.Common;
+using GensanPOS.Application.DTOs.Reports;
+using GensanPOS.Application.Interfaces;
+using GensanPOS.Domain.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteelTrack.Domain.Entities;
-using SteelTrack.Infrastructure.Persistence;
 
-namespace SteelTrack.Api.Controllers;
+namespace GensanPOS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ReportsController : ControllerBase
 {
-    private readonly SteelTrackDbContext? _dbContext;
+    private readonly IReportService _reportService;
 
-    public ReportsController(SteelTrackDbContext? dbContext = null)
+    public ReportsController(IReportService reportService) => _reportService = reportService;
+
+    private Guid UserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private string Role => User.FindFirstValue(ClaimTypes.Role)!;
+
+    private static bool RequiresOwnerRole(ReportTypeKind type) =>
+        type is ReportTypeKind.Profit or ReportTypeKind.Audit;
+
+    [HttpGet("query")]
+    public async Task<ActionResult<ApiResponse<UnifiedReportDto>>> Query(
+        [FromQuery] ReportTypeKind type,
+        [FromQuery] ReportQueryFilter filter,
+        CancellationToken cancellationToken)
     {
-        _dbContext = dbContext;
+        if (RequiresOwnerRole(type) && !RoleNames.IsOwner(Role))
+            return Forbid();
+        var report = await _reportService.GetReportAsync(type, filter, UserId, Role, cancellationToken);
+        return Ok(ApiResponse<UnifiedReportDto>.Ok(report));
+    }
+
+    [HttpGet("print-stamp")]
+    public ActionResult<ApiResponse<ReportPrintStampDto>> GetPrintStamp()
+    {
+        return Ok(ApiResponse<ReportPrintStampDto>.Ok(_reportService.GetPrintStamp()));
     }
 
     [HttpGet("sales-summary")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetSalesSummary(
+    public async Task<ActionResult<ApiResponse<SalesSummaryReportDto>>> GetSalesSummary(
         [FromQuery] string preset = "today",
         [FromQuery] DateTime? from = null,
-        [FromQuery] DateTime? to = null)
+        [FromQuery] DateTime? to = null,
+        [FromQuery] bool verify = false,
+        [FromQuery] string? verifyBaseUrl = null,
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null)
-        {
-            return Ok(new
-            {
-                preset,
-                from = DateTime.UtcNow.Date,
-                to = DateTime.UtcNow,
-                totalTransactions = 0,
-                grossSales = 0m,
-                discounts = 0m,
-                taxAmount = 0m,
-                netSales = 0m
-            });
-        }
-
-        var now = DateTime.UtcNow;
-        DateTime startDate = from ?? now.Date;
-        DateTime endDate = to ?? now;
-
-        if (!from.HasValue && !to.HasValue)
-        {
-            switch (preset.ToLower())
-            {
-                case "today":
-                    startDate = now.Date;
-                    endDate = now;
-                    break;
-                case "this_week":
-                    startDate = now.Date.AddDays(-(int)now.DayOfWeek);
-                    endDate = now;
-                    break;
-                case "this_month":
-                    startDate = new DateTime(now.Year, now.Month, 1);
-                    endDate = now;
-                    break;
-                case "this_year":
-                    startDate = new DateTime(now.Year, 1, 1);
-                    endDate = now;
-                    break;
-            }
-        }
-
-        var sales = await _dbContext.Sales
-            .AsNoTracking()
-            .Where(s => s.Status != 2 && s.CreatedAt >= startDate && s.CreatedAt <= endDate)
-            .ToListAsync();
-
-        var totalTransactions = sales.Count;
-        var grossSales = sales.Sum(s => s.SubTotal);
-        var discounts = sales.Sum(s => s.DiscountAmount);
-        var taxAmount = sales.Sum(s => s.TaxAmount);
-        var netSales = sales.Sum(s => s.TotalAmount);
-
-        // Group by payment method
-        var byPaymentMethod = sales
-            .GroupBy(s => s.PaymentMethod.ToString())
-            .Select(g => new
-            {
-                Method = g.Key,
-                Count = g.Count(),
-                TotalAmount = g.Sum(s => s.TotalAmount)
-            })
-            .ToList();
-
-        return Ok(new
-        {
-            preset,
-            from = startDate,
-            to = endDate,
-            totalTransactions,
-            grossSales,
-            discounts,
-            taxAmount,
-            netSales,
-            byPaymentMethod
-        });
+        var preparedFor = User.FindFirstValue(ClaimTypes.Name);
+        var report = await _reportService.GetSalesSummaryReportAsync(
+            preset, from, to, UserId, Role, preparedFor, verify, verifyBaseUrl, cancellationToken);
+        return Ok(ApiResponse<SalesSummaryReportDto>.Ok(report));
     }
 
-    [HttpGet("top-products")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetTopProducts([FromQuery] int count = 10)
+    [AllowAnonymous]
+    [HttpGet("verify/{*code}")]
+    public async Task<ActionResult<ApiResponse<SalesReportVerificationViewDto>>> VerifySalesReport(
+        string code,
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null) return Ok(new List<object>());
-
-        var top = await _dbContext.SaleItems
-            .AsNoTracking()
-            .GroupBy(i => new { i.ProductId, i.ProductName })
-            .Select(g => new
-            {
-                ProductId = g.Key.ProductId,
-                ProductName = g.Key.ProductName,
-                TotalQuantitySold = g.Sum(i => i.Quantity),
-                TotalRevenue = g.Sum(i => i.LineTotal)
-            })
-            .OrderByDescending(t => t.TotalRevenue)
-            .Take(Math.Min(50, Math.Max(1, count)))
-            .ToListAsync();
-
-        return Ok(top);
-    }
-
-    [HttpPost("verify")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    public async Task<IActionResult> CreateVerification([FromBody] CreateVerificationDto dto)
-    {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        var rawString = $"{dto.FromDate:yyyy-MM-dd}_{dto.ToDate:yyyy-MM-dd}_{dto.GrossSales}_{Guid.NewGuid():N}";
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawString))).Substring(0, 16).ToUpper();
-        var reportCode = $"ST-REP-{hash}";
-
-        var verification = new SalesReportVerification
-        {
-            Id = Guid.NewGuid().ToString(),
-            ReportCode = reportCode,
-            Preset = dto.Preset ?? "custom",
-            PeriodLabel = dto.PeriodLabel ?? $"{dto.FromDate:yyyy-MM-dd} to {dto.ToDate:yyyy-MM-dd}",
-            FromDate = dto.FromDate,
-            ToDate = dto.ToDate,
-            GrossSales = dto.GrossSales,
-            NetSales = dto.NetSales,
-            TotalLineAmount = dto.TotalLineAmount,
-            PrintedAtLabel = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'"),
-            PrintedAtUtc = DateTime.UtcNow,
-            StoreName = dto.StoreName ?? "SteelTrack Enterprise",
-            GeneratedByUserId = dto.GeneratedByUserId,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        _dbContext.SalesReportVerifications.Add(verification);
-        await _dbContext.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(VerifyReport), new { code = reportCode }, verification);
-    }
-
-    [HttpGet("verify/{code}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> VerifyReport(string code)
-    {
-        if (_dbContext == null) return NotFound();
-
         var normalized = code.Trim().TrimStart('/');
-        var result = await _dbContext.SalesReportVerifications
-            .AsNoTracking()
-            .FirstOrDefaultAsync(v => v.ReportCode.ToLower() == normalized.ToLower());
+        var result = await _reportService.GetSalesReportVerificationAsync(normalized, cancellationToken);
+        if (result is null)
+            return NotFound(ApiResponse<SalesReportVerificationViewDto>.Fail("Report verification not found"));
 
-        if (result == null)
-            return NotFound(new { message = $"Sales report verification code '{code}' not found or invalid." });
-
-        return Ok(result);
+        return Ok(ApiResponse<SalesReportVerificationViewDto>.Ok(result));
     }
-}
 
-public class CreateVerificationDto
-{
-    public string? Preset { get; set; }
-    public string? PeriodLabel { get; set; }
-    public DateTime FromDate { get; set; }
-    public DateTime ToDate { get; set; }
-    public decimal GrossSales { get; set; }
-    public decimal NetSales { get; set; }
-    public decimal TotalLineAmount { get; set; }
-    public string? StoreName { get; set; }
-    public string? GeneratedByUserId { get; set; }
+    [HttpGet("sales-summary/export")]
+    public async Task<IActionResult> ExportSalesSummary(
+        [FromQuery] string preset = "today",
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string format = "pdf",
+        [FromQuery] string? verifyBaseUrl = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!format.Equals("pdf", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(ApiResponse<object>.Fail("Sales summary supports PDF export only"));
+
+        var preparedFor = User.FindFirstValue(ClaimTypes.Name);
+        var bytes = await _reportService.ExportSalesSummaryPdfAsync(
+            preset, from, to, UserId, Role, preparedFor, verifyBaseUrl, cancellationToken);
+        return File(bytes, "application/pdf", $"sales-summary-{DateTime.UtcNow:yyyyMMdd-HHmm}.pdf");
+    }
+
+    [HttpGet("sales")]
+    public async Task<ActionResult<ApiResponse<SalesReportDto>>> GetSales(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        CancellationToken cancellationToken)
+    {
+        var report = await _reportService.GetSalesReportAsync(from, to, UserId, Role, cancellationToken);
+        return Ok(ApiResponse<SalesReportDto>.Ok(report));
+    }
+
+    [HttpGet("profit")]
+    [Authorize(Roles = RoleNames.Owner)]
+    public async Task<ActionResult<ApiResponse<ProfitReportDto>>> GetProfit(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        CancellationToken cancellationToken)
+    {
+        var report = await _reportService.GetProfitReportAsync(from, to, UserId, Role, cancellationToken);
+        return Ok(ApiResponse<ProfitReportDto>.Ok(report));
+    }
+
+    [HttpGet("sales/export")]
+    public async Task<IActionResult> ExportSales(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] string format = "excel",
+        CancellationToken cancellationToken = default)
+    {
+        var pdf = format.Equals("pdf", StringComparison.OrdinalIgnoreCase);
+        var bytes = pdf
+            ? await _reportService.ExportSalesPdfAsync(from, to, UserId, Role, cancellationToken)
+            : await _reportService.ExportSalesExcelAsync(from, to, UserId, Role, cancellationToken);
+        var contentType = pdf
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        var ext = pdf ? "pdf" : "xlsx";
+        return File(bytes, contentType, $"sales-report-{DateTime.UtcNow:yyyyMMdd}.{ext}");
+    }
+
+    [HttpGet("profit/export")]
+    [Authorize(Roles = RoleNames.Owner)]
+    public async Task<IActionResult> ExportProfit(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] string format = "excel",
+        CancellationToken cancellationToken = default)
+    {
+        var pdf = format.Equals("pdf", StringComparison.OrdinalIgnoreCase);
+        var bytes = pdf
+            ? await _reportService.ExportProfitPdfAsync(from, to, UserId, Role, cancellationToken)
+            : await _reportService.ExportProfitExcelAsync(from, to, UserId, Role, cancellationToken);
+        var contentType = pdf
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        var ext = pdf ? "pdf" : "xlsx";
+        return File(bytes, contentType, $"profit-report-{DateTime.UtcNow:yyyyMMdd}.{ext}");
+    }
+
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportUnified(
+        [FromQuery] ReportTypeKind type,
+        [FromQuery] ReportQueryFilter filter,
+        [FromQuery] string format = "excel",
+        CancellationToken cancellationToken = default)
+    {
+        if (!format.Equals("excel", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(ApiResponse<object>.Fail("Only Excel export is supported for unified reports"));
+
+        if (RequiresOwnerRole(type) && !RoleNames.IsOwner(Role))
+            return Forbid();
+
+        var bytes = await _reportService.ExportUnifiedExcelAsync(type, filter, UserId, Role, cancellationToken);
+        return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"{type}-report-{DateTime.UtcNow:yyyyMMdd}.xlsx");
+    }
 }

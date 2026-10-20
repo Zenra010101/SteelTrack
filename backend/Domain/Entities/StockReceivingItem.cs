@@ -1,18 +1,16 @@
-namespace SteelTrack.Domain.Entities;
+using GensanPOS.Domain.Common;
 
-public class StockReceivingItem
+namespace GensanPOS.Domain.Entities;
+
+public class StockReceivingItem : BaseEntity
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string StockReceivingId { get; set; } = string.Empty;
+    public Guid StockReceivingId { get; set; }
     public StockReceiving StockReceiving { get; set; } = null!;
-    public string ProductId { get; set; } = string.Empty;
+    public Guid ProductId { get; set; }
     public Product Product { get; set; } = null!;
-    public int Quantity { get; set; } = 0;
-    public string? Notes { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
+    public int Quantity { get; set; }
     public int? ExpectedQuantity { get; set; }
-    public decimal CostPrice { get; set; } = 0m;
+    public decimal CostPrice { get; set; }
+    public decimal SellingPrice { get; set; }
     public string? Remarks { get; set; }
-    public decimal SellingPrice { get; set; } = 0m;
 }

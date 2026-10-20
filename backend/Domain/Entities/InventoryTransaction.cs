@@ -1,21 +1,22 @@
-namespace SteelTrack.Domain.Entities;
+using GensanPOS.Domain.Common;
+using GensanPOS.Domain.Enums;
 
-public class InventoryTransaction
+namespace GensanPOS.Domain.Entities;
+
+public class InventoryTransaction : BaseEntity
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string ProductId { get; set; } = string.Empty;
+    public Guid ProductId { get; set; }
     public Product Product { get; set; } = null!;
-    public int Type { get; set; } = 0;
-    public int Quantity { get; set; } = 0;
-    public int StockBefore { get; set; } = 0;
-    public int StockAfter { get; set; } = 0;
+    public InventoryTransactionType Type { get; set; }
+    public int Quantity { get; set; }
+    public int StockBefore { get; set; }
+    public int StockAfter { get; set; }
     public string? Reference { get; set; }
     public string? Notes { get; set; }
-    public string? StockReceivingId { get; set; }
+    public Guid? StockReceivingId { get; set; }
     public StockReceiving? StockReceiving { get; set; }
-    public string? UserId { get; set; }
+    public Guid? ProductBatchId { get; set; }
+    public ProductBatch? ProductBatch { get; set; }
+    public Guid? UserId { get; set; }
     public User? User { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
-    public string? ProductBatchId { get; set; }
 }

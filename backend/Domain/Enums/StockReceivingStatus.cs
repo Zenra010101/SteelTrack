@@ -1,9 +1,8 @@
-namespace SteelTrack.Domain.Enums;
+namespace GensanPOS.Domain.Enums;
 
 public enum StockReceivingStatus
 {
-    Draft = 0,
-    PendingApproval = 1,
-    Approved = 2,
-    Rejected = 3
+    Pending = 0,
+    Approved = 1,
+    Rejected = 2
 }

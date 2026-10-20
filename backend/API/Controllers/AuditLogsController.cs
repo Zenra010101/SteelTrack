@@ -1,158 +1,68 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using GensanPOS.Application.Common;
+using GensanPOS.Application.DTOs.Audit;
+using GensanPOS.Application.Interfaces;
+using GensanPOS.Domain.Constants;
+using GensanPOS.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteelTrack.Domain.Entities;
-using SteelTrack.Infrastructure.Persistence;
 
-namespace SteelTrack.Api.Controllers;
+namespace GensanPOS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = RoleNames.Owner)]
 public class AuditLogsController : ControllerBase
 {
-    private readonly SteelTrackDbContext? _dbContext;
+    private readonly IAuditLogService _auditLogService;
 
-    public AuditLogsController(SteelTrackDbContext? dbContext = null)
-    {
-        _dbContext = dbContext;
-    }
+    public AuditLogsController(IAuditLogService auditLogService) => _auditLogService = auditLogService;
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Search(
-        [FromQuery] string? search,
-        [FromQuery] string? action,
-        [FromQuery] string? entityType,
-        [FromQuery] string? userId,
+    public async Task<ActionResult<ApiResponse<AuditLogSearchResult>>> Search(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
+        [FromQuery] AuditLogCategory? category,
+        [FromQuery] string? action,
+        [FromQuery] string? entityType,
+        [FromQuery] string? search,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50)
+        [FromQuery] int pageSize = 50,
+        [FromQuery] bool includeArchived = false,
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null) return Ok(new { data = new List<object>(), totalCount = 0 });
-
-        var query = _dbContext.AuditLogs.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var s = search.Trim().ToLower();
-            query = query.Where(l =>
-                l.Action.ToLower().Contains(s) ||
-                l.EntityType.ToLower().Contains(s) ||
-                (l.UserEmail != null && l.UserEmail.ToLower().Contains(s)) ||
-                (l.Details != null && l.Details.ToLower().Contains(s)));
-        }
-
-        if (!string.IsNullOrWhiteSpace(action))
-        {
-            query = query.Where(l => l.Action == action);
-        }
-
-        if (!string.IsNullOrWhiteSpace(entityType))
-        {
-            query = query.Where(l => l.EntityType == entityType);
-        }
-
-        if (!string.IsNullOrWhiteSpace(userId))
-        {
-            query = query.Where(l => l.UserId == userId);
-        }
-
-        if (from.HasValue)
-        {
-            query = query.Where(l => l.CreatedAt >= from.Value);
-        }
-
-        if (to.HasValue)
-        {
-            query = query.Where(l => l.CreatedAt <= to.Value);
-        }
-
-        var totalCount = await query.CountAsync();
-        var logs = await query
-            .OrderByDescending(l => l.CreatedAt)
-            .Skip((Math.Max(1, page) - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        return Ok(new
-        {
-            data = logs,
-            totalCount,
-            page,
-            pageSize,
-            totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
-        });
+        var result = await _auditLogService.SearchAsync(
+            from, to, category, action, entityType, search, page, pageSize, includeArchived, cancellationToken);
+        return Ok(ApiResponse<AuditLogSearchResult>.Ok(result));
     }
 
     [HttpGet("recent")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetRecent([FromQuery] int count = 20)
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<AuditLogDto>>>> GetRecent(
+        [FromQuery] int count = 50,
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null) return Ok(new List<object>());
-
-        var logs = await _dbContext.AuditLogs
-            .AsNoTracking()
-            .OrderByDescending(l => l.CreatedAt)
-            .Take(Math.Min(100, Math.Max(1, count)))
-            .ToListAsync();
-
-        return Ok(logs);
+        var logs = await _auditLogService.GetRecentAsync(count, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AuditLogDto>>.Ok(logs));
     }
 
-    [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateAuditLogDto dto)
+    [HttpGet("export")]
+    public async Task<IActionResult> Export(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] AuditLogCategory? category,
+        [FromQuery] string? action,
+        [FromQuery] string? entityType,
+        [FromQuery] string? search,
+        [FromQuery] string format = "excel",
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        if (string.IsNullOrWhiteSpace(dto.Action))
-        {
-            return BadRequest(new { message = "Action is required." });
-        }
-
-        var log = new AuditLog
-        {
-            Id = Guid.NewGuid().ToString(),
-            UserId = dto.UserId,
-            UserEmail = dto.UserEmail,
-            Action = dto.Action,
-            EntityType = dto.EntityType ?? "General",
-            EntityId = dto.EntityId,
-            Details = dto.Details,
-            IpAddress = dto.IpAddress ?? HttpContext.Connection.RemoteIpAddress?.ToString(),
-            UserAgent = dto.UserAgent ?? Request.Headers.UserAgent.ToString(),
-            Status = dto.Status ?? "SUCCESS",
-            OldValue = dto.OldValue,
-            NewValue = dto.NewValue,
-            Category = dto.Category ?? 1,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        _dbContext.AuditLogs.Add(log);
-        await _dbContext.SaveChangesAsync();
-
-        return StatusCode(StatusCodes.Status201Created, log);
+        var pdf = format.Equals("pdf", StringComparison.OrdinalIgnoreCase);
+        var bytes = pdf
+            ? await _auditLogService.ExportPdfAsync(from, to, category, action, entityType, search, cancellationToken)
+            : await _auditLogService.ExportExcelAsync(from, to, category, action, entityType, search, cancellationToken);
+        var contentType = pdf
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        var ext = pdf ? "pdf" : "xlsx";
+        return File(bytes, contentType, $"audit-log-{DateTime.UtcNow:yyyyMMdd}.{ext}");
     }
-}
-
-public class CreateAuditLogDto
-{
-    public string? UserId { get; set; }
-    public string? UserEmail { get; set; }
-    public string Action { get; set; } = string.Empty;
-    public string? EntityType { get; set; }
-    public string? EntityId { get; set; }
-    public string? Details { get; set; }
-    public string? IpAddress { get; set; }
-    public string? UserAgent { get; set; }
-    public string? Status { get; set; }
-    public string? OldValue { get; set; }
-    public string? NewValue { get; set; }
-    public int? Category { get; set; }
 }

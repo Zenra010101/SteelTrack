@@ -9,7 +9,7 @@ using SteelTrack.Domain.Enums;
 
 namespace SteelTrack.Application.Services;
 
-public class InventoryService : IInventoryService
+public class InventoryService : ISteelInventoryService
 {
     private readonly ISteelRepository _repository;
 

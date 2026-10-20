@@ -26,10 +26,10 @@ user_credentials.*
 
 # Database dumps, SQL and seed folders
 *.dump
+*.sql
 sql/
 **/sql/
 seed/
 **/seed/
 seeds/
 **/seeds/
-backend/steeltrack_supabase*.sql

@@ -1,29 +1,28 @@
-namespace SteelTrack.Domain.Entities;
+using GensanPOS.Domain.Common;
 
-public class SaleItem
+namespace GensanPOS.Domain.Entities;
+
+public class SaleItem : BaseEntity
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string SaleId { get; set; } = string.Empty;
+    public Guid SaleId { get; set; }
     public Sale Sale { get; set; } = null!;
-    public string ProductId { get; set; } = string.Empty;
+    public Guid ProductId { get; set; }
     public Product Product { get; set; } = null!;
-    public string ProductName { get; set; } = string.Empty;
-    public string ProductSku { get; set; } = string.Empty;
-    public int Quantity { get; set; } = 0;
-    public decimal UnitPrice { get; set; } = 0m;
-    public decimal SellingPriceAtSale { get; set; } = 0m;
-    public decimal CostPriceAtSale { get; set; } = 0m;
-    public decimal ProfitAmount { get; set; } = 0m;
-    public decimal Discount { get; set; } = 0m;
-    public decimal LineTotal { get; set; } = 0m;
-    public int ReturnedQuantity { get; set; } = 0;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
-    public int PendingReturnQuantity { get; set; } = 0;
-    public string? ProductBatchId { get; set; }
+    public Guid? ProductBatchId { get; set; }
     public ProductBatch? ProductBatch { get; set; }
     public string? BatchCodeAtSale { get; set; }
-    public DateTime? BatchReceivedDate { get; set; }
-
-    public ICollection<GoodsReturnSlipItem> GoodsReturnSlipItems { get; set; } = new List<GoodsReturnSlipItem>();
+    public DateOnly? BatchReceivedDate { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string ProductSku { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    /// <summary>Selling unit price at time of sale (same as SellingPriceAtSale).</summary>
+    public decimal UnitPrice { get; set; }
+    public decimal SellingPriceAtSale { get; set; }
+    public decimal CostPriceAtSale { get; set; }
+    public decimal ProfitAmount { get; set; }
+    public decimal Discount { get; set; }
+    public decimal LineTotal { get; set; }
+    public int ReturnedQuantity { get; set; }
+    /// <summary>Qty reserved by GRS in PendingInspection (exchange-era).</summary>
+    public int PendingReturnQuantity { get; set; }
 }

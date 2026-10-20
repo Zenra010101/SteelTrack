@@ -1,4 +1,5 @@
 using System;
+using GensanPOS.Domain.Entities;
 
 namespace SteelTrack.Domain.Entities;
 

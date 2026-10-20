@@ -1,17 +1,20 @@
-namespace SteelTrack.Domain.Entities;
+using GensanPOS.Domain.Common;
 
-public class GoodsExchangeLine
+namespace GensanPOS.Domain.Entities;
+
+public class GoodsExchangeLine : BaseEntity
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string GoodsExchangeId { get; set; } = string.Empty;
+    public Guid GoodsExchangeId { get; set; }
     public GoodsExchange GoodsExchange { get; set; } = null!;
-    public string ProductId { get; set; } = string.Empty;
+    public Guid ProductId { get; set; }
     public Product Product { get; set; } = null!;
     public string ProductName { get; set; } = string.Empty;
     public string ProductSku { get; set; } = string.Empty;
-    public int Quantity { get; set; } = 0;
-    public decimal UnitPrice { get; set; } = 0m;
-    public decimal LineTotal { get; set; } = 0m;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal LineTotal { get; set; }
+    /// <summary>Weighted average FIFO/batch cost per unit at exchange time.</summary>
+    public decimal CostPriceAtSale { get; set; }
+    /// <summary>Line margin locked at exchange (LineTotal − cost × qty).</summary>
+    public decimal ProfitAmount { get; set; }
 }

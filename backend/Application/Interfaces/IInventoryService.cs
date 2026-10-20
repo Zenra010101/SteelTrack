@@ -1,16 +1,35 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using SteelTrack.Application.DTOs;
-using SteelTrack.Domain.Enums;
+using GensanPOS.Application.Common;
+using GensanPOS.Application.DTOs.Inventory;
 
-namespace SteelTrack.Application.Interfaces;
+namespace GensanPOS.Application.Interfaces;
 
 public interface IInventoryService
 {
-    Task<IEnumerable<SteelBatchDto>> GetInventoryAsync(string? search = null, SteelGrade? grade = null, BatchStatus? status = null);
-    Task<SteelBatchDto?> GetBatchByIdAsync(Guid id);
-    Task<SteelBatchDto> CreateBatchAsync(CreateSteelBatchDto dto);
-    Task<SteelBatchDto?> UpdateStatusAsync(Guid id, UpdateBatchStatusDto dto);
-    Task<InventoryStatsDto> GetStatsAsync();
+    Task<InventorySummaryDto> GetSummaryAsync(bool includeFinancials, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<InventoryOnHandDto>> GetOnHandAsync(
+        string? search,
+        Guid? categoryId,
+        Guid? productId,
+        bool? lowStockOnly,
+        bool includeFinancials,
+        CancellationToken cancellationToken = default);
+    Task<PagedResult<InventoryOnHandDto>> GetOnHandPagedAsync(
+        string? search,
+        Guid? categoryId,
+        Guid? productId,
+        bool? lowStockOnly,
+        bool includeFinancials,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<InventoryTransactionDto> AdjustAsync(AdjustInventoryRequest request, Guid userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<InventoryTransactionDto>> GetTransactionsAsync(Guid? productId, CancellationToken cancellationToken = default);
+    Task<PagedResult<InventoryTransactionDto>> GetTransactionsPagedAsync(InventorySearchQuery query, CancellationToken cancellationToken = default);
+
+    Task<InventoryStockListReportDto> GetStockListReportAsync(
+        string? search,
+        Guid? categoryId,
+        bool? lowStockOnly,
+        CancellationToken cancellationToken = default);
 }

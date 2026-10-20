@@ -1,273 +1,153 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using GensanPOS.Application.Common;
+using GensanPOS.Application.DTOs.StockReceiving;
+using GensanPOS.Application.Interfaces;
+using GensanPOS.Domain.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteelTrack.Domain.Entities;
-using SteelTrack.Domain.Enums;
-using SteelTrack.Infrastructure.Persistence;
 
-namespace SteelTrack.Api.Controllers;
+namespace GensanPOS.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/stockreceiving")]
+[Authorize]
 public class StockReceivingController : ControllerBase
 {
-    private readonly SteelTrackDbContext? _dbContext;
+    private readonly IStockReceivingService _service;
+    private readonly IStockReceivingExportService _exportService;
 
-    public StockReceivingController(SteelTrackDbContext? dbContext = null)
+    public StockReceivingController(
+        IStockReceivingService service,
+        IStockReceivingExportService exportService)
     {
-        _dbContext = dbContext;
+        _service = service;
+        _exportService = exportService;
+    }
+
+    private Guid UserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private string Role => User.FindFirstValue(ClaimTypes.Role)!;
+    private bool IsOwner => User.IsInRole(RoleNames.Owner);
+
+    [HttpGet("summary")]
+    public async Task<ActionResult<ApiResponse<StockReceivingSummaryDto>>> GetSummary(CancellationToken cancellationToken)
+    {
+        var summary = await _service.GetSummaryAsync(UserId, Role, IsOwner, cancellationToken);
+        return Ok(ApiResponse<StockReceivingSummaryDto>.Ok(summary));
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll(
-        [FromQuery] string? search,
-        [FromQuery] StockReceivingStatus? status,
-        [FromQuery] string? supplierId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50)
+    public async Task<ActionResult> Search(
+        [FromQuery] StockReceivingSearchQuery query,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return Ok(new { data = new List<object>(), totalCount = 0 });
-
-        var query = _dbContext.StockReceivings
-            .AsNoTracking()
-            .Include(r => r.Supplier)
-            .Include(r => r.RequestedByUser)
-            .Include(r => r.ReviewedByUser)
-            .Include(r => r.Items)
-                .ThenInclude(i => i.Product)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(search))
+        if (query.Page > 0)
         {
-            var s = search.Trim().ToLower();
-            query = query.Where(r =>
-                r.ReceivingNumber.ToLower().Contains(s) ||
-                (r.ReferenceNumber != null && r.ReferenceNumber.ToLower().Contains(s)) ||
-                (r.DeliveryReceiptNumber != null && r.DeliveryReceiptNumber.ToLower().Contains(s)) ||
-                (r.ContainerNumber != null && r.ContainerNumber.ToLower().Contains(s)) ||
-                (r.Supplier != null && r.Supplier.Name.ToLower().Contains(s)));
+            var paged = await _service.SearchPagedAsync(query, UserId, Role, IsOwner, cancellationToken);
+            return Ok(ApiResponse<PagedResult<StockReceivingDto>>.Ok(paged));
         }
 
-        if (status.HasValue)
-        {
-            query = query.Where(r => r.Status == status.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(supplierId))
-        {
-            query = query.Where(r => r.SupplierId == supplierId);
-        }
-
-        var totalCount = await query.CountAsync();
-        var receivings = await query
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((Math.Max(1, page) - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        return Ok(new
-        {
-            data = receivings,
-            totalCount,
-            page,
-            pageSize,
-            totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
-        });
+        var list = await _service.SearchAsync(query, UserId, Role, IsOwner, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<StockReceivingDto>>.Ok(list));
     }
 
-    [HttpGet("{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(string id)
+    [HttpGet("validate-references")]
+    public async Task<ActionResult<ApiResponse<DuplicateReferenceCheckDto>>> ValidateReferences(
+        [FromQuery] string? referenceNumber,
+        [FromQuery] string? deliveryReceiptNumber,
+        [FromQuery] Guid? excludeId,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return NotFound();
+        var result = await _service.CheckDuplicatesAsync(referenceNumber, deliveryReceiptNumber, excludeId, cancellationToken);
+        return Ok(ApiResponse<DuplicateReferenceCheckDto>.Ok(result));
+    }
 
-        var receiving = await _dbContext.StockReceivings
-            .AsNoTracking()
-            .Include(r => r.Supplier)
-            .Include(r => r.RequestedByUser)
-            .Include(r => r.ReviewedByUser)
-            .Include(r => r.Items)
-                .ThenInclude(i => i.Product)
-            .FirstOrDefaultAsync(r => r.Id == id);
-
-        if (receiving == null) return NotFound(new { message = $"Stock receiving report with ID '{id}' not found." });
-
-        return Ok(receiving);
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ApiResponse<StockReceivingDto>>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await _service.GetByIdAsync(id, UserId, Role, IsOwner, cancellationToken);
+        return Ok(ApiResponse<StockReceivingDto>.Ok(item));
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateStockReceivingDto dto)
+    public async Task<ActionResult<ApiResponse<StockReceivingDto>>> Create(
+        [FromBody] CreateStockReceivingRequest request,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        if (string.IsNullOrWhiteSpace(dto.SupplierId))
-            return BadRequest(new { message = "Supplier is required." });
-
-        if (dto.Items == null || dto.Items.Count == 0)
-            return BadRequest(new { message = "At least one receiving line item is required." });
-
-        var receivingNumber = $"MRR-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}";
-        var receivingId = Guid.NewGuid().ToString();
-
-        // Check first active user to associate if none specified
-        var userId = dto.RequestedByUserId;
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            var defaultUser = await _dbContext.Users.FirstOrDefaultAsync();
-            userId = defaultUser?.Id ?? "usr-001";
-        }
-
-        var receiving = new StockReceiving
-        {
-            Id = receivingId,
-            ReceivingNumber = receivingNumber,
-            SupplierId = dto.SupplierId,
-            ContainerNumber = dto.ContainerNumber ?? string.Empty,
-            StockNumber = dto.StockNumber ?? string.Empty,
-            ReferenceNumber = dto.ReferenceNumber ?? string.Empty,
-            DeliveryReceiptNumber = dto.DeliveryReceiptNumber,
-            DeliveryDate = dto.DeliveryDate ?? DateTime.UtcNow,
-            Status = dto.AutoApprove ? StockReceivingStatus.Approved : StockReceivingStatus.PendingApproval,
-            Notes = dto.Notes,
-            RequestedByUserId = userId,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        foreach (var itemDto in dto.Items)
-        {
-            var item = new StockReceivingItem
-            {
-                Id = Guid.NewGuid().ToString(),
-                StockReceivingId = receivingId,
-                ProductId = itemDto.ProductId,
-                Quantity = itemDto.Quantity,
-                ExpectedQuantity = itemDto.ExpectedQuantity ?? itemDto.Quantity,
-                CostPrice = itemDto.CostPrice,
-                SellingPrice = itemDto.SellingPrice,
-                Remarks = itemDto.Remarks,
-                CreatedAt = DateTime.UtcNow
-            };
-            receiving.Items.Add(item);
-
-            if (dto.AutoApprove)
-            {
-                var product = await _dbContext.Products.FindAsync(itemDto.ProductId);
-                if (product != null)
-                {
-                    product.StockQuantity += itemDto.Quantity;
-                    if (itemDto.CostPrice > 0) product.CostPrice = itemDto.CostPrice;
-                    if (itemDto.SellingPrice > 0) product.UnitPrice = itemDto.SellingPrice;
-                    product.UpdatedAt = DateTime.UtcNow;
-                }
-            }
-        }
-
-        _dbContext.StockReceivings.Add(receiving);
-        await _dbContext.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetById), new { id = receiving.Id }, receiving);
+        var item = await _service.CreateAsync(request, UserId, Role, cancellationToken);
+        return Ok(ApiResponse<StockReceivingDto>.Ok(
+            item,
+            "Receiving request submitted — awaiting owner approval"));
     }
 
-    [HttpPost("{id}/approve")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Approve(string id, [FromBody] ApproveReceivingDto? dto)
+    [HttpPost("{id:guid}/approve")]
+    [Authorize(Roles = RoleNames.Owner)]
+    public async Task<ActionResult<ApiResponse<StockReceivingDto>>> Approve(
+        Guid id,
+        [FromBody] ApproveStockReceivingRequest? request,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        var receiving = await _dbContext.StockReceivings
-            .Include(r => r.Items)
-            .FirstOrDefaultAsync(r => r.Id == id);
-
-        if (receiving == null) return NotFound(new { message = $"Stock receiving report '{id}' not found." });
-
-        if (receiving.Status == StockReceivingStatus.Approved)
-            return BadRequest(new { message = "Receiving report has already been approved." });
-
-        receiving.Status = StockReceivingStatus.Approved;
-        receiving.ReviewedByUserId = dto?.ReviewedByUserId;
-        receiving.ReviewedAt = DateTime.UtcNow;
-        receiving.ApprovalNotes = dto?.ApprovalNotes;
-        receiving.UpdatedAt = DateTime.UtcNow;
-
-        // Apply inventory increment for each item
-        foreach (var item in receiving.Items)
-        {
-            var product = await _dbContext.Products.FindAsync(item.ProductId);
-            if (product != null)
-            {
-                product.StockQuantity += item.Quantity;
-                if (item.CostPrice > 0) product.CostPrice = item.CostPrice;
-                if (item.SellingPrice > 0) product.UnitPrice = item.SellingPrice;
-                product.UpdatedAt = DateTime.UtcNow;
-            }
-        }
-
-        await _dbContext.SaveChangesAsync();
-        return Ok(new { message = $"Stock receiving report '{receiving.ReceivingNumber}' approved and stock updated successfully." });
+        var item = await _service.ApproveAsync(id, UserId, request, cancellationToken);
+        var message = item.BatchesCreatedCount > 0
+            ? $"Receiving approved. {item.BatchesCreatedCount} inventory batch{(item.BatchesCreatedCount == 1 ? "" : "es")} created."
+            : "Receiving approved — inventory updated with movement records";
+        return Ok(ApiResponse<StockReceivingDto>.Ok(item, message));
     }
 
-    [HttpPost("{id}/reject")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Reject(string id, [FromBody] RejectReceivingDto dto)
+    [HttpPost("{id:guid}/reject")]
+    [Authorize(Roles = RoleNames.Owner)]
+    public async Task<ActionResult<ApiResponse<StockReceivingDto>>> Reject(
+        Guid id,
+        [FromBody] RejectStockReceivingRequest request,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        var receiving = await _dbContext.StockReceivings.FindAsync(id);
-        if (receiving == null) return NotFound(new { message = $"Stock receiving report '{id}' not found." });
-
-        receiving.Status = StockReceivingStatus.Rejected;
-        receiving.RejectionReason = dto.RejectionReason ?? "Rejected by authorized manager";
-        receiving.ReviewedByUserId = dto.ReviewedByUserId;
-        receiving.ReviewedAt = DateTime.UtcNow;
-        receiving.UpdatedAt = DateTime.UtcNow;
-
-        await _dbContext.SaveChangesAsync();
-        return Ok(new { message = $"Stock receiving report '{receiving.ReceivingNumber}' rejected." });
+        var item = await _service.RejectAsync(id, request, UserId, cancellationToken);
+        return Ok(ApiResponse<StockReceivingDto>.Ok(item, "Receiving rejected — inventory unchanged"));
     }
-}
 
-public class CreateStockReceivingDto
-{
-    public string SupplierId { get; set; } = string.Empty;
-    public string? ContainerNumber { get; set; }
-    public string? StockNumber { get; set; }
-    public string? ReferenceNumber { get; set; }
-    public string? DeliveryReceiptNumber { get; set; }
-    public DateTime? DeliveryDate { get; set; }
-    public string? Notes { get; set; }
-    public string? RequestedByUserId { get; set; }
-    public bool AutoApprove { get; set; } = false;
-    public List<CreateStockReceivingItemDto> Items { get; set; } = new();
-}
+    [HttpPost("{id:guid}/attachments")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<ActionResult<ApiResponse<StockReceivingAttachmentDto>>> UploadAttachment(
+        Guid id,
+        IFormFile file,
+        [FromForm] string? description,
+        CancellationToken cancellationToken)
+    {
+        if (file.Length == 0)
+            return BadRequest(ApiResponse<object>.Fail("File is empty"));
 
-public class CreateStockReceivingItemDto
-{
-    public string ProductId { get; set; } = string.Empty;
-    public int Quantity { get; set; }
-    public int? ExpectedQuantity { get; set; }
-    public decimal CostPrice { get; set; }
-    public decimal SellingPrice { get; set; }
-    public string? Remarks { get; set; }
-}
+        await using var stream = file.OpenReadStream();
+        var attachment = await _service.AddAttachmentAsync(
+            id, stream, file.FileName, file.ContentType, description, UserId, cancellationToken);
+        return Ok(ApiResponse<StockReceivingAttachmentDto>.Ok(attachment, "Attachment uploaded"));
+    }
 
-public class ApproveReceivingDto
-{
-    public string? ReviewedByUserId { get; set; }
-    public string? ApprovalNotes { get; set; }
-}
+    [HttpGet("attachments/{attachmentId:guid}")]
+    public async Task<IActionResult> DownloadAttachment(Guid attachmentId, CancellationToken cancellationToken)
+    {
+        var file = await _service.GetAttachmentFileAsync(attachmentId, UserId, Role, cancellationToken);
+        if (file is null) return NotFound();
+        return File(file.Value.Stream, file.Value.ContentType, file.Value.FileName);
+    }
 
-public class RejectReceivingDto
-{
-    public string? ReviewedByUserId { get; set; }
-    public string? RejectionReason { get; set; }
+    [HttpGet("export")]
+    public async Task<IActionResult> Export(
+        [FromQuery] StockReceivingSearchQuery query,
+        [FromQuery] string format = "excel",
+        CancellationToken cancellationToken = default)
+    {
+        var isPdf = string.Equals(format, "pdf", StringComparison.OrdinalIgnoreCase);
+        var bytes = isPdf
+            ? await _exportService.ExportPdfAsync(query, UserId, Role, IsOwner, cancellationToken)
+            : await _exportService.ExportExcelAsync(query, UserId, Role, IsOwner, cancellationToken);
+        var ext = isPdf ? "pdf" : "xlsx";
+        var contentType = isPdf ? "application/pdf" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        return File(bytes, contentType, $"stock-receiving-{DateTime.UtcNow:yyyyMMdd}.{ext}");
+    }
+
+    [HttpGet("{id:guid}/report")]
+    public async Task<IActionResult> ExportReport(Guid id, CancellationToken cancellationToken)
+    {
+        var bytes = await _exportService.ExportReceivingReportPdfAsync(id, UserId, Role, IsOwner, cancellationToken);
+        return File(bytes, "application/pdf", $"RCV-report-{id:N}.pdf");
+    }
 }

@@ -1,24 +1,22 @@
-using SteelTrack.Domain.Enums;
+using GensanPOS.Domain.Common;
+using GensanPOS.Domain.Enums;
 
-namespace SteelTrack.Domain.Entities;
+namespace GensanPOS.Domain.Entities;
 
-public class GoodsExchange
+/// <summary>Return-and-replace exchange linked to a GRS (no cash refund).</summary>
+public class GoodsExchange : BaseEntity
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string GoodsReturnSlipId { get; set; } = string.Empty;
+    public Guid GoodsReturnSlipId { get; set; }
     public GoodsReturnSlip GoodsReturnSlip { get; set; } = null!;
     public string ExchangeNumber { get; set; } = string.Empty;
-    public decimal ReturnCreditTotal { get; set; } = 0m;
-    public decimal ReplacementTotal { get; set; } = 0m;
-    public decimal AmountPaid { get; set; } = 0m;
+    public decimal ReturnCreditTotal { get; set; }
+    public decimal ReplacementTotal { get; set; }
+    public decimal AmountPaid { get; set; }
     public PaymentMethod? PaymentMethod { get; set; }
-    public string? TopUpSaleId { get; set; }
+    public Guid? TopUpSaleId { get; set; }
     public Sale? TopUpSale { get; set; }
-    public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
-    public string CompletedByUserId { get; set; } = string.Empty;
+    public DateTime CompletedAt { get; set; }
+    public Guid CompletedByUserId { get; set; }
     public User CompletedByUser { get; set; } = null!;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
-
-    public ICollection<GoodsExchangeLine> Lines { get; set; } = new List<GoodsExchangeLine>();
+    public ICollection<GoodsExchangeLine> Lines { get; set; } = [];
 }

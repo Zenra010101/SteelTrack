@@ -1,214 +1,114 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using GensanPOS.Application.Common;
+using GensanPOS.Application.DTOs.Customers;
+using GensanPOS.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteelTrack.Domain.Entities;
-using SteelTrack.Infrastructure.Persistence;
 
-namespace SteelTrack.Api.Controllers;
+namespace GensanPOS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CustomersController : ControllerBase
 {
-    private readonly SteelTrackDbContext? _dbContext;
+    private readonly ICustomerService _customerService;
+    private readonly IReceivableExportService _exportService;
 
-    public CustomersController(SteelTrackDbContext? dbContext = null)
+    public CustomersController(
+        ICustomerService customerService,
+        IReceivableExportService exportService)
     {
-        _dbContext = dbContext;
+        _customerService = customerService;
+        _exportService = exportService;
+    }
+
+    private Guid UserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private string Role => User.FindFirstValue(ClaimTypes.Role)!;
+
+    [HttpGet("summary")]
+    public async Task<ActionResult<ApiResponse<CustomersSummaryDto>>> GetSummary(
+        [FromQuery] string? search,
+        [FromQuery] bool includeInactive = false,
+        CancellationToken cancellationToken = default)
+    {
+        var summary = await _customerService.GetSummaryAsync(search, includeInactive, cancellationToken);
+        return Ok(ApiResponse<CustomersSummaryDto>.Ok(summary));
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] bool? includeInactive = false)
+    public async Task<ActionResult> GetAll(
+        [FromQuery] CustomerListQuery query,
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null) return Ok(new List<object>());
-
-        var query = _dbContext.Customers.AsNoTracking().AsQueryable();
-
-        if (includeInactive != true)
+        if (query.Page > 0)
         {
-            query = query.Where(c => c.IsActive);
+            var paged = await _customerService.GetPagedAsync(query, cancellationToken);
+            return Ok(ApiResponse<PagedResult<CustomerDto>>.Ok(paged));
         }
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var s = search.Trim().ToLower();
-            query = query.Where(c =>
-                c.Name.ToLower().Contains(s) ||
-                (c.CustomerCode != null && c.CustomerCode.ToLower().Contains(s)) ||
-                (c.Phone != null && c.Phone.ToLower().Contains(s)) ||
-                (c.Email != null && c.Email.ToLower().Contains(s)));
-        }
-
-        var customers = await query
-            .OrderBy(c => c.Name)
-            .Select(c => new
-            {
-                c.Id,
-                c.CustomerCode,
-                c.Name,
-                c.Phone,
-                c.Email,
-                c.Address,
-                c.CreditLimit,
-                c.EnableCredit,
-                c.PaymentTerms,
-                c.DueDays,
-                c.IsBlacklisted,
-                c.IsBlocked,
-                c.IsActive,
-                c.Notes,
-                c.CreatedAt,
-                c.UpdatedAt
-            })
-            .ToListAsync();
-
-        return Ok(customers);
+        var list = await _customerService.GetAllAsync(query.Search, query.IncludeInactive, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<CustomerDto>>.Ok(list));
     }
 
-    [HttpGet("{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(string id)
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ApiResponse<CustomerDto>>> GetById(
+        Guid id,
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null) return NotFound();
+        var customer = await _customerService.GetByIdAsync(id, cancellationToken);
+        return Ok(ApiResponse<CustomerDto>.Ok(customer));
+    }
 
-        var customer = await _dbContext.Customers
-            .AsNoTracking()
-            .Include(c => c.Receivables)
-            .FirstOrDefaultAsync(c => c.Id == id);
+    [HttpGet("{id:guid}/profile")]
+    public async Task<ActionResult<ApiResponse<CustomerProfileDto>>> GetProfile(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var profile = await _customerService.GetProfileAsync(id, UserId, Role, cancellationToken);
+        return Ok(ApiResponse<CustomerProfileDto>.Ok(profile));
+    }
 
-        if (customer == null) return NotFound(new { message = $"Customer with ID '{id}' not found." });
+    [HttpGet("{id:guid}/ledger")]
+    public async Task<ActionResult<ApiResponse<CustomerLedgerDetailDto>>> GetLedger(
+        Guid id,
+        [FromQuery] CustomerLedgerQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var ledger = await _customerService.GetLedgerAsync(id, query, UserId, Role, cancellationToken);
+        return Ok(ApiResponse<CustomerLedgerDetailDto>.Ok(ledger));
+    }
 
-        return Ok(customer);
+    [HttpGet("{id:guid}/statement/export/pdf")]
+    public async Task<IActionResult> ExportStatementPdf(Guid id, CancellationToken cancellationToken = default)
+    {
+        var bytes = await _exportService.ExportStatementPdfAsync(id, UserId, Role, cancellationToken);
+        return File(bytes, "application/pdf", $"statement-{id}.pdf");
+    }
+
+    [HttpGet("next-code")]
+    public async Task<ActionResult<ApiResponse<NextCustomerCodeDto>>> GetNextCode(CancellationToken cancellationToken)
+    {
+        var code = await _customerService.GetNextCustomerCodeAsync(cancellationToken);
+        return Ok(ApiResponse<NextCustomerCodeDto>.Ok(new NextCustomerCodeDto { CustomerCode = code }));
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] Customer customer)
+    public async Task<ActionResult<ApiResponse<CustomerDto>>> Create(
+        [FromBody] CreateCustomerRequest request,
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        if (string.IsNullOrWhiteSpace(customer.Name))
-        {
-            return BadRequest(new { message = "Customer Name is required." });
-        }
-
-        if (string.IsNullOrWhiteSpace(customer.Id))
-        {
-            customer.Id = Guid.NewGuid().ToString();
-        }
-
-        customer.CreatedAt = DateTime.UtcNow;
-        _dbContext.Customers.Add(customer);
-        await _dbContext.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetById), new { id = customer.Id }, customer);
+        var created = await _customerService.CreateAsync(request, UserId, cancellationToken);
+        return Ok(ApiResponse<CustomerDto>.Ok(created, "Customer created"));
     }
 
-    [HttpPut("{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(string id, [FromBody] Customer customer)
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<ApiResponse<CustomerDto>>> Update(
+        Guid id,
+        [FromBody] UpdateCustomerRequest request,
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        var existing = await _dbContext.Customers.FindAsync(id);
-        if (existing == null) return NotFound(new { message = $"Customer with ID '{id}' not found." });
-
-        existing.Name = customer.Name;
-        existing.CustomerCode = customer.CustomerCode;
-        existing.Phone = customer.Phone;
-        existing.Email = customer.Email;
-        existing.Address = customer.Address;
-        existing.CreditLimit = customer.CreditLimit;
-        existing.EnableCredit = customer.EnableCredit;
-        existing.PaymentTerms = customer.PaymentTerms;
-        existing.DueDays = customer.DueDays;
-        existing.IsBlacklisted = customer.IsBlacklisted;
-        existing.IsBlocked = customer.IsBlocked;
-        existing.IsActive = customer.IsActive;
-        existing.Notes = customer.Notes;
-        existing.UpdatedAt = DateTime.UtcNow;
-
-        await _dbContext.SaveChangesAsync();
-        return Ok(existing);
+        var updated = await _customerService.UpdateAsync(id, request, UserId, cancellationToken);
+        return Ok(ApiResponse<CustomerDto>.Ok(updated, "Customer updated"));
     }
-
-    [HttpDelete("{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(string id)
-    {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-
-        var existing = await _dbContext.Customers.FindAsync(id);
-        if (existing == null) return NotFound(new { message = $"Customer with ID '{id}' not found." });
-
-        _dbContext.Customers.Remove(existing);
-        await _dbContext.SaveChangesAsync();
-        return Ok(new { message = $"Customer '{existing.Name}' deleted successfully." });
-    }
-
-    [HttpPatch("{id}/credit-limit")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> UpdateCreditLimit(string id, [FromBody] UpdateCreditLimitDto dto)
-    {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-        var existing = await _dbContext.Customers.FindAsync(id);
-        if (existing == null) return NotFound(new { message = $"Customer with ID '{id}' not found." });
-
-        existing.CreditLimit = dto.CreditLimitPHP;
-        if (!string.IsNullOrWhiteSpace(dto.Justification))
-        {
-            existing.Notes = (existing.Notes ?? "") + $" | Credit Limit updated to ₱{dto.CreditLimitPHP:N0} ({DateTime.UtcNow:yyyy-MM-dd}): {dto.Justification}";
-        }
-        existing.UpdatedAt = DateTime.UtcNow;
-        await _dbContext.SaveChangesAsync();
-        return Ok(existing);
-    }
-
-    [HttpPatch("{id}/status")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateCustomerStatusDto dto)
-    {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
-        var existing = await _dbContext.Customers.FindAsync(id);
-        if (existing == null) return NotFound(new { message = $"Customer with ID '{id}' not found." });
-
-        if (dto.Status == "Active")
-        {
-            existing.IsActive = true;
-            existing.IsBlocked = false;
-        }
-        else if (dto.Status == "Blocked")
-        {
-            existing.IsActive = false;
-            existing.IsBlocked = true;
-        }
-        else
-        {
-            existing.IsActive = false;
-            existing.IsBlocked = false;
-        }
-        existing.UpdatedAt = DateTime.UtcNow;
-        await _dbContext.SaveChangesAsync();
-        return Ok(existing);
-    }
-}
-
-public class UpdateCreditLimitDto
-{
-    public decimal CreditLimitPHP { get; set; }
-    public string? Justification { get; set; }
-}
-
-public class UpdateCustomerStatusDto
-{
-    public string Status { get; set; } = "Active"; // Active | On Hold | Blocked
 }

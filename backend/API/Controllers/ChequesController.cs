@@ -1,130 +1,74 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using GensanPOS.Application.Common;
+using GensanPOS.Application.DTOs.Cheques;
+using GensanPOS.Application.Interfaces;
+using GensanPOS.Domain.Constants;
+using GensanPOS.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SteelTrack.Domain.Entities;
-using SteelTrack.Infrastructure.Persistence;
 
-namespace SteelTrack.Api.Controllers;
-
-public class UpdateChequeStatusDto
-{
-    public int Status { get; set; } // 0: Pending, 1: Deposited, 2: Cleared, 3: Bounced
-    public string? Remarks { get; set; }
-}
+namespace GensanPOS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ChequesController : ControllerBase
 {
-    private readonly SteelTrackDbContext? _dbContext;
+    private readonly IChequeService _chequeService;
 
-    public ChequesController(SteelTrackDbContext? dbContext = null)
-    {
-        _dbContext = dbContext;
-    }
+    public ChequesController(IChequeService chequeService) => _chequeService = chequeService;
+
+    private Guid UserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private string Role => User.FindFirstValue(ClaimTypes.Role)!;
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll(
-        [FromQuery] int? status,
-        [FromQuery] string? search)
+    public async Task<ActionResult> GetAll(
+        [FromQuery] ChequeStatus? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken cancellationToken = default)
     {
-        if (_dbContext == null) return Ok(new List<object>());
-
-        var query = _dbContext.SaleCheques
-            .AsNoTracking()
-            .Include(c => c.Sale)
-            .AsQueryable();
-
-        if (status.HasValue)
+        if (page > 0)
         {
-            query = query.Where(c => c.Status == status.Value);
+            var paged = await _chequeService.GetPagedAsync(status, page, pageSize, cancellationToken);
+            return Ok(ApiResponse<PagedResult<ChequeDto>>.Ok(paged));
         }
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var s = search.Trim().ToLower();
-            query = query.Where(c =>
-                c.ChequeNumber.ToLower().Contains(s) ||
-                c.BankName.ToLower().Contains(s) ||
-                (c.AccountName != null && c.AccountName.ToLower().Contains(s)));
-        }
-
-        var cheques = await query
-            .OrderBy(c => c.MaturityDate)
-            .Select(c => new
-            {
-                c.Id,
-                c.SaleId,
-                c.ChequeNumber,
-                c.BankName,
-                c.Branch,
-                c.AccountName,
-                c.Amount,
-                ChequeDate = c.MaturityDate,
-                c.MaturityDate,
-                c.Status,
-                c.Notes,
-                c.CreatedAt
-            })
-            .ToListAsync();
-
-        return Ok(cheques);
+        var list = await _chequeService.GetAllAsync(status, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ChequeDto>>.Ok(list));
     }
 
-    [HttpGet("{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(string id)
+    [HttpGet("summary")]
+    public async Task<ActionResult<ApiResponse<ChequesSummaryDto>>> GetSummary(CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return NotFound();
-
-        var cheque = await _dbContext.SaleCheques
-            .AsNoTracking()
-            .Include(c => c.Sale)
-            .Include(c => c.BouncedHistories)
-            .FirstOrDefaultAsync(c => c.Id == id);
-
-        if (cheque == null) return NotFound(new { message = $"Cheque with ID '{id}' not found." });
-
-        return Ok(cheque);
+        var summary = await _chequeService.GetSummaryAsync(cancellationToken);
+        return Ok(ApiResponse<ChequesSummaryDto>.Ok(summary));
     }
 
-    [HttpPut("{id}/status")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateChequeStatusDto dto)
+    [HttpGet("bounced-history")]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<BouncedChequeHistoryDto>>>> GetBouncedHistory(
+        [FromQuery] Guid? customerId,
+        CancellationToken cancellationToken)
     {
-        if (_dbContext == null) return StatusCode(503, "Database unavailable.");
+        var list = await _chequeService.GetBouncedHistoryAsync(customerId, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<BouncedChequeHistoryDto>>.Ok(list));
+    }
 
-        var cheque = await _dbContext.SaleCheques.FindAsync(id);
-        if (cheque == null) return NotFound(new { message = $"Cheque with ID '{id}' not found." });
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ApiResponse<ChequeDto>>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var cheque = await _chequeService.GetByIdAsync(id, cancellationToken);
+        return Ok(ApiResponse<ChequeDto>.Ok(cheque));
+    }
 
-        cheque.Status = dto.Status;
-        if (!string.IsNullOrWhiteSpace(dto.Remarks))
-        {
-            cheque.Notes = (cheque.Notes ?? "") + $" | {DateTime.UtcNow:yyyy-MM-dd}: {dto.Remarks}";
-        }
-        cheque.UpdatedAt = DateTime.UtcNow;
-
-        if (dto.Status == 3) // Bounced
-        {
-            var history = new BouncedChequeHistory
-            {
-                Id = Guid.NewGuid().ToString(),
-                SaleChequeId = id,
-                BouncedDate = DateTime.UtcNow,
-                Reason = dto.Remarks ?? "Insufficient funds / DAIF",
-                CreatedAt = DateTime.UtcNow
-            };
-            _dbContext.BouncedChequeHistories.Add(history);
-        }
-
-        await _dbContext.SaveChangesAsync();
-        return Ok(cheque);
+    [HttpPost("{id:guid}/status")]
+    [Authorize(Roles = RoleNames.Owner)]
+    public async Task<ActionResult<ApiResponse<ChequeDto>>> UpdateStatus(
+        Guid id,
+        [FromBody] UpdateChequeStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        var cheque = await _chequeService.UpdateStatusAsync(id, request, UserId, Role, cancellationToken);
+        return Ok(ApiResponse<ChequeDto>.Ok(cheque, "Cheque status updated"));
     }
 }

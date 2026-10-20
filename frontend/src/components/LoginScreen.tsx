@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Layers, User, KeyRound, ArrowRight, Sparkles, Building2, AlertCircle } from 'lucide-react';
-import { UserRole, BranchLocation, resolveRegisteredUser, type UserSession } from '../types/auth';
+import { Layers, User, KeyRound, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { UserRole, BranchLocation, type UserSession } from '../types/auth';
 
 interface LoginScreenProps {
   onLogin: (session: UserSession) => void;
@@ -11,7 +11,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [password, setPassword] = useState<string>('');
   const [redirectNotice, setRedirectNotice] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,64 +31,67 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     setIsLoading(true);
 
     try {
-      // Query database for registered user
-      const res = await fetch(`/api/users?search=${encodeURIComponent(trimmedUser)}`);
-      if (res.ok) {
-        const users = await res.json();
-        if (Array.isArray(users) && users.length > 0) {
-          const dbUser = users.find((u: any) => u.email.toLowerCase() === trimmedUser.toLowerCase()) || users[0];
-          
-          let role: UserRole = UserRole.Cashier;
-          const rName = (dbUser.roleName || dbUser.role || '').toLowerCase();
-          if (rName.includes('owner') || dbUser.email.toLowerCase().includes('owner')) {
-            role = UserRole.Owner;
-          } else if (rName.includes('manager') || dbUser.email.toLowerCase().includes('manager')) {
-            role = UserRole.BranchManager;
-          }
+      // Authenticate against backend /api/auth/login endpoint
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          email: trimmedUser,
+          password: password,
+        }),
+      });
 
-          let branch: BranchLocation | undefined = undefined;
-          if (role !== UserRole.Owner) {
-            const bName = (dbUser.branchName || dbUser.branchCode || rName || '').toLowerCase();
-            if (bName.includes('davao') || bName.includes('dvo')) branch = BranchLocation.Davao;
-            else if (bName.includes('cagayan') || bName.includes('cgy')) branch = BranchLocation.Cagayan;
-            else if (bName.includes('mandaue') || bName.includes('mnd')) branch = BranchLocation.Mandaue;
-            else if (bName.includes('cebu') || bName.includes('ceb')) branch = BranchLocation.Cebu;
-            else branch = BranchLocation.Davao;
-          }
+      const result = await res.json();
 
-          setRedirectNotice(
-            role === UserRole.Owner
-              ? 'Authenticated via Database! Redirecting to All-Branches Executive View...'
-              : `Verified in Database! Redirecting ${dbUser.fullName} to ${branch} Branch Workspace...`
-          );
-
-          setUsername('');
-          setPassword('');
-
-          setTimeout(() => {
-            onLogin({
-              username: dbUser.email,
-              name: dbUser.fullName,
-              role,
-              branch,
-            });
-          }, 400);
-          return;
-        }
+      if (!res.ok) {
+        const errorMsg =
+          result?.message ||
+          result?.error ||
+          (res.status === 401 ? 'Invalid email or password.' : 'Login failed. Please check your credentials.');
+        setErrorMessage(errorMsg);
+        setIsLoading(false);
+        return;
       }
-    } catch (err) {
-      console.warn('Backend /api/users auth query offline, using dynamic fallback:', err);
-    } finally {
-      setIsLoading(false);
-    }
 
-    // Dynamic resolution fallback
-    const matchedUser = resolveRegisteredUser(trimmedUser);
-    if (matchedUser) {
+      const authData = result.data;
+      if (authData?.token) {
+        localStorage.setItem('steeltrack_auth_token', authData.token);
+      }
+      if (authData?.user) {
+        localStorage.setItem('steeltrack_user', JSON.stringify(authData.user));
+      }
+
+      // Map role from backend verification
+      let role: UserRole = UserRole.Cashier;
+      const rName = (authData?.user?.role || '').toLowerCase();
+      if (rName.includes('owner') || rName.includes('admin') || authData?.user?.email?.toLowerCase().includes('owner')) {
+        role = UserRole.Owner;
+      } else if (rName.includes('manager') || authData?.user?.email?.toLowerCase().includes('manager')) {
+        role = UserRole.BranchManager;
+      }
+
+      // Map branch location
+      let branch: BranchLocation | undefined = undefined;
+      if (role !== UserRole.Owner) {
+        const bName = (authData?.user?.branchName || '').toLowerCase();
+        const em = (authData?.user?.email || trimmedUser).toLowerCase();
+
+        if (bName.includes('davao') || em.includes('davao') || em.includes('dvo')) branch = BranchLocation.Davao;
+        else if (bName.includes('cagayan') || em.includes('cagayan') || em.includes('cgy')) branch = BranchLocation.Cagayan;
+        else if (bName.includes('mandaue') || em.includes('mandaue') || em.includes('mnd')) branch = BranchLocation.Mandaue;
+        else if (bName.includes('cebu') || em.includes('cebu') || em.includes('ceb')) branch = BranchLocation.Cebu;
+        else branch = BranchLocation.Davao;
+      }
+
+      const displayName = authData?.user?.fullName || trimmedUser.split('@')[0];
+
       setRedirectNotice(
-        matchedUser.role === UserRole.Owner
+        role === UserRole.Owner
           ? 'Authenticated! Redirecting to All-Branches Executive View...'
-          : `Verified! Redirecting ${matchedUser.name} to ${matchedUser.branch} Branch Workspace...`
+          : `Verified! Redirecting ${displayName} to ${branch} Branch Workspace...`
       );
 
       setUsername('');
@@ -97,32 +99,19 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
       setTimeout(() => {
         onLogin({
-          username: matchedUser.username,
-          name: matchedUser.name,
-          role: matchedUser.role,
-          branch: matchedUser.branch,
+          username: authData?.user?.email || trimmedUser,
+          name: displayName,
+          role,
+          branch,
         });
       }, 400);
-    } else {
-      const autoName = trimmedUser.split('@')[0] || 'User';
-      const cleanName = autoName.charAt(0).toUpperCase() + autoName.slice(1);
-
-      setRedirectNotice(`Authenticated! Redirecting to workspace...`);
-      setUsername('');
-      setPassword('');
-
-      setTimeout(() => {
-        onLogin({
-          username: trimmedUser,
-          name: cleanName,
-          role: UserRole.Cashier,
-          branch: undefined,
-        });
-      }, 400);
+    } catch (err: any) {
+      console.error('Login request failed:', err);
+      setErrorMessage('Unable to connect to authentication server. Please verify your connection.');
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  const matchedPreview = username.trim() ? resolveRegisteredUser(username.trim()) : null;
 
   return (
     <div className="login-wrapper">
@@ -172,15 +161,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <div className="login-auto-notice" style={{ background: '#FEF2F2', borderColor: '#FECACA', color: '#B91C1C', marginBottom: '1rem' }}>
               <AlertCircle size={16} />
               <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {matchedPreview && !redirectNotice && (
-            <div className="login-auto-notice" style={{ marginBottom: '1rem' }}>
-              <Building2 size={16} />
-              <span>
-                Account: <strong>{matchedPreview.branch ? `${matchedPreview.branch} Branch` : 'All Branches'}</strong> ({matchedPreview.role})
-              </span>
             </div>
           )}
 

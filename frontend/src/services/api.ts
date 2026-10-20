@@ -24,6 +24,31 @@ import type { CustomerMaster, SupplierMaster } from '../types/suppliers';
 
 const API_BASE_URL = '/api/inventory';
 
+export function getAuthToken(): string | null {
+  return localStorage.getItem('steeltrack_auth_token');
+}
+
+export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...extraHeaders,
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+export function extractItems<T = any>(result: any): T[] {
+  if (!result) return [];
+  if (Array.isArray(result)) return result;
+  if (Array.isArray(result.data)) return result.data;
+  if (result.data && Array.isArray(result.data.items)) return result.data.items;
+  if (result.items && Array.isArray(result.items)) return result.items;
+  return [];
+}
+
 // ============================================================================
 // INVENTORY & STEEL BATCHES (PostgreSQL Database Connected)
 // ============================================================================
@@ -42,7 +67,7 @@ export async function fetchInventory(
     if (branch && branch !== 'All') params.append('branch', branch);
 
     const res = await fetch(`${API_BASE_URL}?${params.toString()}`, {
-      headers: { Accept: 'application/json' },
+      headers: getAuthHeaders(),
     });
 
     if (res.ok) {
@@ -102,7 +127,7 @@ export async function fetchStats(branch?: BranchLocation | string): Promise<Inve
 export async function createBatch(dto: CreateSteelBatchDto): Promise<SteelBatch> {
   const res = await fetch(API_BASE_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(dto),
   });
 
@@ -120,7 +145,7 @@ export async function updateBatchStatus(
 ): Promise<SteelBatch | null> {
   const res = await fetch(`${API_BASE_URL}/${id}/status`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(dto),
   });
 
@@ -138,9 +163,10 @@ export async function updateBatchStatus(
 export async function fetchTransfers(branch?: BranchLocation | 'All' | string): Promise<StockTransferRequest[]> {
   try {
     const url = '/api/stocktransfers' + (branch && branch !== 'All' ? `?branch=${encodeURIComponent(branch)}` : '');
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: getAuthHeaders() });
     if (res.ok) {
-      const data = await res.json();
+      const raw = await res.json();
+      const data = extractItems(raw);
       if (Array.isArray(data)) {
         return data.map((t: any) => ({
           id: t.transferNumber || t.id,
@@ -180,7 +206,7 @@ export async function createTransferRequest(
 
   const res = await fetch('/api/stocktransfers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload),
   });
 
@@ -212,7 +238,7 @@ export async function updateTransferStatus(
 
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(body),
   });
 
@@ -242,10 +268,10 @@ export async function updateTransferStatus(
 
 export async function fetchPosTransactions(branch?: BranchLocation | 'All' | string): Promise<PosTransaction[]> {
   try {
-    const res = await fetch('/api/sales');
+    const res = await fetch('/api/sales', { headers: getAuthHeaders() });
     if (res.ok) {
       const result = await res.json();
-      const rawSales = Array.isArray(result) ? result : Array.isArray(result.data) ? result.data : [];
+      const rawSales = extractItems(result);
       
       const remoteTx: PosTransaction[] = rawSales.map((s: any) => ({
         id: s.id,
@@ -336,7 +362,7 @@ export async function processPosSale(
 
   const res = await fetch('/api/sales', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(salePayload),
   });
 
@@ -398,9 +424,10 @@ export function fetchLstmDemandForecast(
 export async function fetchReceivables(branch?: BranchLocation | 'All' | string): Promise<CustomerReceivable[]> {
   try {
     const url = '/api/receivables' + (branch && branch !== 'All' ? `?branch=${encodeURIComponent(branch)}` : '');
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: getAuthHeaders() });
     if (res.ok) {
-      const data = await res.json();
+      const raw = await res.json();
+      const data = extractItems(raw);
       if (Array.isArray(data)) {
         return data.map((r: any) => ({
           id: r.id,
@@ -445,7 +472,7 @@ export async function fetchReceivables(branch?: BranchLocation | 'All' | string)
 export async function fetchReceivableStats(branch?: BranchLocation | 'All' | string): Promise<ReceivableStats> {
   try {
     const url = '/api/receivables/stats' + (branch && branch !== 'All' ? `?branch=${encodeURIComponent(branch)}` : '');
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: getAuthHeaders() });
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data.totalReceivablesPHP === 'number') {
@@ -482,7 +509,7 @@ export async function fetchReceivableStats(branch?: BranchLocation | 'All' | str
 export async function recordReceivablePayment(dto: ReceivablePaymentDto): Promise<CustomerReceivable | null> {
   const res = await fetch(`/api/receivables/${dto.receivableId}/pay`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(dto),
   });
 
@@ -507,9 +534,10 @@ export async function fetchCheques(branch?: BranchLocation | 'All' | string, sta
     if (status) params.append('status', statusMap[status].toString());
     if (branch && branch !== 'All') params.append('branch', branch);
 
-    const res = await fetch(`/api/cheques?${params.toString()}`);
+    const res = await fetch(`/api/cheques?${params.toString()}`, { headers: getAuthHeaders() });
     if (res.ok) {
-      const data = await res.json();
+      const raw = await res.json();
+      const data = extractItems(raw);
       if (Array.isArray(data)) {
         const revStatusMap: Record<number, ChequeStatusType> = {
           0: 'Pending',
@@ -563,7 +591,7 @@ export async function updateChequeStatus(
 
   const res = await fetch(`/api/cheques/${id}/status`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       status: statusMap[newStatus],
       remarks: bounceReason,
@@ -584,9 +612,10 @@ export async function updateChequeStatus(
 export async function fetchGoodsReturns(branch?: BranchLocation | 'All' | string): Promise<GoodsReturnSlip[]> {
   try {
     const url = '/api/goodsreturns' + (branch && branch !== 'All' ? `?branch=${encodeURIComponent(branch)}` : '');
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: getAuthHeaders() });
     if (res.ok) {
-      const data = await res.json();
+      const raw = await res.json();
+      const data = extractItems(raw);
       if (Array.isArray(data)) {
         return data.map((g: any) => ({
           id: g.id,
@@ -633,7 +662,7 @@ export async function fetchGoodsReturns(branch?: BranchLocation | 'All' | string
 export async function createGoodsReturn(dto: CreateGrsDto): Promise<GoodsReturnSlip> {
   const res = await fetch('/api/goodsreturns', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(dto),
   });
 
@@ -651,7 +680,7 @@ export async function approveGoodsReturn(
 ): Promise<GoodsReturnSlip | null> {
   const res = await fetch(`/api/goodsreturns/${id}/approve`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ approverName }),
   });
 
@@ -669,7 +698,7 @@ export async function rejectGoodsReturn(
 ): Promise<GoodsReturnSlip | null> {
   const res = await fetch(`/api/goodsreturns/${id}/reject`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ rejecterName, rejectionReason }),
   });
 
@@ -685,7 +714,7 @@ export async function lookupHeatNumberForReturn(heatNumber: string): Promise<Hea
   if (!query) return null;
 
   try {
-    const res = await fetch(`/api/goodsreturns/lookup-heat/${encodeURIComponent(query)}`);
+    const res = await fetch(`/api/goodsreturns/lookup-heat/${encodeURIComponent(query)}`, { headers: getAuthHeaders() });
     if (res.ok) {
       const data = await res.json();
       if (data && data.heatNumber) {
@@ -715,9 +744,10 @@ export async function lookupHeatNumberForReturn(heatNumber: string): Promise<Hea
 
 export async function fetchBranches(): Promise<BranchRecord[]> {
   try {
-    const res = await fetch('/api/branches');
+    const res = await fetch('/api/branches', { headers: getAuthHeaders() });
     if (res.ok) {
-      const data = await res.json();
+      const raw = await res.json();
+      const data = extractItems(raw);
       if (Array.isArray(data)) {
         return data.map((b: any) => ({
           id: b.id,
@@ -741,7 +771,7 @@ export async function fetchBranches(): Promise<BranchRecord[]> {
 export async function updateBranch(id: string, dto: UpdateBranchDto): Promise<BranchRecord | null> {
   const res = await fetch(`/api/branches/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(dto),
   });
 
@@ -765,9 +795,10 @@ export interface CategoryItem {
 
 export async function fetchCategories(): Promise<CategoryItem[]> {
   try {
-    const res = await fetch('/api/categories');
+    const res = await fetch('/api/categories', { headers: getAuthHeaders() });
     if (res.ok) {
-      const list = await res.json();
+      const raw = await res.json();
+      const list = extractItems(raw);
       if (Array.isArray(list)) {
         return list;
       }
@@ -793,11 +824,12 @@ export async function fetchProducts(
     if (lowStockOnly) params.append('lowStockOnly', 'true');
     params.append('pageSize', '150');
 
-    const res = await fetch(`/api/products?${params.toString()}`);
+    const res = await fetch(`/api/products?${params.toString()}`, { headers: getAuthHeaders() });
     if (res.ok) {
       const json = await res.json();
-      if (json && Array.isArray(json.data)) {
-        const mapped: ProductItem[] = json.data.map((p: any) => ({
+      const items = extractItems(json);
+      if (Array.isArray(items)) {
+        const mapped: ProductItem[] = items.map((p: any) => ({
           id: p.id,
           sku: p.sku || p.code || `STL-${p.id?.slice(0, 6)}`,
           name: p.name,
@@ -830,7 +862,7 @@ export async function fetchProducts(
 export async function createProduct(dto: CreateProductDto): Promise<ProductItem> {
   const res = await fetch('/api/products', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(dto),
   });
 
@@ -848,7 +880,7 @@ export async function updateProduct(
 ): Promise<ProductItem | null> {
   const res = await fetch(`/api/products/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(dto),
   });
 
@@ -892,9 +924,10 @@ export async function fetchStaffUsers(search?: string, branchId?: string): Promi
     if (search) params.append('search', search);
     if (branchId) params.append('branchId', branchId);
 
-    const res = await fetch(`/api/users?${params.toString()}`);
+    const res = await fetch(`/api/users?${params.toString()}`, { headers: getAuthHeaders() });
     if (res.ok) {
-      const data = await res.json();
+      const raw = await res.json();
+      const data = extractItems(raw);
       if (Array.isArray(data)) {
         return data.map((u: any) => ({
           id: u.id,
@@ -920,7 +953,7 @@ export async function fetchStaffUsers(search?: string, branchId?: string): Promi
 export async function createStaffUser(dto: CreateStaffUserDto): Promise<StaffUser> {
   const res = await fetch('/api/users', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       email: dto.email,
       fullName: dto.fullName,
@@ -939,7 +972,7 @@ export async function createStaffUser(dto: CreateStaffUserDto): Promise<StaffUse
 }
 
 export async function toggleStaffUserStatus(id: string): Promise<boolean> {
-  const res = await fetch(`/api/users/${id}/status`, { method: 'PATCH' });
+  const res = await fetch(`/api/users/${id}/status`, { method: 'PATCH', headers: getAuthHeaders() });
   if (!res.ok) {
     throw new Error(`Failed to toggle user status in database: ${res.statusText}`);
   }
@@ -954,9 +987,10 @@ export async function toggleStaffUserStatus(id: string): Promise<boolean> {
 
 export async function fetchCustomers(branch?: BranchLocation | 'All' | string): Promise<CustomerMaster[]> {
   try {
-    const res = await fetch('/api/customers?includeInactive=true');
+    const res = await fetch('/api/customers?includeInactive=true', { headers: getAuthHeaders() });
     if (res.ok) {
-      const data = await res.json();
+      const raw = await res.json();
+      const data = extractItems(raw);
       if (Array.isArray(data)) {
         const mapped: CustomerMaster[] = data.map((c: any) => ({
           id: c.id,
@@ -991,7 +1025,7 @@ export async function fetchCustomers(branch?: BranchLocation | 'All' | string): 
 export async function createCustomer(dto: Partial<CustomerMaster>): Promise<CustomerMaster> {
   const res = await fetch('/api/customers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       id: dto.id || crypto.randomUUID(),
       name: dto.customerName || dto.companyName || 'New Customer',
@@ -1039,7 +1073,7 @@ export async function updateCustomerCreditLimit(
 ): Promise<boolean> {
   const res = await fetch(`/api/customers/${id}/credit-limit`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ creditLimitPHP, justification }),
   });
 
@@ -1052,7 +1086,7 @@ export async function updateCustomerStatus(
 ): Promise<boolean> {
   const res = await fetch(`/api/customers/${id}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ status }),
   });
 
@@ -1072,9 +1106,10 @@ export async function fetchSuppliers(
     if (search) params.append('search', search);
     if (includeInactive) params.append('includeInactive', 'true');
 
-    const res = await fetch(`/api/suppliers?${params.toString()}`);
+    const res = await fetch(`/api/suppliers?${params.toString()}`, { headers: getAuthHeaders() });
     if (res.ok) {
-      const data = await res.json();
+      const raw = await res.json();
+      const data = extractItems(raw);
       if (Array.isArray(data)) {
         return data.map((s: any) => ({
           id: s.id,
@@ -1144,7 +1179,7 @@ export async function createSupplier(supplier: Partial<SupplierMaster>): Promise
 
   const res = await fetch('/api/suppliers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload),
   });
 
@@ -1187,7 +1222,7 @@ export async function updateSupplier(
 
   const res = await fetch(`/api/suppliers/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload),
   });
 
@@ -1211,6 +1246,86 @@ export async function updateSupplier(
 }
 
 export async function deleteSupplier(id: string): Promise<boolean> {
-  const res = await fetch(`/api/suppliers/${id}`, { method: 'DELETE' });
+  const res = await fetch(`/api/suppliers/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
   return res.ok;
+}
+
+
+// ============================================================================
+// QUALITY CONTROL & APPROVAL REQUESTS (Live Supabase Tables)
+// ============================================================================
+
+export interface ApprovalRequestItem {
+  id: string;
+  type: string;
+  status: string;
+  referenceNumber: string;
+  details: string;
+  requestedBy: string;
+  requestedAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+}
+
+export async function fetchApprovals(status?: string): Promise<ApprovalRequestItem[]> {
+  try {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    const res = await fetch(`/api/approvals?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const items = extractItems(json);
+      return items.map((a: any) => ({
+        id: a.id,
+        type: a.type || 'Quality / Status Review',
+        status: a.status || 'Pending',
+        referenceNumber: a.referenceNumber || a.saleNumber || a.grsNumber || String(a.id).slice(0, 8),
+        details: a.reason || a.details || 'Pending review by branch manager or owner',
+        requestedBy: a.requesterName || a.requestedBy || 'Staff Member',
+        requestedAt: a.createdAt || new Date().toISOString(),
+        reviewedBy: a.reviewerName,
+        reviewedAt: a.reviewedAt,
+        rejectionReason: a.rejectionReason,
+      }));
+    }
+  } catch (err) {
+    console.error('Error fetching approvals from database:', err);
+  }
+  return [];
+}
+
+export async function reviewApproval(id: string, action: 'approve' | 'reject', reason?: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/approvals/${id}/${action}`, {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ reason }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error(`Error reviewing approval ${id}:`, err);
+    return false;
+  }
+}
+
+// ============================================================================
+// DASHBOARD & EXECUTIVE METRICS (Live Supabase Connected)
+// ============================================================================
+
+export async function fetchDashboardMetrics(): Promise<any> {
+  try {
+    const res = await fetch('/api/dashboard', {
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      return json.data || json;
+    }
+  } catch (err) {
+    console.error('Error fetching dashboard metrics:', err);
+  }
+  return null;
 }
