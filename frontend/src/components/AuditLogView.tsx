@@ -88,202 +88,8 @@ function computeObjectDiff(beforeJson: string, afterJson: string): FieldDiff[] {
   });
 }
 
-const INITIAL_AUDIT_LOGS: AuditRecord[] = [
-  {
-    id: 'log-8001',
-    timestamp: new Date(Date.now() - 15 * 60000).toISOString(),
-    userName: 'Maria Santos',
-    userRole: 'BranchManager',
-    userEmail: 'maria.santos@steeltrack.ph',
-    branch: 'Davao',
-    action: 'APPROVE',
-    entityName: 'GoodsReturnSlip',
-    entityId: 'GRS-2026-0088',
-    ipAddress: '192.168.10.45',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0',
-    status: 'SUCCESS',
-    category: 'EntityMutation',
-    details: 'Approved goods return slip for heat #HT-2026-8841. Restored 3.5T to Davao Yard.',
-    beforeStateJson: JSON.stringify(
-      { grsNumber: 'GRS-2026-0088', status: 'Pending_Approval', creditNoteNumber: null, inspectRemarks: 'Awaiting QC' },
-      null,
-      2
-    ),
-    afterStateJson: JSON.stringify(
-      { grsNumber: 'GRS-2026-0088', status: 'Approved', creditNoteNumber: 'CN-2026-0033', approvedBy: 'Maria Santos', inspectRemarks: 'Passed dimensional spec' },
-      null,
-      2
-    ),
-  },
-  {
-    id: 'log-8002',
-    timestamp: new Date(Date.now() - 45 * 60000).toISOString(),
-    userName: 'System Admin',
-    userRole: 'Owner',
-    userEmail: 'admin@steeltrack.ph',
-    branch: 'Cagayan',
-    action: 'UPDATE',
-    entityName: 'CustomerCreditLimit',
-    entityId: 'CUST-002',
-    ipAddress: '10.0.0.12',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/129.0',
-    status: 'SUCCESS',
-    category: 'EntityMutation',
-    details: 'Adjusted customer approved credit line with commercial justification.',
-    beforeStateJson: JSON.stringify(
-      { customerName: 'Visayas Shipyard Yard', approvedLimitPHP: 3000000, paymentTermsDays: 30, accountStatus: 'Active' },
-      null,
-      2
-    ),
-    afterStateJson: JSON.stringify(
-      { customerName: 'Visayas Shipyard Yard', approvedLimitPHP: 5000000, paymentTermsDays: 45, accountStatus: 'Active', updatedBy: 'System Admin' },
-      null,
-      2
-    ),
-  },
-  {
-    id: 'log-8003',
-    timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
-    userName: 'Roberto Diaz',
-    userRole: 'BranchManager',
-    userEmail: 'roberto.diaz@steeltrack.ph',
-    branch: 'Cebu',
-    action: 'TRANSFER_REQUEST',
-    entityName: 'StockTransfer',
-    entityId: 'TR-2026-0041',
-    ipAddress: '192.168.20.18',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/130.0',
-    status: 'SUCCESS',
-    category: 'EntityMutation',
-    details: 'Dispatched inter-branch stock reallocation: 15.0T A36 Structural to Davao branch.',
-    beforeStateJson: JSON.stringify(
-      { transferId: 'TR-2026-0041', status: 'Pending', sourceBranch: 'Cebu', destinationBranch: 'Davao', tonnage: 15.0 },
-      null,
-      2
-    ),
-    afterStateJson: JSON.stringify(
-      { transferId: 'TR-2026-0041', status: 'InTransit', sourceBranch: 'Cebu', destinationBranch: 'Davao', tonnage: 15.0, waybillNumber: 'WB-992014' },
-      null,
-      2
-    ),
-  },
-  {
-    id: 'log-8004',
-    timestamp: new Date(Date.now() - 3 * 3600000).toISOString(),
-    userName: 'Juan Dela Cruz',
-    userRole: 'Cashier',
-    userEmail: 'juan.delacruz@steeltrack.ph',
-    branch: 'Davao',
-    action: 'INSERT',
-    entityName: 'Sale',
-    entityId: 'pos-8001',
-    ipAddress: '192.168.10.12',
-    userAgent: 'SteelTrack POS Workstation v2.4 (Windows POS Terminal)',
-    status: 'SUCCESS',
-    category: 'EntityMutation',
-    details: 'Completed counter POS invoice INV-2026-0041 for Mindanao Steelworks Corp.',
-    beforeStateJson: 'null',
-    afterStateJson: JSON.stringify(
-      { invoiceNumber: 'INV-2026-0041', customerName: 'Mindanao Steelworks Corp.', totalAmountPHP: 4284, paymentMethod: 'Bank Transfer' },
-      null,
-      2
-    ),
-  },
-  // SECURITY & ACCESS LOGS
-  {
-    id: 'sec-9001',
-    timestamp: new Date(Date.now() - 10 * 60000).toISOString(),
-    userName: 'System Admin',
-    userRole: 'Owner',
-    userEmail: 'admin@steeltrack.ph',
-    branch: 'Cagayan',
-    action: 'LOGIN_SUCCESS',
-    entityName: 'SecuritySession',
-    entityId: 'SES-001',
-    ipAddress: '10.0.0.12',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/129.0',
-    status: 'SUCCESS',
-    category: 'SecurityAccess',
-    details: 'Successful 2FA biometric web credentials authorization for Executive Console.',
-    beforeStateJson: 'null',
-    afterStateJson: JSON.stringify({ event: 'LOGIN_SUCCESS', method: 'StoredToken', role: 'Owner' }),
-  },
-  {
-    id: 'sec-9002',
-    timestamp: new Date(Date.now() - 35 * 60000).toISOString(),
-    userName: 'Unknown Attempter',
-    userRole: 'Anonymous',
-    userEmail: 'cashier_davao@steeltrack.ph',
-    branch: 'Davao',
-    action: 'LOGIN_FAILED',
-    entityName: 'AuthenticationFailure',
-    entityId: 'AUTH-FAIL-104',
-    ipAddress: '112.198.44.82',
-    userAgent: 'Python-requests/2.31.0 (Automated Probe)',
-    status: 'FAILED',
-    category: 'SecurityAccess',
-    details: 'Failed password verification (3 consecutive attempts). IP rate-limited for 15 minutes.',
-    beforeStateJson: JSON.stringify({ ip: '112.198.44.82', failedAttempts: 2 }),
-    afterStateJson: JSON.stringify({ ip: '112.198.44.82', failedAttempts: 3, action: 'RateLimited' }),
-  },
-  {
-    id: 'sec-9003',
-    timestamp: new Date(Date.now() - 90 * 60000).toISOString(),
-    userName: 'System Admin',
-    userRole: 'Owner',
-    userEmail: 'admin@steeltrack.ph',
-    branch: 'Cagayan',
-    action: 'ROLE_MODIFIED',
-    entityName: 'UserAccount',
-    entityId: 'usr-maria',
-    ipAddress: '10.0.0.12',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/129.0',
-    status: 'WARNING',
-    category: 'SecurityAccess',
-    details: 'Staff account privilege escalated: user Maria Santos promoted from LogisticsLead to BranchManager.',
-    beforeStateJson: JSON.stringify({ userEmail: 'maria.santos@steeltrack.ph', role: 'LogisticsLead', branch: 'Davao' }),
-    afterStateJson: JSON.stringify({ userEmail: 'maria.santos@steeltrack.ph', role: 'BranchManager', branch: 'Davao' }),
-  },
-  {
-    id: 'sec-9004',
-    timestamp: new Date(Date.now() - 4 * 3600000).toISOString(),
-    userName: 'System Admin',
-    userRole: 'Owner',
-    userEmail: 'admin@steeltrack.ph',
-    branch: 'Enterprise',
-    action: 'CREDIT_LIMIT_OVERRIDE',
-    entityName: 'CustomerLedger',
-    entityId: 'CUST-APEX',
-    ipAddress: '10.0.0.12',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/129.0',
-    status: 'WARNING',
-    category: 'SecurityAccess',
-    details: 'Manual owner override: authorized one-time order release despite temporary credit hold.',
-    beforeStateJson: JSON.stringify({ customer: 'Apex Construction Inc.', creditHold: true, outstandingBalance: 4950000 }),
-    afterStateJson: JSON.stringify({ customer: 'Apex Construction Inc.', creditHold: false, overrideReason: 'Cheque pledged in escrow' }),
-  },
-  {
-    id: 'sec-9005',
-    timestamp: new Date(Date.now() - 8 * 3600000).toISOString(),
-    userName: 'Session Manager',
-    userRole: 'System',
-    userEmail: 'system@steeltrack.ph',
-    branch: 'Enterprise',
-    action: 'SESSION_RESTORED',
-    entityName: 'LocalStorageSession',
-    entityId: 'SES-TOKEN-88',
-    ipAddress: '127.0.0.1',
-    userAgent: 'SteelTrack Web App v2.0',
-    status: 'SUCCESS',
-    category: 'SecurityAccess',
-    details: 'Persistent user session verified and resumed from localStorage after page reload.',
-    beforeStateJson: 'null',
-    afterStateJson: JSON.stringify({ sessionResumed: true, tokenValid: true }),
-  },
-];
-
 export function AuditLogView() {
-  const [logs, setLogs] = useState<AuditRecord[]>(INITIAL_AUDIT_LOGS);
+  const [logs, setLogs] = useState<AuditRecord[]>([]);
   const [activeTab, setActiveTab] = useState<'EntityMutation' | 'SecurityAccess'>('EntityMutation');
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'SUCCESS' | 'FAILED' | 'WARNING'>('All');
@@ -301,7 +107,7 @@ export function AuditLogView() {
       const res = await fetch('/api/auditlogs?pageSize=100');
       if (res.ok) {
         const json = await res.json();
-        if (json && Array.isArray(json.data) && json.data.length > 0) {
+        if (json && Array.isArray(json.data)) {
           const mapped: AuditRecord[] = json.data.map((l: any) => ({
             id: l.id,
             timestamp: l.createdAt,
@@ -321,14 +127,11 @@ export function AuditLogView() {
             afterStateJson: l.newValue || 'null',
           }));
 
-          setLogs((prev) => {
-            const remoteIds = new Set(mapped.map((m) => m.id));
-            return [...mapped, ...prev.filter((p) => !remoteIds.has(p.id))];
-          });
+          setLogs(mapped);
         }
       }
     } catch (err) {
-      console.warn('Backend /api/auditlogs unreachable, keeping current log state:', err);
+      console.warn('Backend /api/auditlogs unreachable:', err);
     } finally {
       setIsRefreshing(false);
     }

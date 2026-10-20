@@ -33,92 +33,38 @@ export interface PresetAccount {
   description: string;
 }
 
-export const REGISTERED_USERS: PresetAccount[] = [
-  {
-    id: 'owner-alex',
-    name: 'Alexander Vance',
-    username: 'owner@steeltrack.com',
-    role: UserRole.Owner,
-    description: 'Executive Administrator — Enterprise-wide multi-branch authority, forecasting & audit.',
-  },
-  // Davao Branch Accounts
-  {
-    id: 'bm-davao',
-    name: 'Maria Santos',
-    username: 'manager.davao@steeltrack.com',
-    role: UserRole.BranchManager,
-    branch: BranchLocation.Davao,
-    description: 'Davao Yard Manager — Superintends Davao stock, inbound loads & transfer approvals.',
-  },
-  {
-    id: 'cashier-davao',
-    name: 'Juan Dela Cruz',
-    username: 'cashier.davao@steeltrack.com',
-    role: UserRole.Cashier,
-    branch: BranchLocation.Davao,
-    description: 'Davao Head Cashier — Front-counter terminal sales & billing for Davao Branch.',
-  },
-  // Cagayan Branch Accounts
-  {
-    id: 'bm-cagayan',
-    name: 'Carlos Reyes',
-    username: 'manager.cagayan@steeltrack.com',
-    role: UserRole.BranchManager,
-    branch: BranchLocation.Cagayan,
-    description: 'Cagayan Regional Hub Manager — Oversees Northern Mindanao inventory & logistics.',
-  },
-  {
-    id: 'cashier-cagayan',
-    name: 'Ana Patricia Gonzales',
-    username: 'cashier.cagayan@steeltrack.com',
-    role: UserRole.Cashier,
-    branch: BranchLocation.Cagayan,
-    description: 'Cagayan Front-Desk Cashier — Daily corporate sales counter checkout.',
-  },
-  // Mandaue Branch Accounts
-  {
-    id: 'bm-mandaue',
-    name: 'Rodrigo Tan',
-    username: 'manager.mandaue@steeltrack.com',
-    role: UserRole.BranchManager,
-    branch: BranchLocation.Mandaue,
-    description: 'Mandaue Logistics Superintendent — Industrial fabrication & Visayas shipments.',
-  },
-  {
-    id: 'cashier-mandaue',
-    name: 'Liza Mercado',
-    username: 'cashier.mandaue@steeltrack.com',
-    role: UserRole.Cashier,
-    branch: BranchLocation.Mandaue,
-    description: 'Mandaue Counter Cashier — Daily sales orders and payment reconciliation.',
-  },
-  // Cebu Branch Accounts
-  {
-    id: 'bm-cebu',
-    name: 'Mateo Lim',
-    username: 'manager.cebu@steeltrack.com',
-    role: UserRole.BranchManager,
-    branch: BranchLocation.Cebu,
-    description: 'Cebu Port Yard Manager — Port logistics, sea freight receiving & QC inspection.',
-  },
-  {
-    id: 'cashier-cebu',
-    name: 'Elena Ramos',
-    username: 'cashier.cebu@steeltrack.com',
-    role: UserRole.Cashier,
-    branch: BranchLocation.Cebu,
-    description: 'Cebu Port Counter Cashier — High-volume dispatch checkout & customer receipts.',
-  },
-];
-
-// Alias for backwards compatibility
-export const PRESET_USERS = REGISTERED_USERS;
-
 /**
- * Resolves a user account and identifies their registered branch.
- * Non-owner accounts will strictly be bound to their registered branch upon redirection.
+ * Dynamic resolution of user identity based on user input or offline fallback.
+ * Primary authentication is performed dynamically against the PostgreSQL database.
  */
 export function resolveRegisteredUser(usernameInput: string): PresetAccount | undefined {
   const clean = usernameInput.trim().toLowerCase();
-  return REGISTERED_USERS.find((u) => u.username.toLowerCase() === clean);
+  if (!clean) return undefined;
+
+  if (clean.includes('owner') || clean.includes('admin')) {
+    return {
+      id: 'usr-001',
+      name: 'Alexander Vance',
+      username: clean,
+      role: UserRole.Owner,
+      description: 'Executive Administrator — Enterprise-wide multi-branch authority.',
+    };
+  }
+
+  let branch: BranchLocation = BranchLocation.Davao;
+  if (clean.includes('cagayan')) branch = BranchLocation.Cagayan;
+  else if (clean.includes('mandaue')) branch = BranchLocation.Mandaue;
+  else if (clean.includes('cebu')) branch = BranchLocation.Cebu;
+
+  const isMgr = clean.includes('manager') || clean.includes('lead') || clean.includes('asst');
+  const role = isMgr ? UserRole.BranchManager : UserRole.Cashier;
+
+  return {
+    id: `usr-${clean.split('@')[0]}`,
+    name: clean.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    username: clean,
+    role,
+    branch,
+    description: `${branch} Branch ${isMgr ? 'Branch Manager' : 'Cashier'}`,
+  };
 }

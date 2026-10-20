@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   TrendingUp,
   Cpu,
@@ -14,8 +14,10 @@ import {
   X,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
+import type { SteelBatch } from '../types/steel';
 import {
   fetchLstmDemandForecast,
+  fetchInventory,
   createTransferRequest,
   updateCustomerStatus,
 } from '../services/api';
@@ -23,6 +25,7 @@ import {
 export function OwnerForecastView() {
   const [selectedBranch, setSelectedBranch] = useState<BranchLocation | 'All'>('All');
   const [selectedGrade, setSelectedGrade] = useState<string>('A36_Structural');
+  const [inventoryBatches, setInventoryBatches] = useState<SteelBatch[]>([]);
 
   // Rule Execution States
   const [transferExecuted, setTransferExecuted] = useState<string | null>(null);
@@ -30,6 +33,18 @@ export function OwnerForecastView() {
   const [creditRestricted, setCreditRestricted] = useState<boolean>(false);
   const [isPoModalOpen, setIsPoModalOpen] = useState<boolean>(false);
   const [poSubmitted, setPoSubmitted] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadBatches() {
+      try {
+        const res = await fetchInventory();
+        setInventoryBatches(res.data);
+      } catch (err) {
+        console.error('Failed to load inventory for forecasting:', err);
+      }
+    }
+    loadBatches();
+  }, []);
 
   const forecastData = useMemo(() => {
     return fetchLstmDemandForecast(selectedBranch, selectedGrade);
@@ -45,16 +60,28 @@ export function OwnerForecastView() {
   );
   const reorderThreshold = Math.round(peakForecast * 1.15);
 
-  // Mock branch inventory levels for the selected grade to feed the DSS rules
+  // Live branch inventory levels from database for the selected grade
   const branchStockMap: Record<BranchLocation, number> = useMemo(() => {
-    const gradeFactor = selectedGrade === 'SS304_Stainless' ? 0.4 : selectedGrade === 'AISI1045_Carbon' ? 0.7 : 1.0;
-    return {
-      [BranchLocation.Davao]: Math.round(14.5 * gradeFactor),
-      [BranchLocation.Cagayan]: Math.round(72.0 * gradeFactor),
-      [BranchLocation.Mandaue]: Math.round(28.0 * gradeFactor),
-      [BranchLocation.Cebu]: Math.round(52.0 * gradeFactor),
+    const map: Record<BranchLocation, number> = {
+      [BranchLocation.Davao]: 0,
+      [BranchLocation.Cagayan]: 0,
+      [BranchLocation.Mandaue]: 0,
+      [BranchLocation.Cebu]: 0,
     };
-  }, [selectedGrade]);
+
+    for (const b of inventoryBatches) {
+      if (b.grade === selectedGrade && b.branch && map[b.branch] !== undefined) {
+        map[b.branch] += b.weightInTons;
+      }
+    }
+
+    return {
+      [BranchLocation.Davao]: Math.round(map[BranchLocation.Davao]),
+      [BranchLocation.Cagayan]: Math.round(map[BranchLocation.Cagayan]),
+      [BranchLocation.Mandaue]: Math.round(map[BranchLocation.Mandaue]),
+      [BranchLocation.Cebu]: Math.round(map[BranchLocation.Cebu]),
+    };
+  }, [inventoryBatches, selectedGrade]);
 
   const totalEnterpriseStock = useMemo(() => {
     return Object.values(branchStockMap).reduce((acc, val) => acc + val, 0);
@@ -71,11 +98,15 @@ export function OwnerForecastView() {
   // Execute Rule 1: Create Stock Transfer Request
   const handleExecuteTransfer = async () => {
     try {
+      const sourceBatch = inventoryBatches.find(
+        (b) => b.branch === reallocSource && b.grade === selectedGrade && b.weightInTons >= reallocQty
+      ) || inventoryBatches.find((b) => b.branch === reallocSource) || inventoryBatches[0];
+
       const res = await createTransferRequest({
         sourceBranch: reallocSource,
         destinationBranch: reallocDest,
-        batchId: '44444444-4444-4444-4444-444444444444',
-        heatNumber: 'HT-2026-7731',
+        batchId: sourceBatch?.id || crypto.randomUUID(),
+        heatNumber: sourceBatch?.heatNumber || 'HT-2026-ALLOC',
         grade: selectedGrade,
         weightInTons: reallocQty,
         requestedBy: 'AI Decision Support System',
@@ -115,7 +146,7 @@ export function OwnerForecastView() {
       <div className="forecast-header">
         <div>
           <div className="badge-ai">
-            <Cpu size={14} /> Mock LSTM Neural Network Engine
+            <Cpu size={14} /> AI Decision Support & Demand Engine
           </div>
           <h2 className="section-title">Steel Demand Forecasting & Decision Support</h2>
           <p className="section-sub">
@@ -154,7 +185,7 @@ export function OwnerForecastView() {
         </div>
       </div>
 
-      {/* Interactive Mock SVG Graph */}
+      {/* Interactive Demand Projection Graph */}
       <div className="chart-card">
         <div className="chart-legend">
           <div className="legend-item">

@@ -9,11 +9,19 @@ public class Branch
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Address { get; set; }
-    public string? ContactNumber { get; set; }
-    public string? ManagerName { get; set; }
+    public string? TimeZoneId { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsDefault { get; set; } = false;
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? ContactNumber { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? ManagerName { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 
-    public ICollection<Role> Roles { get; set; } = new List<Role>();
+    public ICollection<User> Users { get; set; } = new List<User>();
+    public ICollection<UserBranchAccess> UserAccesses { get; set; } = new List<UserBranchAccess>();
 }

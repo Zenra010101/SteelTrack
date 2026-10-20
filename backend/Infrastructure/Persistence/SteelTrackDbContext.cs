@@ -22,6 +22,7 @@ public class SteelTrackDbContext : DbContext
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductBatch> ProductBatches => Set<ProductBatch>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserBranchAccess> UserBranchAccesses => Set<UserBranchAccess>();
     public DbSet<InventoryAdjustmentRequest> InventoryAdjustmentRequests => Set<InventoryAdjustmentRequest>();
     public DbSet<InventoryAdjustmentRequestLine> InventoryAdjustmentRequestLines => Set<InventoryAdjustmentRequestLine>();
     public DbSet<Sale> Sales => Set<Sale>();
@@ -49,21 +50,33 @@ public class SteelTrackDbContext : DbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-        // Global Convention: Ensure all string properties map to PostgreSQL 'varchar' instead of 'text'
+        var guidConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.StringToGuidConverter();
+
+        // Global Convention: Map ID and Foreign Key strings to PostgreSQL 'uuid', and others to 'varchar'
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
+            if (entityType.ClrType == typeof(SteelBatch)) continue;
+
             foreach (var property in entityType.GetProperties())
             {
                 if (property.ClrType == typeof(string))
                 {
-                    var maxLength = property.GetMaxLength();
-                    if (maxLength.HasValue)
+                    if (property.Name == "Id" || (property.Name.EndsWith("Id") && property.Name != "TimeZoneId" && property.Name != "TaxId"))
                     {
-                        property.SetColumnType($"varchar({maxLength.Value})");
+                        property.SetValueConverter(guidConverter);
+                        property.SetColumnType("uuid");
                     }
                     else
                     {
-                        property.SetColumnType("varchar");
+                        var maxLength = property.GetMaxLength();
+                        if (maxLength.HasValue)
+                        {
+                            property.SetColumnType($"varchar({maxLength.Value})");
+                        }
+                        else
+                        {
+                            property.SetColumnType("varchar");
+                        }
                     }
                 }
             }

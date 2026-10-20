@@ -16,7 +16,7 @@ import {
 import { BranchLocation } from '../types/auth';
 import type { PosTransaction, PosCartItem, SteelCategory } from '../types/pos';
 import type { SteelBatch } from '../types/steel';
-import { fetchInventory, processPosSale } from '../services/api';
+import { fetchInventory, processPosSale, fetchCustomers } from '../services/api';
 
 interface CashierPosViewProps {
   branch: BranchLocation;
@@ -33,14 +33,6 @@ const GRADE_PRICE_MAP: Record<string, number> = {
   ToolSteel_D2: 3800,
 };
 
-const COMMON_CUSTOMERS = [
-  { name: 'Mindanao Steelworks Corp.', tin: '241-890-112-000' },
-  { name: 'Apex Construction Inc.', tin: '109-445-882-000' },
-  { name: 'MegaBuild Infrastructure', tin: '330-192-551-000' },
-  { name: 'Port Marine Fabricators', tin: '512-889-320-000' },
-  { name: 'Davao Prime Engineering', tin: '419-332-108-000' },
-];
-
 export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   const [batches, setBatches] = useState<SteelBatch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -53,7 +45,8 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   const [cart, setCart] = useState<PosCartItem[]>([]);
 
   // Customer & Payment State
-  const [selectedCustomerName, setSelectedCustomerName] = useState<string>(COMMON_CUSTOMERS[0].name);
+  const [customers, setCustomers] = useState<{ name: string; tin?: string }[]>([]);
+  const [selectedCustomerName, setSelectedCustomerName] = useState<string>('Walk-in Client');
   const [customCustomerInput, setCustomCustomerInput] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque'>('Cash');
   const [amountTendered, setAmountTendered] = useState<number>(0);
@@ -68,13 +61,22 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const invResult = await fetchInventory(undefined, undefined, undefined, branch);
+      const [invResult, custList] = await Promise.all([
+        fetchInventory(undefined, undefined, undefined, branch),
+        fetchCustomers(branch),
+      ]);
 
       // Only batches marked 'Available' at THIS branch can be sold
       const available = invResult.data.filter(
         (b) => b.branch === branch && (b.status === 'Available' || b.status === 'QualityCheck') && b.weightInTons > 0
       );
       setBatches(available);
+
+      if (custList && custList.length > 0) {
+        const mappedCust = custList.map((c) => ({ name: c.customerName, tin: c.tin }));
+        setCustomers(mappedCust);
+        setSelectedCustomerName(mappedCust[0].name);
+      }
     } catch (err) {
       console.error('Failed loading POS data:', err);
     } finally {
@@ -205,7 +207,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
     if (cart.length === 0) return;
 
     const customer = selectedCustomerName === 'Other' ? customCustomerInput || 'Cash Customer' : selectedCustomerName;
-    const foundTin = COMMON_CUSTOMERS.find((c) => c.name === customer)?.tin;
+    const foundTin = customers.find((c) => c.name === customer)?.tin;
 
     const newTx = await processPosSale({
       branch,
@@ -392,7 +394,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   onChange={(e) => setSelectedCustomerName(e.target.value)}
                   style={{ width: '100%', fontSize: '0.85rem' }}
                 >
-                  {COMMON_CUSTOMERS.map((c) => (
+                  {customers.map((c) => (
                     <option key={c.name} value={c.name}>
                       {c.name}
                     </option>

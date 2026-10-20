@@ -14,7 +14,7 @@ import {
   UserPlus,
   ShieldAlert,
 } from 'lucide-react';
-import { PRESET_USERS, UserRole, BranchLocation } from '../types/auth';
+import { UserRole, BranchLocation } from '../types/auth';
 import type { BranchRecord } from '../types/branch';
 import {
   fetchBranches,
@@ -263,16 +263,15 @@ export function SystemManagementView() {
             </tr>
           </thead>
           <tbody>
-            {(staffUsers.length > 0 ? staffUsers : PRESET_USERS.map((p) => ({
-              id: p.id,
-              fullName: p.name,
-              email: p.username,
-              roleName: p.role,
-              branchName: p.branch,
-              isActive: true,
-              createdAt: '2026-01-01',
-            }))).map((user) => (
-              <tr key={user.id}>
+            {staffUsers.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                  No staff users found in database. Click <strong>Add Staff User</strong> to create one.
+                </td>
+              </tr>
+            ) : (
+              staffUsers.map((user) => (
+                <tr key={user.id}>
                 <td style={{ fontWeight: 600 }}>{user.fullName}</td>
                 <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#64748B' }}>{user.email}</td>
                 <td>
@@ -304,7 +303,8 @@ export function SystemManagementView() {
                   </button>
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>

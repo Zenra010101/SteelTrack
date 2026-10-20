@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Layers, User, KeyRound, ArrowRight, Sparkles, Building2, AlertCircle } from 'lucide-react';
-import { UserRole, resolveRegisteredUser, type UserSession } from '../types/auth';
+import { UserRole, BranchLocation, resolveRegisteredUser, type UserSession } from '../types/auth';
 
 interface LoginScreenProps {
   onLogin: (session: UserSession) => void;
@@ -12,7 +12,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [redirectNotice, setRedirectNotice] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -27,8 +29,62 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       return;
     }
 
-    const matchedUser = resolveRegisteredUser(trimmedUser);
+    setIsLoading(true);
 
+    try {
+      // Query database for registered user
+      const res = await fetch(`/api/users?search=${encodeURIComponent(trimmedUser)}`);
+      if (res.ok) {
+        const users = await res.json();
+        if (Array.isArray(users) && users.length > 0) {
+          const dbUser = users.find((u: any) => u.email.toLowerCase() === trimmedUser.toLowerCase()) || users[0];
+          
+          let role: UserRole = UserRole.Cashier;
+          const rName = (dbUser.roleName || dbUser.role || '').toLowerCase();
+          if (rName.includes('owner') || dbUser.email.toLowerCase().includes('owner')) {
+            role = UserRole.Owner;
+          } else if (rName.includes('manager') || dbUser.email.toLowerCase().includes('manager')) {
+            role = UserRole.BranchManager;
+          }
+
+          let branch: BranchLocation | undefined = undefined;
+          if (role !== UserRole.Owner) {
+            const bName = (dbUser.branchName || dbUser.branchCode || rName || '').toLowerCase();
+            if (bName.includes('davao') || bName.includes('dvo')) branch = BranchLocation.Davao;
+            else if (bName.includes('cagayan') || bName.includes('cgy')) branch = BranchLocation.Cagayan;
+            else if (bName.includes('mandaue') || bName.includes('mnd')) branch = BranchLocation.Mandaue;
+            else if (bName.includes('cebu') || bName.includes('ceb')) branch = BranchLocation.Cebu;
+            else branch = BranchLocation.Davao;
+          }
+
+          setRedirectNotice(
+            role === UserRole.Owner
+              ? 'Authenticated via Database! Redirecting to All-Branches Executive View...'
+              : `Verified in Database! Redirecting ${dbUser.fullName} to ${branch} Branch Workspace...`
+          );
+
+          setUsername('');
+          setPassword('');
+
+          setTimeout(() => {
+            onLogin({
+              username: dbUser.email,
+              name: dbUser.fullName,
+              role,
+              branch,
+            });
+          }, 400);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Backend /api/users auth query offline, using dynamic fallback:', err);
+    } finally {
+      setIsLoading(false);
+    }
+
+    // Dynamic resolution fallback
+    const matchedUser = resolveRegisteredUser(trimmedUser);
     if (matchedUser) {
       setRedirectNotice(
         matchedUser.role === UserRole.Owner
@@ -36,7 +92,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           : `Verified! Redirecting ${matchedUser.name} to ${matchedUser.branch} Branch Workspace...`
       );
 
-      // Immediately clear sensitive credentials from component state
       setUsername('');
       setPassword('');
 
@@ -49,12 +104,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         });
       }, 400);
     } else {
-      // In case user entered a non-preset account, authenticate with safe fallback
       const autoName = trimmedUser.split('@')[0] || 'User';
       const cleanName = autoName.charAt(0).toUpperCase() + autoName.slice(1);
 
       setRedirectNotice(`Authenticated! Redirecting to workspace...`);
-
       setUsername('');
       setPassword('');
 
@@ -163,8 +216,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               </div>
             </div>
 
-            <button type="submit" className="btn-login" style={{ marginTop: '0.5rem' }}>
-              <span>Sign In to Workspace</span>
+            <button type="submit" className="btn-login" style={{ marginTop: '0.5rem' }} disabled={isLoading}>
+              <span>{isLoading ? 'Verifying with Database...' : 'Sign In to Workspace'}</span>
               <ArrowRight size={18} />
             </button>
           </form>

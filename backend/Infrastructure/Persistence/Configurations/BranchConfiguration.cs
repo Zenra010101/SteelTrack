@@ -18,13 +18,13 @@ public class BranchConfiguration : IEntityTypeConfiguration<Branch>
 
         builder.Property(b => b.Name).IsRequired().HasMaxLength(100);
         builder.Property(b => b.Address).HasMaxLength(255);
-        builder.Property(b => b.ContactNumber).HasMaxLength(50);
-        builder.Property(b => b.ManagerName).HasMaxLength(100);
+        builder.Property(b => b.TimeZoneId).HasMaxLength(50);
         builder.Property(b => b.IsActive).IsRequired().HasDefaultValue(true);
+        builder.Property(b => b.IsDefault).IsRequired().HasDefaultValue(false);
 
-        builder.HasMany(b => b.Roles)
-            .WithOne(r => r.Branch)
-            .HasForeignKey(r => r.BranchId)
+        builder.HasMany(b => b.Users)
+            .WithOne(u => u.Branch)
+            .HasForeignKey(u => u.BranchId)
             .OnDelete(DeleteBehavior.SetNull);
     }
 }

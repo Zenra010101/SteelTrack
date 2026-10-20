@@ -374,7 +374,7 @@ export function App() {
             <AuditLogView />
           )}
 
-          {/* TAB 4: MOCK LSTM DEMAND FORECASTING (OWNER ONLY) */}
+          {/* TAB 4: AI LSTM DEMAND FORECASTING (OWNER ONLY) */}
           {activeTab === 'forecast' && userSession.role === UserRole.Owner && (
             <OwnerForecastView />
           )}

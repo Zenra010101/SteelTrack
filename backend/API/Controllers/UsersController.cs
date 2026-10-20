@@ -34,7 +34,7 @@ public class UsersController : ControllerBase
         var query = _dbContext.Users
             .AsNoTracking()
             .Include(u => u.Role)
-                .ThenInclude(r => r.Branch)
+            .Include(u => u.Branch)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -47,7 +47,7 @@ public class UsersController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(branchId))
         {
-            query = query.Where(u => u.Role.BranchId == branchId);
+            query = query.Where(u => u.BranchId == branchId);
         }
 
         if (!string.IsNullOrWhiteSpace(roleId))
@@ -70,9 +70,11 @@ public class UsersController : ControllerBase
                 u.IsActive,
                 u.RoleId,
                 RoleName = u.Role != null ? u.Role.Name : string.Empty,
-                BranchId = u.Role != null ? u.Role.BranchId : null,
-                BranchName = u.Role != null && u.Role.Branch != null ? u.Role.Branch.Name : null,
-                BranchCode = u.Role != null && u.Role.Branch != null ? u.Role.Branch.Code : null,
+                BranchId = u.BranchId,
+                BranchName = u.Branch != null ? u.Branch.Name : null,
+                BranchCode = u.Branch != null ? u.Branch.Code : null,
+                u.IsMainOwner,
+                u.CanViewAllBranches,
                 u.CreatedAt,
                 u.UpdatedAt
             })
@@ -91,7 +93,7 @@ public class UsersController : ControllerBase
         var user = await _dbContext.Users
             .AsNoTracking()
             .Include(u => u.Role)
-                .ThenInclude(r => r.Branch)
+            .Include(u => u.Branch)
             .FirstOrDefaultAsync(u => u.Id == id);
 
         if (user == null) return NotFound(new { message = $"User with ID '{id}' not found." });
@@ -104,9 +106,11 @@ public class UsersController : ControllerBase
             user.IsActive,
             user.RoleId,
             RoleName = user.Role?.Name,
-            BranchId = user.Role?.BranchId,
-            BranchName = user.Role?.Branch?.Name,
-            BranchCode = user.Role?.Branch?.Code,
+            BranchId = user.BranchId,
+            BranchName = user.Branch?.Name,
+            BranchCode = user.Branch?.Code,
+            user.IsMainOwner,
+            user.CanViewAllBranches,
             user.CreatedAt,
             user.UpdatedAt
         });
@@ -120,15 +124,13 @@ public class UsersController : ControllerBase
 
         var roles = await _dbContext.Roles
             .AsNoTracking()
-            .Include(r => r.Branch)
             .OrderBy(r => r.Name)
             .Select(r => new
             {
                 r.Id,
                 r.Name,
                 r.Description,
-                r.BranchId,
-                BranchName = r.Branch != null ? r.Branch.Name : null
+                r.CreatedAt
             })
             .ToListAsync();
 
@@ -156,6 +158,9 @@ public class UsersController : ControllerBase
             FullName = request.FullName?.Trim() ?? string.Empty,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(string.IsNullOrWhiteSpace(request.Password) ? "SteelTrack@2025" : request.Password),
             RoleId = request.RoleId,
+            BranchId = string.IsNullOrWhiteSpace(request.BranchId) ? null : request.BranchId.Trim(),
+            IsMainOwner = request.IsMainOwner,
+            CanViewAllBranches = request.CanViewAllBranches,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow
         };
@@ -169,6 +174,7 @@ public class UsersController : ControllerBase
             user.Email,
             user.FullName,
             user.RoleId,
+            user.BranchId,
             user.IsActive,
             user.CreatedAt
         });
@@ -190,6 +196,15 @@ public class UsersController : ControllerBase
         if (!string.IsNullOrWhiteSpace(request.RoleId))
             user.RoleId = request.RoleId;
 
+        if (request.BranchId != null)
+            user.BranchId = string.IsNullOrWhiteSpace(request.BranchId) ? null : request.BranchId.Trim();
+
+        if (request.IsMainOwner.HasValue)
+            user.IsMainOwner = request.IsMainOwner.Value;
+
+        if (request.CanViewAllBranches.HasValue)
+            user.CanViewAllBranches = request.CanViewAllBranches.Value;
+
         if (request.IsActive.HasValue)
             user.IsActive = request.IsActive.Value;
 
@@ -206,6 +221,7 @@ public class UsersController : ControllerBase
             user.Email,
             user.FullName,
             user.RoleId,
+            user.BranchId,
             user.IsActive,
             user.UpdatedAt
         });
@@ -235,6 +251,9 @@ public class CreateUserRequest
     public string FullName { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string RoleId { get; set; } = string.Empty;
+    public string? BranchId { get; set; }
+    public bool IsMainOwner { get; set; } = false;
+    public bool CanViewAllBranches { get; set; } = false;
     public bool IsActive { get; set; } = true;
 }
 
@@ -242,6 +261,9 @@ public class UpdateUserRequest
 {
     public string? FullName { get; set; }
     public string? RoleId { get; set; }
+    public string? BranchId { get; set; }
+    public bool? IsMainOwner { get; set; }
+    public bool? CanViewAllBranches { get; set; }
     public bool? IsActive { get; set; }
     public string? Password { get; set; }
 }

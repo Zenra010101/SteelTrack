@@ -24,3 +24,12 @@ Thumbs.db
 USER_CREDENTIALS.*
 user_credentials.*
 
+# Database dumps, SQL and seed folders
+*.dump
+sql/
+**/sql/
+seed/
+**/seed/
+seeds/
+**/seeds/
+backend/steeltrack_supabase*.sql

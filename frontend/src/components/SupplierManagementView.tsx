@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Plus,
   Search,
@@ -13,8 +13,10 @@ import {
   Check,
   Download,
   Trash2,
+  RefreshCw,
 } from 'lucide-react';
 import type { SupplierMaster, SupplierAttachment } from '../types/suppliers';
+import { fetchSuppliers, createSupplier } from '../services/api';
 
 interface CountryOption {
   name: string;
@@ -39,112 +41,9 @@ const COUNTRIES: CountryOption[] = [
   { name: 'Thailand', code: 'THA', flag: '🇹🇭' },
 ];
 
-const INITIAL_SUPPLIERS: SupplierMaster[] = [
-  {
-    id: 'sup-101',
-    supplierCode: 'SUP-JPN-001',
-    companyName: 'Nippon Steel Corporation',
-    tin: '990-112-441-000',
-    countryOfOrigin: 'Japan',
-    paymentTermsDays: 60,
-    ratingScore: 5,
-    status: 'Active',
-    contacts: [
-      {
-        id: 'c-1',
-        supplierId: 'sup-101',
-        contactPerson: 'Kenji Sato',
-        designation: 'Export Sales Manager',
-        phone: '+81 3 6867 4111',
-        email: 'k.sato@nipponsteel.com',
-        isPrimary: true,
-      },
-    ],
-    attachments: [
-      {
-        id: 'att-1',
-        supplierId: 'sup-101',
-        fileName: 'Nippon_JIS_G3101_Mill_Test_Cert_2026.pdf',
-        fileType: 'Mill_Test_Certificate',
-        uploadDate: '2026-01-15',
-        fileUrl: '#',
-      },
-      {
-        id: 'att-2',
-        supplierId: 'sup-101',
-        fileName: 'ISO_9001_Quality_Compliance.pdf',
-        fileType: 'ISO_Certification',
-        uploadDate: '2026-02-01',
-        fileUrl: '#',
-      },
-    ],
-  },
-  {
-    id: 'sup-102',
-    supplierCode: 'SUP-KOR-004',
-    companyName: 'POSCO Steel Group',
-    tin: '881-332-901-000',
-    countryOfOrigin: 'South Korea',
-    paymentTermsDays: 45,
-    ratingScore: 5,
-    status: 'Active',
-    contacts: [
-      {
-        id: 'c-2',
-        supplierId: 'sup-102',
-        contactPerson: 'Min-jun Kim',
-        designation: 'Regional Logistics Lead',
-        phone: '+82 2 3457 0114',
-        email: 'mj.kim@posco.com',
-        isPrimary: true,
-      },
-    ],
-    attachments: [
-      {
-        id: 'att-3',
-        supplierId: 'sup-102',
-        fileName: 'POSCO_High_Tensile_Mill_Cert_EN10025.pdf',
-        fileType: 'Mill_Test_Certificate',
-        uploadDate: '2026-01-20',
-        fileUrl: '#',
-      },
-    ],
-  },
-  {
-    id: 'sup-103',
-    supplierCode: 'SUP-PHL-009',
-    companyName: 'SteelAsia Manufacturing Corp.',
-    tin: '000-891-224-000',
-    countryOfOrigin: 'Philippines',
-    paymentTermsDays: 30,
-    ratingScore: 4,
-    status: 'Active',
-    contacts: [
-      {
-        id: 'c-3',
-        supplierId: 'sup-103',
-        contactPerson: 'Eduardo Tan',
-        designation: 'Key Account Executive',
-        phone: '+63 2 8892 1000',
-        email: 'etan@steelasia.com',
-        isPrimary: true,
-      },
-    ],
-    attachments: [
-      {
-        id: 'att-4',
-        supplierId: 'sup-103',
-        fileName: 'SteelAsia_PNS_49_Rebar_Mill_Cert.pdf',
-        fileType: 'Mill_Test_Certificate',
-        uploadDate: '2026-02-10',
-        fileUrl: '#',
-      },
-    ],
-  },
-];
-
 export function SupplierManagementView() {
-  const [suppliers, setSuppliers] = useState<SupplierMaster[]>(INITIAL_SUPPLIERS);
+  const [suppliers, setSuppliers] = useState<SupplierMaster[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>('');
 
   // Modals
@@ -160,6 +59,22 @@ export function SupplierManagementView() {
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState<boolean>(false);
   const [termsDays, setTermsDays] = useState<number>(30);
   const [ratingScore, setRatingScore] = useState<number>(5);
+
+  const loadSuppliers = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchSuppliers(search);
+      setSuppliers(data);
+    } catch (err) {
+      console.error('Failed to load suppliers from database:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSuppliers();
+  }, []);
 
   // Helper to generate automated code based on ISO-3 and existing sequence
   const generateSupplierCode = (countryCode: string) => {
@@ -197,12 +112,11 @@ export function SupplierManagementView() {
     setSupplierCode(generateSupplierCode(country.code));
   };
 
-  const handleAddSupplier = (e: React.FormEvent) => {
+  const handleAddSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalCode = supplierCode || generateSupplierCode(selectedCountry.code);
 
-    const newSup: SupplierMaster = {
-      id: `sup-${Date.now()}`,
+    const newSup: Partial<SupplierMaster> = {
       supplierCode: finalCode,
       companyName,
       tin: tin || '000-000-000-000',
@@ -214,7 +128,12 @@ export function SupplierManagementView() {
       attachments: [],
     };
 
-    setSuppliers([newSup, ...suppliers]);
+    try {
+      const created = await createSupplier(newSup);
+      setSuppliers((prev) => [created, ...prev]);
+    } catch (err) {
+      console.error('Failed to create supplier in database:', err);
+    }
     setIsAddModalOpen(false);
   };
 
@@ -332,7 +251,22 @@ export function SupplierManagementView() {
             </tr>
           </thead>
           <tbody>
-            {filteredSuppliers.map((s) => (
+            {loading ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <RefreshCw size={18} className="animate-spin" /> Loading suppliers from database...
+                  </div>
+                </td>
+              </tr>
+            ) : filteredSuppliers.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>
+                  No registered suppliers found in database. Click <strong>Add Supplier</strong> to create one.
+                </td>
+              </tr>
+            ) : (
+              filteredSuppliers.map((s) => (
               <tr key={s.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.9rem', background: '#FFFFFF' }}>
                 <td style={{ padding: '0.85rem 1rem' }}>
                   <div style={{ fontWeight: 700, color: '#0284C7', fontFamily: 'monospace' }}>{s.supplierCode}</div>
@@ -383,7 +317,7 @@ export function SupplierManagementView() {
                   </button>
                 </td>
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>
