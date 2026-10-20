@@ -25,6 +25,57 @@ public static class DatabaseInitializer
                 """ALTER TABLE "Sales" ADD COLUMN IF NOT EXISTS "SplitPaymentsJson" text NULL;""");
             await context.Database.ExecuteSqlRawAsync(
                 """
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "UnitPrice" numeric NOT NULL DEFAULT 0;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "CostPrice" numeric NOT NULL DEFAULT 0;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "ReorderLevel" integer NOT NULL DEFAULT 10;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "StockQuantity" integer NOT NULL DEFAULT 0;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "Barcode" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "Diameter" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "Schedule" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "Width" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "Height" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "MaterialType" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "SupplierId" uuid NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "Thickness" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "Length" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "Grade" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "Size" character varying(100) NULL;
+                ALTER TABLE "Products" ADD COLUMN IF NOT EXISTS "IsActive" boolean NOT NULL DEFAULT TRUE;
+                """);
+            await context.Database.ExecuteSqlRawAsync(
+                """
+                CREATE TABLE IF NOT EXISTS "StockTransfers" (
+                    "Id" text NOT NULL PRIMARY KEY,
+                    "TransferNumber" character varying(100) NOT NULL,
+                    "BatchId" character varying(100) NOT NULL,
+                    "HeatNumber" character varying(100) NOT NULL,
+                    "SourceBranch" character varying(100) NOT NULL,
+                    "DestinationBranch" character varying(100) NOT NULL,
+                    "WeightInTons" numeric NOT NULL DEFAULT 0,
+                    "RequestedBy" character varying(200) NOT NULL,
+                    "ApprovedBy" character varying(200) NULL,
+                    "Status" character varying(50) NOT NULL DEFAULT 'Pending_Approval',
+                    "Reason" text NULL,
+                    "TrackingNumber" character varying(100) NULL,
+                    "RequestedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "ShippedAt" timestamp with time zone NULL,
+                    "CompletedAt" timestamp with time zone NULL,
+                    "RejectedAt" timestamp with time zone NULL,
+                    "RejectionReason" text NULL
+                );
+                CREATE TABLE IF NOT EXISTS "UserBranchAccesses" (
+                    "Id" uuid NOT NULL PRIMARY KEY,
+                    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "UpdatedAt" timestamp with time zone NULL,
+                    "UserId" uuid NOT NULL,
+                    "BranchId" uuid NOT NULL,
+                    "CanView" boolean NOT NULL DEFAULT TRUE,
+                    "CanOperate" boolean NOT NULL DEFAULT TRUE,
+                    "CreatedById" uuid NULL
+                );
+                """);
+            await context.Database.ExecuteSqlRawAsync(
+                """
                 CREATE TABLE IF NOT EXISTS "ApprovalRequests" (
                     "Id" uuid NOT NULL PRIMARY KEY,
                     "CreatedAt" timestamp with time zone NOT NULL,

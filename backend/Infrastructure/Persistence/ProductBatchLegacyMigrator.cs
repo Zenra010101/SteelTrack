@@ -1,3 +1,4 @@
+using System;
 using GensanPOS.Infrastructure.Services;
 using GensanPOS.Domain.Entities;
 using GensanPOS.Infrastructure.Persistence;
@@ -11,22 +12,29 @@ public static class ProductBatchLegacyMigrator
 {
     public static async Task ApplyAsync(AppDbContext context, ILogger? logger = null)
     {
-        var productsNeedingBatch = await context.Products
-            .Where(p => p.StockQuantity > 0)
-            .Where(p => !context.ProductBatches.Any(b => b.ProductId == p.Id))
-            .ToListAsync();
-
-        if (productsNeedingBatch.Count == 0)
-            return;
-
-        foreach (var product in productsNeedingBatch)
+        try
         {
-            context.ProductBatches.Add(ProductBatchStockHelper.CreateLegacyBatch(product));
-        }
+            var productsNeedingBatch = await context.Products
+                .Where(p => p.StockQuantity > 0)
+                .Where(p => !context.ProductBatches.Any(b => b.ProductId == p.Id))
+                .ToListAsync();
 
-        await context.SaveChangesAsync();
-        logger?.LogInformation(
-            "Product batch legacy migration: created {Count} LEGACY batch(es) for existing stock.",
-            productsNeedingBatch.Count);
+            if (productsNeedingBatch.Count == 0)
+                return;
+
+            foreach (var product in productsNeedingBatch)
+            {
+                context.ProductBatches.Add(ProductBatchStockHelper.CreateLegacyBatch(product));
+            }
+
+            await context.SaveChangesAsync();
+            logger?.LogInformation(
+                "Product batch legacy migration: created {Count} LEGACY batch(es) for existing stock.",
+                productsNeedingBatch.Count);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "ProductBatchLegacyMigrator skipped due to schema differences: {Message}", ex.Message);
+        }
     }
 }

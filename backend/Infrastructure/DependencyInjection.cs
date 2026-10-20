@@ -24,6 +24,8 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options =>
         {
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+
             if (connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase))
                 options.UseNpgsql(connectionString);
             else if (connectionString.Contains("Initial Catalog=", StringComparison.OrdinalIgnoreCase) ||

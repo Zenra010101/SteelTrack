@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using GensanPOS.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,32 +11,39 @@ public static class ProductBarcodeBackfillMigrator
 {
     public static async Task ApplyAsync(AppDbContext context, ILogger? logger = null)
     {
-        var existingCodes = await context.Products
-            .AsNoTracking()
-            .Where(p => p.Barcode != null && p.Barcode != "")
-            .Select(p => p.Barcode!)
-            .ToListAsync();
-
-        var taken = new HashSet<string>(existingCodes, StringComparer.OrdinalIgnoreCase);
-
-        var missing = await context.Products
-            .Where(p => p.IsActive && (p.Barcode == null || p.Barcode == ""))
-            .ToListAsync();
-
-        if (missing.Count == 0)
-            return;
-
-        foreach (var product in missing)
+        try
         {
-            var barcode = ProductBarcodeGenerator.GenerateUnique(product.Sku, taken.Contains);
-            product.Barcode = barcode;
-            product.UpdatedAt = DateTime.UtcNow;
-            taken.Add(barcode);
-        }
+            var existingCodes = await context.Products
+                .AsNoTracking()
+                .Where(p => p.Barcode != null && p.Barcode != "")
+                .Select(p => p.Barcode!)
+                .ToListAsync();
 
-        await context.SaveChangesAsync();
-        logger?.LogInformation(
-            "Product barcode backfill: assigned barcodes to {Count} active product(s).",
-            missing.Count);
+            var taken = new HashSet<string>(existingCodes, StringComparer.OrdinalIgnoreCase);
+
+            var missing = await context.Products
+                .Where(p => p.IsActive && (p.Barcode == null || p.Barcode == ""))
+                .ToListAsync();
+
+            if (missing.Count == 0)
+                return;
+
+            foreach (var product in missing)
+            {
+                var barcode = ProductBarcodeGenerator.GenerateUnique(product.Sku, taken.Contains);
+                product.Barcode = barcode;
+                product.UpdatedAt = DateTime.UtcNow;
+                taken.Add(barcode);
+            }
+
+            await context.SaveChangesAsync();
+            logger?.LogInformation(
+                "Product barcode backfill: assigned barcodes to {Count} active product(s).",
+                missing.Count);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogWarning(ex, "ProductBarcodeBackfillMigrator skipped due to schema differences: {Message}", ex.Message);
+        }
     }
 }

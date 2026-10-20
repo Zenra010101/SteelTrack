@@ -1,18 +1,16 @@
 using System;
+using GensanPOS.Domain.Common;
 using GensanPOS.Domain.Entities;
 
 namespace SteelTrack.Domain.Entities;
 
-public class UserBranchAccess
+public class UserBranchAccess : BaseEntity
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-    public string UserId { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
     public User User { get; set; } = null!;
-    public string BranchId { get; set; } = string.Empty;
+    public Guid BranchId { get; set; }
     public Branch Branch { get; set; } = null!;
     public bool CanView { get; set; } = true;
     public bool CanOperate { get; set; } = true;
-    public string? CreatedById { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; set; }
+    public Guid? CreatedById { get; set; }
 }

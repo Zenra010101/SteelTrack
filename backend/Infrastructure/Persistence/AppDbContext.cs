@@ -112,6 +112,9 @@ public class AppDbContext : DbContext
             e.Property(x => x.UnitOfMeasure).HasMaxLength(20);
             e.Property(x => x.UnitPrice).HasPrecision(18, 2);
             e.Property(x => x.CostPrice).HasPrecision(18, 2);
+            e.Property(x => x.StockQuantity)
+                .HasColumnType("numeric")
+                .HasConversion(v => (decimal)v, v => (int)v);
             e.HasOne(x => x.Category).WithMany(c => c.Products).HasForeignKey(x => x.CategoryId);
             e.HasOne(x => x.Supplier).WithMany().HasForeignKey(x => x.SupplierId).IsRequired(false);
         });
