@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.StockReceiving;
+using SteelTrack.Application.DTOs.StockReceiving;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IStockReceivingExportService
 {

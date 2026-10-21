@@ -1,10 +1,10 @@
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace GensanPOS.Infrastructure.Persistence.Migrations;
+namespace SteelTrack.Infrastructure.Persistence.Migrations;
 
 [DbContext(typeof(AppDbContext))]
 [Migration("20260611020000_ReceivingBatchSellingPrice")]

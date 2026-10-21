@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Products;
+using SteelTrack.Application.DTOs.Products;
 
-namespace GensanPOS.Application.DTOs.Alerts;
+namespace SteelTrack.Application.DTOs.Alerts;
 
 public class AlertsSummaryDto
 {

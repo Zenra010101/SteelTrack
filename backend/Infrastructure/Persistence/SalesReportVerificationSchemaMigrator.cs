@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 public static class SalesReportVerificationSchemaMigrator
 {

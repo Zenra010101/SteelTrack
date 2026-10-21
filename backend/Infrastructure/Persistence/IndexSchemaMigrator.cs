@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 /// <summary>
 /// Applies performance indexes to existing databases (SQLite dev + PostgreSQL production).

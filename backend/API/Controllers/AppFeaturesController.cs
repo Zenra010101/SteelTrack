@@ -1,11 +1,11 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs;
-using GensanPOS.Infrastructure.Settings;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs;
+using SteelTrack.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace GensanPOS.API.Controllers;
+namespace SteelTrack.Api.Controllers;
 
 [ApiController]
 [Route("api/app-features")]

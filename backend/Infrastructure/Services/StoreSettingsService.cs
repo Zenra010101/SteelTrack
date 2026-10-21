@@ -1,11 +1,11 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Settings;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Settings;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class StoreSettingsService : IStoreSettingsService
 {

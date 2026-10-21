@@ -1,9 +1,9 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Interfaces;
-namespace GensanPOS.Infrastructure.Services;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Interfaces;
+namespace SteelTrack.Infrastructure.Services;
 
 public class AuditService : IAuditService
 {

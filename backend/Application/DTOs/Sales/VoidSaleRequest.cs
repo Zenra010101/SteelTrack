@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Sales;
+namespace SteelTrack.Application.DTOs.Sales;
 
 public class VoidSaleRequest
 {

@@ -1,14 +1,14 @@
 using ClosedXML.Excel;
 
-using GensanPOS.Application.DTOs.Inventory;
+using SteelTrack.Application.DTOs.Inventory;
 
-using GensanPOS.Application.Interfaces;
+using SteelTrack.Application.Interfaces;
 
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Infrastructure.Services.Reports;
 
 
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 
 
@@ -64,7 +64,7 @@ public class InventoryExportService : IInventoryExportService
 
             "On Hand",
 
-            "GensanPOS — Current Inventory",
+            "SteelTrack — Current Inventory",
 
             $"Total products: {rows.Count}",
 
@@ -166,7 +166,7 @@ public class InventoryExportService : IInventoryExportService
 
         return ReportDocumentHelper.BuildTablePdf(
 
-            "GensanPOS — Current Inventory",
+            "SteelTrack — Current Inventory",
 
             $"Total products: {rows.Count}",
 
@@ -208,7 +208,7 @@ public class InventoryExportService : IInventoryExportService
 
             "Movements",
 
-            "GensanPOS — Inventory Movements",
+            "SteelTrack — Inventory Movements",
 
             $"Total records: {data.Items.Count}",
 
@@ -300,7 +300,7 @@ public class InventoryExportService : IInventoryExportService
 
         return ReportDocumentHelper.BuildTablePdf(
 
-            "GensanPOS — Inventory Movements",
+            "SteelTrack — Inventory Movements",
 
             $"Total records: {data.Items.Count}",
 
@@ -330,7 +330,7 @@ public class InventoryExportService : IInventoryExportService
         var ws = ExportSpreadsheetHelper.BeginReport(
             wb,
             "Stock List",
-            "GensanPOS — Inventory Stock List",
+            "SteelTrack — Inventory Stock List",
             $"Total value at cost: {report.TotalValueAtCost:N2}",
             out var headerRow);
 
@@ -390,7 +390,7 @@ public class InventoryExportService : IInventoryExportService
         }).ToList();
 
         return ReportDocumentHelper.BuildTablePdf(
-            "GensanPOS — Inventory Stock List",
+            "SteelTrack — Inventory Stock List",
             $"Total value at cost: {report.TotalValueAtCost:N2}",
             new[] { "Product", "SKU", "Batch", "Received", "Original", "Remaining", "Cost", "Sell", "Value" },
             rows,

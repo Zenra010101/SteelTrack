@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Reports;
+namespace SteelTrack.Application.DTOs.Reports;
 
 /// <summary>Server-generated print timestamp (Asia/Manila). Read-only for clients.</summary>
 public class ReportPrintStampDto

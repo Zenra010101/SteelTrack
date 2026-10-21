@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Common;
+using SteelTrack.Domain.Common;
 
-namespace GensanPOS.Domain.Entities;
+namespace SteelTrack.Domain.Entities;
 
 /// <summary>
 /// Explicit sales deduction tied to a GRS — amount reduces reports on <see cref="DeductionDate"/> (return date), not original sale date.

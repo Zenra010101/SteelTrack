@@ -1,11 +1,11 @@
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 /// <summary>
 /// Periodically removes expense receipt image files from disk after retention

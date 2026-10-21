@@ -1,14 +1,14 @@
 using ClosedXML.Excel;
 
-using GensanPOS.Application.DTOs.Suppliers;
+using SteelTrack.Application.DTOs.Suppliers;
 
-using GensanPOS.Application.Interfaces;
+using SteelTrack.Application.Interfaces;
 
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Infrastructure.Services.Reports;
 
 
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 
 
@@ -60,7 +60,7 @@ public class SupplierExportService : ISupplierExportService
 
             "Suppliers",
 
-            "GensanPOS — Suppliers",
+            "SteelTrack — Suppliers",
 
             $"Total records: {list.Count}",
 
@@ -178,7 +178,7 @@ public class SupplierExportService : ISupplierExportService
 
         return ReportDocumentHelper.BuildTablePdf(
 
-            "GensanPOS — Suppliers",
+            "SteelTrack — Suppliers",
 
             $"Total records: {list.Count}",
 

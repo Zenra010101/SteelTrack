@@ -1,9 +1,9 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Returns;
-using GensanPOS.Application.DTOs.Sales;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Returns;
+using SteelTrack.Application.DTOs.Sales;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.Approvals;
+namespace SteelTrack.Application.DTOs.Approvals;
 
 public class CreateApprovalRequestResponseDto
 {

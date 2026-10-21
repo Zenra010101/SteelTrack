@@ -1,4 +1,4 @@
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 /// <summary>Default stainless/hardware categories used for fresh installs and import validation.</summary>
 public static class CatalogCategories

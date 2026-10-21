@@ -1,4 +1,4 @@
-namespace GensanPOS.Domain.Enums;
+namespace SteelTrack.Domain.Enums;
 
 /// <summary>Display status for customer account (may be computed from receivables).</summary>
 public enum CustomerAccountStatus

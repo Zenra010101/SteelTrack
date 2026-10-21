@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.Expenses;
+namespace SteelTrack.Application.DTOs.Expenses;
 
 public class ExpenseCategoryDto
 {

@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Categories;
+using SteelTrack.Application.DTOs.Categories;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface ICategoryService
 {

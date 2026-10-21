@@ -1,8 +1,8 @@
-using GensanPOS.Domain.Common;
+using SteelTrack.Domain.Common;
 
 
 
-namespace GensanPOS.Domain.Entities;
+namespace SteelTrack.Domain.Entities;
 
 
 

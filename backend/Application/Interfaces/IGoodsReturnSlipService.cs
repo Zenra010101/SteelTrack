@@ -1,7 +1,7 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Returns;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Returns;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IGoodsReturnSlipService
 {

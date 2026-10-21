@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Entities;
+using SteelTrack.Domain.Entities;
 
-namespace GensanPOS.Domain.Interfaces;
+namespace SteelTrack.Domain.Interfaces;
 
 public interface IUserRepository : IRepository<User>
 {

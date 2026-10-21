@@ -1,10 +1,10 @@
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Repositories;
+namespace SteelTrack.Infrastructure.Repositories;
 
 public class ReceivableRepository : Repository<CustomerReceivable>, IReceivableRepository
 {

@@ -1,7 +1,7 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Expenses;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Expenses;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IExpenseService
 {

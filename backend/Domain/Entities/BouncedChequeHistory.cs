@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Common;
+using SteelTrack.Domain.Common;
 
-namespace GensanPOS.Domain.Entities;
+namespace SteelTrack.Domain.Entities;
 
 /// <summary>Immutable record when a cheque/PDC is marked bounced.</summary>
 public class BouncedChequeHistory : BaseEntity

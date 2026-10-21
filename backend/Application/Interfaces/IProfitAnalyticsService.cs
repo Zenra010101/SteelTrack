@@ -1,7 +1,7 @@
-using GensanPOS.Application.DTOs.Analytics;
-using GensanPOS.Application.DTOs.Reports;
+using SteelTrack.Application.DTOs.Analytics;
+using SteelTrack.Application.DTOs.Reports;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IProfitAnalyticsService
 {

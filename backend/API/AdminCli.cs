@@ -1,7 +1,7 @@
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.API;
+namespace SteelTrack.Api;
 
 internal static class AdminCli
 {
@@ -54,7 +54,7 @@ internal static class AdminCli
     {
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var demos = new[] { "owner@gensanpos.com", "cashier@gensanpos.com" };
+        var demos = new[] { "demo.owner@steeltrack.com", "demo.cashier@steeltrack.com" };
         var users = await db.Users.Where(u => demos.Contains(u.Email)).ToListAsync();
         foreach (var u in users)
             u.IsActive = false;

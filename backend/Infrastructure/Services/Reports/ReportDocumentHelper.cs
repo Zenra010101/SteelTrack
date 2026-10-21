@@ -1,11 +1,11 @@
-using GensanPOS.Application.DTOs.Reports;
-using GensanPOS.Application.DTOs.Receivables;
-using GensanPOS.Application.DTOs.Returns;
+using SteelTrack.Application.DTOs.Reports;
+using SteelTrack.Application.DTOs.Receivables;
+using SteelTrack.Application.DTOs.Returns;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
-namespace GensanPOS.Infrastructure.Services.Reports;
+namespace SteelTrack.Infrastructure.Services.Reports;
 
 internal static class ReportDocumentHelper
 {
@@ -16,9 +16,9 @@ internal static class ReportDocumentHelper
 
     public static byte[] BuildSalesSummaryPdf(SalesSummaryReportDto report)
     {
-        const string systemName = "GENSAN POS & INVENTORY";
-        const string systemFooter = "GENSAN POS & INVENTORY SYSTEM";
-        var storeLine = string.IsNullOrWhiteSpace(report.StoreName) ? "GensanPOS" : report.StoreName.Trim();
+        const string systemName = "STEELTRACK & INVENTORY";
+        const string systemFooter = "STEELTRACK & INVENTORY SYSTEM";
+        var storeLine = string.IsNullOrWhiteSpace(report.StoreName) ? "SteelTrack" : report.StoreName.Trim();
         var printedBy = string.IsNullOrWhiteSpace(report.PrintedBy) ? "Owner" : report.PrintedBy.Trim();
         var printedAtLabel = string.IsNullOrWhiteSpace(report.PrintedAtLabel)
             ? SalesReportTimeZone.FormatPrintedAt(report.GeneratedAt)
@@ -226,7 +226,7 @@ internal static class ReportDocumentHelper
 
                 page.Header().Column(col =>
                 {
-                    col.Item().Text("GensanPOS — Sales Report").Bold().FontSize(16);
+                    col.Item().Text("SteelTrack — Sales Report").Bold().FontSize(16);
                     col.Item().Text($"{report.From:yyyy-MM-dd} to {report.To:yyyy-MM-dd}");
                     col.Item().Text(SalesReportTimeZone.StampSubtitle()).FontSize(8).FontColor(Colors.Grey.Darken1);
                     col.Item().PaddingTop(8).Text(
@@ -279,7 +279,7 @@ internal static class ReportDocumentHelper
 
                 page.Header().Column(col =>
                 {
-                    col.Item().Text("GensanPOS — Profit Analytics").Bold().FontSize(16);
+                    col.Item().Text("SteelTrack — Profit Analytics").Bold().FontSize(16);
                     col.Item().Text($"{report.From:yyyy-MM-dd} to {report.To:yyyy-MM-dd}");
                     col.Item().Text(SalesReportTimeZone.StampSubtitle()).FontSize(8).FontColor(Colors.Grey.Darken1);
                 });
@@ -489,7 +489,7 @@ internal static class ReportDocumentHelper
     }
 
     public static byte[] BuildReceivingReportPdf(
-        GensanPOS.Application.DTOs.StockReceiving.StockReceivingDto r,
+        SteelTrack.Application.DTOs.StockReceiving.StockReceivingDto r,
         bool includeCosts)
     {
         return Document.Create(container =>
@@ -646,7 +646,7 @@ internal static class ReportDocumentHelper
 
                 page.Footer().AlignCenter().Text(text =>
                 {
-                    text.Span("GensanPOS  ·  Page ").FontSize(8).FontColor(Colors.Grey.Darken1);
+                    text.Span("SteelTrack  ·  Page ").FontSize(8).FontColor(Colors.Grey.Darken1);
                     text.CurrentPageNumber().FontSize(8).FontColor(Colors.Grey.Darken1);
                     text.Span(" of ").FontSize(8).FontColor(Colors.Grey.Darken1);
                     text.TotalPages().FontSize(8).FontColor(Colors.Grey.Darken1);

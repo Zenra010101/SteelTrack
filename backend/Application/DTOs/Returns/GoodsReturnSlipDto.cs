@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.Returns;
+namespace SteelTrack.Application.DTOs.Returns;
 
 public class GoodsReturnSlipDto
 {

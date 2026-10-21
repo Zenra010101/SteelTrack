@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Auth;
+using SteelTrack.Application.DTOs.Auth;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IAuthService
 {

@@ -1,6 +1,6 @@
 using System;
-using GensanPOS.Domain.Common;
-using GensanPOS.Domain.Entities;
+using SteelTrack.Domain.Common;
+using SteelTrack.Domain.Entities;
 
 namespace SteelTrack.Domain.Entities;
 

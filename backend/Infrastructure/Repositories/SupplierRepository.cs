@@ -1,16 +1,16 @@
-using GensanPOS.Domain.Entities;
+using SteelTrack.Domain.Entities;
 
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Enums;
 
-using GensanPOS.Domain.Interfaces;
+using SteelTrack.Domain.Interfaces;
 
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Persistence;
 
 using Microsoft.EntityFrameworkCore;
 
 
 
-namespace GensanPOS.Infrastructure.Repositories;
+namespace SteelTrack.Infrastructure.Repositories;
 
 
 

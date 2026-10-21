@@ -1,14 +1,14 @@
 using ClosedXML.Excel;
 
-using GensanPOS.Application.DTOs.Inventory;
+using SteelTrack.Application.DTOs.Inventory;
 
-using GensanPOS.Application.Interfaces;
+using SteelTrack.Application.Interfaces;
 
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Infrastructure.Services.Reports;
 
 
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 
 
@@ -64,7 +64,7 @@ public class InventoryAdjustmentExportService : IInventoryAdjustmentExportServic
 
             "Adjustments",
 
-            "GensanPOS — Inventory Adjustment Requests",
+            "SteelTrack — Inventory Adjustment Requests",
 
             $"Total records: {list.Count}",
 
@@ -196,7 +196,7 @@ public class InventoryAdjustmentExportService : IInventoryAdjustmentExportServic
 
         return ReportDocumentHelper.BuildTablePdf(
 
-            "GensanPOS — Inventory Adjustments",
+            "SteelTrack — Inventory Adjustments",
 
             $"Total records: {list.Count}",
 

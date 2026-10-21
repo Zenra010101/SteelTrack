@@ -1,7 +1,7 @@
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Domain.Interfaces;
+namespace SteelTrack.Domain.Interfaces;
 
 public interface IStockReceivingRepository : IRepository<StockReceiving>
 {

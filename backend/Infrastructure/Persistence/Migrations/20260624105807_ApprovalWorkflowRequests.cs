@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace GensanPOS.Infrastructure.Persistence.Migrations
+namespace SteelTrack.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class ApprovalWorkflowRequests : Migration

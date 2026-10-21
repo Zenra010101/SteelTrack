@@ -1,7 +1,7 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Inventory;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Inventory;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IInventoryService
 {

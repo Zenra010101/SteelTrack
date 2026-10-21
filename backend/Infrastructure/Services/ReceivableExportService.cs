@@ -1,16 +1,16 @@
 using ClosedXML.Excel;
 
-using GensanPOS.Application.Common;
+using SteelTrack.Application.Common;
 
-using GensanPOS.Application.DTOs.Receivables;
+using SteelTrack.Application.DTOs.Receivables;
 
-using GensanPOS.Application.Interfaces;
+using SteelTrack.Application.Interfaces;
 
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Infrastructure.Services.Reports;
 
 
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 
 
@@ -62,7 +62,7 @@ public class ReceivableExportService : IReceivableExportService
 
             "Receivables",
 
-            "GensanPOS — Charge / Receivables",
+            "SteelTrack — Charge / Receivables",
 
             $"Total records: {list.Count}",
 
@@ -180,7 +180,7 @@ public class ReceivableExportService : IReceivableExportService
 
         return ReportDocumentHelper.BuildTablePdf(
 
-            "GensanPOS — Receivables Report",
+            "SteelTrack — Receivables Report",
 
             $"Total records: {list.Count}",
 

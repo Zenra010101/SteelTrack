@@ -1,17 +1,17 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Inventory;
-using GensanPOS.Application.Exceptions;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Helpers;
-using GensanPOS.Domain.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Inventory;
+using SteelTrack.Application.Exceptions;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Helpers;
+using SteelTrack.Domain.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Services.Reports;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class InventoryService : IInventoryService
 {

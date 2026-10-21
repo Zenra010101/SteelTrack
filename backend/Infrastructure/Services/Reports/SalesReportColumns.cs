@@ -1,4 +1,4 @@
-namespace GensanPOS.Infrastructure.Services.Reports;
+namespace SteelTrack.Infrastructure.Services.Reports;
 
 internal static class SalesReportColumns
 {

@@ -1,7 +1,7 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Receivables;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Receivables;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IReceivableService
 {

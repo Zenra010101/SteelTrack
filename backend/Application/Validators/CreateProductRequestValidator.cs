@@ -1,7 +1,7 @@
 using FluentValidation;
-using GensanPOS.Application.DTOs.Products;
+using SteelTrack.Application.DTOs.Products;
 
-namespace GensanPOS.Application.Validators;
+namespace SteelTrack.Application.Validators;
 
 public class CreateProductRequestValidator : AbstractValidator<CreateProductRequest>
 {

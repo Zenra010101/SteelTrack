@@ -1,4 +1,4 @@
-namespace GensanPOS.Infrastructure.Settings;
+namespace SteelTrack.Infrastructure.Settings;
 
 public class ExchangeWorkflowOptions
 {

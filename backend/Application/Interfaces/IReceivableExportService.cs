@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Receivables;
+using SteelTrack.Application.DTOs.Receivables;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IReceivableExportService
 {

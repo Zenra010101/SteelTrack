@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Common;
+using SteelTrack.Domain.Common;
 
-namespace GensanPOS.Domain.Entities;
+namespace SteelTrack.Domain.Entities;
 
 /// <summary>Per-batch physical count line within an inventory adjustment request.</summary>
 public class InventoryAdjustmentRequestLine : BaseEntity

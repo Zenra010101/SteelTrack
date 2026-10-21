@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Search;
+using SteelTrack.Application.DTOs.Search;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IGlobalSearchService
 {

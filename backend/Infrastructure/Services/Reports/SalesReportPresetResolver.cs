@@ -1,6 +1,6 @@
-using GensanPOS.Application.Exceptions;
+using SteelTrack.Application.Exceptions;
 
-namespace GensanPOS.Infrastructure.Services.Reports;
+namespace SteelTrack.Infrastructure.Services.Reports;
 
 public static class SalesReportPresetResolver
 {

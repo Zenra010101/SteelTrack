@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Reports;
+namespace SteelTrack.Application.DTOs.Reports;
 
 public class SalesSummaryReportDto
 {

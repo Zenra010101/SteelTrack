@@ -1,7 +1,7 @@
-using GensanPOS.Domain.Common;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Common;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Domain.Entities;
+namespace SteelTrack.Domain.Entities;
 
 /// <summary>Return-and-replace exchange linked to a GRS (no cash refund).</summary>
 public class GoodsExchange : BaseEntity

@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.Cheques;
+namespace SteelTrack.Application.DTOs.Cheques;
 
 public class ChequeDto
 {

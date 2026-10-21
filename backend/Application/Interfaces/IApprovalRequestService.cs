@@ -1,7 +1,7 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Approvals;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Approvals;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IApprovalRequestService
 {

@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.Common;
+namespace SteelTrack.Application.Common;
 
 /// <summary>
 /// Store policy for GRS and exchange returns.

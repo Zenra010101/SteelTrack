@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.Suppliers;
+namespace SteelTrack.Application.DTOs.Suppliers;
 
 public class SupplierListItemDto
 {

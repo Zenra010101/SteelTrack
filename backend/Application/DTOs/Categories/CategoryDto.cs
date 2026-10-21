@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Categories;
+namespace SteelTrack.Application.DTOs.Categories;
 
 public class CategoryDto
 {

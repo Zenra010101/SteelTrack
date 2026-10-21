@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace GensanPOS.Infrastructure.Persistence.Migrations
+namespace SteelTrack.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class GoodsExchangeLineProfitSnapshots : Migration

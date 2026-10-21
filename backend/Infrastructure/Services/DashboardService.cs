@@ -1,11 +1,11 @@
-using GensanPOS.Application.DTOs.Dashboard;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.DTOs.Dashboard;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class DashboardService : IDashboardService
 {

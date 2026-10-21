@@ -1,9 +1,9 @@
-using GensanPOS.Application.DTOs.Search;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.DTOs.Search;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class GlobalSearchService : IGlobalSearchService
 {

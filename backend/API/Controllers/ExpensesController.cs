@@ -1,12 +1,12 @@
 using System.Security.Claims;
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Expenses;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Expenses;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GensanPOS.API.Controllers;
+namespace SteelTrack.Api.Controllers;
 
 [ApiController]
 [Route("api/expenses")]

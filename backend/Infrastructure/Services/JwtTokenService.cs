@@ -1,12 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Infrastructure.Settings;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Infrastructure.Settings;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class JwtTokenService
 {

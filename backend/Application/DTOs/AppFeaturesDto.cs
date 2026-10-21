@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs;
+namespace SteelTrack.Application.DTOs;
 
 public class AppFeaturesDto
 {

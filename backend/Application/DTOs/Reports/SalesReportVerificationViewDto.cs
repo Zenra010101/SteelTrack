@@ -1,10 +1,10 @@
-namespace GensanPOS.Application.DTOs.Reports;
+namespace SteelTrack.Application.DTOs.Reports;
 
 public class SalesReportVerificationViewDto
 {
     public string ReportId { get; set; } = string.Empty;
     public string ReportTitle { get; set; } = "Daily Sales Report";
-    public string SystemName { get; set; } = "GENSAN POS & INVENTORY";
+    public string SystemName { get; set; } = "STEELTRACK & INVENTORY";
     public string ReportDateRange { get; set; } = string.Empty;
     public string PeriodLabel { get; set; } = string.Empty;
     public decimal GrossSales { get; set; }

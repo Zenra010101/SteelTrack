@@ -1,7 +1,7 @@
-using GensanPOS.Application.Exceptions;
-using GensanPOS.Domain.Constants;
+using SteelTrack.Application.Exceptions;
+using SteelTrack.Domain.Constants;
 
-namespace GensanPOS.Application.Common;
+namespace SteelTrack.Application.Common;
 
 /// <summary>
 /// Role-based sales history retention (store-local calendar dates, Asia/Manila).

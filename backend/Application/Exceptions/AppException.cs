@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.Exceptions;
+namespace SteelTrack.Application.Exceptions;
 
 public class AppException : Exception
 {

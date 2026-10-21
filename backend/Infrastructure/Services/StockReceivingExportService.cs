@@ -1,14 +1,14 @@
 using ClosedXML.Excel;
 
-using GensanPOS.Application.DTOs.StockReceiving;
+using SteelTrack.Application.DTOs.StockReceiving;
 
-using GensanPOS.Application.Interfaces;
+using SteelTrack.Application.Interfaces;
 
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Infrastructure.Services.Reports;
 
 
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 
 
@@ -64,7 +64,7 @@ public class StockReceivingExportService : IStockReceivingExportService
 
             "Stock Receiving",
 
-            "GensanPOS — Stock Receiving",
+            "SteelTrack — Stock Receiving",
 
             $"Total records: {list.Count}",
 
@@ -196,7 +196,7 @@ public class StockReceivingExportService : IStockReceivingExportService
 
         return ReportDocumentHelper.BuildTablePdf(
 
-            "GensanPOS — Stock Receiving",
+            "SteelTrack — Stock Receiving",
 
             $"Total records: {list.Count}",
 

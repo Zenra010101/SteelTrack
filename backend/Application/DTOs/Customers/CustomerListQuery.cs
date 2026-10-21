@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Customers;
+namespace SteelTrack.Application.DTOs.Customers;
 
 public class CustomerListQuery
 {

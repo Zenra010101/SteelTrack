@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.Common;
+namespace SteelTrack.Application.Common;
 
 /// <summary>Historical profit per sale line — never use current product cost in reports.</summary>
 public static class SaleItemProfit

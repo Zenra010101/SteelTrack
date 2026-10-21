@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Dashboard;
+namespace SteelTrack.Application.DTOs.Dashboard;
 
 public class DashboardDto
 {

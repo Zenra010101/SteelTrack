@@ -1,7 +1,7 @@
-using GensanPOS.Domain.Common;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Common;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Domain.Entities;
+namespace SteelTrack.Domain.Entities;
 
 public class SalePayment : BaseEntity
 {

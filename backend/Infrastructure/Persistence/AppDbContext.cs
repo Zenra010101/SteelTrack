@@ -1,7 +1,7 @@
-using GensanPOS.Domain.Entities;
+using SteelTrack.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 public class AppDbContext : DbContext
 {

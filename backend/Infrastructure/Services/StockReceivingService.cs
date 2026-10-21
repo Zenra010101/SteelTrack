@@ -1,15 +1,15 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.StockReceiving;
-using GensanPOS.Application.Exceptions;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.StockReceiving;
+using SteelTrack.Application.Exceptions;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class StockReceivingService : IStockReceivingService
 {

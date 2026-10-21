@@ -1,12 +1,12 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Entities;
+using SteelTrack.Application.Common;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 public static class DataSeeder
 {
@@ -81,11 +81,11 @@ public static class DataSeeder
         var ownerRole = await context.Roles.FirstAsync(r => r.Name == RoleNames.Owner);
         var cashierRole = await context.Roles.FirstAsync(r => r.Name == RoleNames.Cashier);
 
-        if (!await context.Users.AnyAsync(u => u.Email == "owner@gensanpos.com"))
+        if (!await context.Users.AnyAsync(u => u.Email == "demo.owner@steeltrack.com"))
         {
             context.Users.Add(new User
             {
-                Email = "owner@gensanpos.com",
+                Email = "demo.owner@steeltrack.com",
                 FullName = "Stainless Shop Owner",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Owner@123"),
                 RoleId = ownerRole.Id,
@@ -93,11 +93,11 @@ public static class DataSeeder
             });
         }
 
-        if (!await context.Users.AnyAsync(u => u.Email == "cashier@gensanpos.com"))
+        if (!await context.Users.AnyAsync(u => u.Email == "demo.cashier@steeltrack.com"))
         {
             context.Users.Add(new User
             {
-                Email = "cashier@gensanpos.com",
+                Email = "demo.cashier@steeltrack.com",
                 FullName = "Sales Counter",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("Cashier@123"),
                 RoleId = cashierRole.Id,
@@ -143,7 +143,7 @@ public static class DataSeeder
         var targetUsers = new[]
         {
             (Email: "owner@steeltrack.com", Name: "Alexander Vance", RoleId: ownerRole.Id, BranchId: (Guid?)null, Password: "Owner@SteelTrack2026!"),
-            (Email: "owner@gensanpos.com", Name: "Stainless Shop Owner", RoleId: ownerRole.Id, BranchId: (Guid?)null, Password: "Owner@SteelTrack2026!"),
+            (Email: "demo.owner@steeltrack.com", Name: "Stainless Shop Owner", RoleId: ownerRole.Id, BranchId: (Guid?)null, Password: "Owner@SteelTrack2026!"),
             (Email: "manager.davao@steeltrack.com", Name: "Maria Santos", RoleId: managerRole.Id, BranchId: davao, Password: "DavaoMgr@2026!"),
             (Email: "manager.mandaue@steeltrack.com", Name: "Juan Dela Cruz", RoleId: managerRole.Id, BranchId: mandaue, Password: "MandaueMgr@2026!"),
             (Email: "manager.cebu@steeltrack.com", Name: "Carlos Reyes", RoleId: managerRole.Id, BranchId: cebu, Password: "CebuMgr@2026!"),

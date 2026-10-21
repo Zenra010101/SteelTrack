@@ -1,9 +1,9 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.Common;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services.Reports;
+namespace SteelTrack.Infrastructure.Services.Reports;
 
 internal static class NetProfitQueryHelper
 {

@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Infrastructure.Persistence;
 
 namespace SteelTrack.Api.Controllers;
 

@@ -1,4 +1,4 @@
-namespace GensanPOS.Domain.Interfaces;
+namespace SteelTrack.Domain.Interfaces;
 
 public interface IUnitOfWork
 {
