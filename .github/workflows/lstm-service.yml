@@ -1,0 +1,81 @@
+name: LSTM Service
+
+on:
+  push:
+    branches: [main, liveupdate]
+    paths:
+      - 'python-lstm-service/**'
+      - '.github/workflows/lstm-service.yml'
+  pull_request:
+    paths:
+      - 'python-lstm-service/**'
+      - '.github/workflows/lstm-service.yml'
+
+concurrency:
+  group: lstm-service-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python-lstm-service
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'uv'
+          cache-dependency-path: python-lstm-service/pyproject.toml
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        # The CPU-only torch index keeps the CI image small; the model is
+        # small enough that a GPU is not needed to validate the pipeline.
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv pip install --python .venv/bin/python \
+            "torch>=2.5" --index-url https://download.pytorch.org/whl/cpu
+          uv pip install --python .venv/bin/python -e ".[dev]"
+
+      - name: Lint
+        run: ./.venv/bin/python -m ruff check src tests
+
+      - name: Test
+        # The scheduler is disabled so the background jobs do not fire
+        # during the test run; the suite is otherwise fully offline.
+        env:
+          LSTM_ENABLE_SCHEDULER: 'false'
+        run: ./.venv/bin/python -m pytest -q
+
+  docker:
+    name: Docker image
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./python-lstm-service
+          push: false
+          load: true
+          tags: steeltrack-lstm:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

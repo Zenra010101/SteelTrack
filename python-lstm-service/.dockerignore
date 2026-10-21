@@ -1,0 +1,31 @@
+# Keep the build context small and never ship secrets or local state.
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+*.log
+
+# Credentials — the image reads these from the environment at runtime.
+.env
+.env.local
+.env.*.local
+
+# Model artifacts are produced inside the container and mounted as a
+# volume; copying local ones in would bake stale weights into the image.
+models/
+*.pt
+*.pth
+*.onnx
+
+# Tests are not needed at runtime.
+tests/
