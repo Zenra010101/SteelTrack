@@ -26,8 +26,13 @@ public class AuthService : IAuthService
         string? userAgent,
         CancellationToken cancellationToken = default)
     {
-        var email = request.Email.Trim().ToLower();
+        var inputEmail = request.Email?.Trim() ?? string.Empty;
+        var email = inputEmail.ToLower();
         var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
+        if (user is null && !email.Contains('@'))
+        {
+            user = await _userRepository.GetByEmailAsync($"{email}@steeltrack.com", cancellationToken);
+        }
 
         if (user is null)
         {
@@ -45,7 +50,12 @@ public class AuthService : IAuthService
             throw new UnauthorizedException("Account is deactivated");
         }
 
-        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        var rawPassword = request.Password ?? string.Empty;
+        var trimmedPassword = rawPassword.Trim();
+        var passwordValid = BCrypt.Net.BCrypt.Verify(rawPassword, user.PasswordHash) ||
+                            BCrypt.Net.BCrypt.Verify(trimmedPassword, user.PasswordHash);
+
+        if (!passwordValid)
         {
             await _auditService.LogAsync(
                 user.Id, user.Email, AuditLogCategory.Security, "LOGIN_FAILED", "User", user.Id.ToString(),
