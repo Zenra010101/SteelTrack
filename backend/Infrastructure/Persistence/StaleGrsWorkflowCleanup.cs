@@ -1,9 +1,9 @@
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 /// <summary>
 /// One-time style cleanup for exchange-era slips left in draft, pending inspection, or approved-awaiting-exchange.

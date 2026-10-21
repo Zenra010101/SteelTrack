@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Reports;
+using SteelTrack.Application.DTOs.Reports;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IReportService
 {

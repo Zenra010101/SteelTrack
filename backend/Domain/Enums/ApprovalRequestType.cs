@@ -1,4 +1,4 @@
-namespace GensanPOS.Domain.Enums;
+namespace SteelTrack.Domain.Enums;
 
 public enum ApprovalRequestType
 {

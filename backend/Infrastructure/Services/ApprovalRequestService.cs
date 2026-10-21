@@ -1,18 +1,18 @@
 using System.Text.Json;
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Approvals;
-using GensanPOS.Application.DTOs.Returns;
-using GensanPOS.Application.DTOs.Sales;
-using GensanPOS.Application.Exceptions;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Approvals;
+using SteelTrack.Application.DTOs.Returns;
+using SteelTrack.Application.DTOs.Sales;
+using SteelTrack.Application.Exceptions;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class ApprovalRequestService : IApprovalRequestService
 {

@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Settings;
+using SteelTrack.Application.DTOs.Settings;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IStoreSettingsService
 {

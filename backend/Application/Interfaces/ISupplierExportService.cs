@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Suppliers;
+using SteelTrack.Application.DTOs.Suppliers;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface ISupplierExportService
 {

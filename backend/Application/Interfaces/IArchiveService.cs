@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Archive;
+using SteelTrack.Application.DTOs.Archive;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IArchiveService
 {

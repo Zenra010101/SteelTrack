@@ -1,12 +1,12 @@
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Helpers;
-using GensanPOS.Domain.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Helpers;
+using SteelTrack.Domain.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Repositories;
+namespace SteelTrack.Infrastructure.Repositories;
 
 public class ProductRepository : Repository<Product>, IProductRepository
 {

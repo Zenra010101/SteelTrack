@@ -1,13 +1,13 @@
 using System.Globalization;
 using System.Text.Json;
-using GensanPOS.Application.DTOs.Reports;
-using GensanPOS.Domain.Entities;
+using SteelTrack.Application.DTOs.Reports;
+using SteelTrack.Domain.Entities;
 
-namespace GensanPOS.Infrastructure.Services.Reports;
+namespace SteelTrack.Infrastructure.Services.Reports;
 
 internal static class SalesReportVerification
 {
-    public const string SystemName = "GENSAN POS & INVENTORY";
+    public const string SystemName = "STEELTRACK & INVENTORY";
     public const string ReportTitle = "Daily Sales Report";
     public const string VerifiedStatus = "Verified Report";
 
@@ -37,7 +37,7 @@ internal static class SalesReportVerification
 
         var payload = new Dictionary<string, string>
         {
-            ["system"] = "GENSAN POS",
+            ["system"] = "STEELTRACK",
             ["report"] = ReportTitle,
             ["reportId"] = report.VerificationReportCode,
             ["generatedAt"] = generatedAt,

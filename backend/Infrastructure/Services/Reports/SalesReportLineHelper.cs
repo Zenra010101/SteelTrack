@@ -1,8 +1,8 @@
-using GensanPOS.Application.DTOs.Reports;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Application.DTOs.Reports;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Infrastructure.Services.Reports;
+namespace SteelTrack.Infrastructure.Services.Reports;
 
 internal static class SalesReportLineHelper
 {

@@ -1,4 +1,4 @@
-namespace GensanPOS.Domain.Enums;
+namespace SteelTrack.Domain.Enums;
 
 /// <summary>
 /// Operational resellable return only (wrong item/size/spec or approved exchange).

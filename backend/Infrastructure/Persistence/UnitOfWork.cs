@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Interfaces;
+using SteelTrack.Domain.Interfaces;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 public class UnitOfWork : IUnitOfWork
 {

@@ -1,15 +1,22 @@
 using ClosedXML.Excel;
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Reports;
-using GensanPOS.Application.Exceptions;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Infrastructure.Persistence;
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Reports;
+using SteelTrack.Application.Exceptions;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Services.Reports;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-namespace GensanPOS.Infrastructure.Services;
+
+// SteelTrack.Domain.Entities also declares a type named SalesReportVerification
+// (the EF entity), which collides with the static helper of the same name in
+// SteelTrack.Infrastructure.Services.Reports. Only the helper is used here, so
+// alias it and leave the entity to be referenced by its own namespace.
+using SalesReportVerificationHelper = SteelTrack.Infrastructure.Services.Reports.SalesReportVerification;
+
+namespace SteelTrack.Infrastructure.Services;
 
 public class ReportService : IReportService
 {
@@ -137,7 +144,7 @@ public class ReportService : IReportService
             var ws = ExportSpreadsheetHelper.BeginReport(
                 wb,
                 type.ToString(),
-                $"GensanPOS — {type} Report",
+                $"SteelTrack — {type} Report",
                 subtitle,
                 out var headerRow);
             ExportSpreadsheetHelper.WriteHeaders(ws, headerRow, headers);
@@ -167,7 +174,7 @@ public class ReportService : IReportService
             var ws = ExportSpreadsheetHelper.BeginReport(
                 wb,
                 type.ToString(),
-                $"GensanPOS — {type} Report",
+                $"SteelTrack — {type} Report",
                 subtitle,
                 out var headerRow);
             ExportSpreadsheetHelper.WriteHeaders(ws, headerRow, headers);
@@ -191,7 +198,7 @@ public class ReportService : IReportService
             ExportSpreadsheetHelper.BeginReport(
                 wb,
                 type.ToString(),
-                $"GensanPOS — {type} Report",
+                $"SteelTrack — {type} Report",
                 $"{subtitle}  ·  No records",
                 out _);
         }
@@ -263,7 +270,7 @@ public class ReportService : IReportService
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        return SalesReportVerification.ToViewDto(record, generatedByName);
+        return SalesReportVerificationHelper.ToViewDto(record, generatedByName);
     }
 
     private async Task EnrichSummaryAsync(
@@ -287,7 +294,7 @@ public class ReportService : IReportService
 
         if (!issueVerification) return;
 
-        var reportCode = SalesReportVerification.BuildReportCode(report.GeneratedAt);
+        var reportCode = SalesReportVerificationHelper.BuildReportCode(report.GeneratedAt);
         report.VerificationReportCode = reportCode;
 
         SalesReportVerificationRecord record;
@@ -306,8 +313,8 @@ public class ReportService : IReportService
         }
 
         report.VerificationUrl = BuildVerifyUrl(record.Id, verifyBaseUrl);
-        report.VerificationQrText = SalesReportVerification.BuildQrContent(report.VerificationUrl);
-        report.VerificationQrPayload = SalesReportVerification.BuildQrPayloadJson(report, report.PrintedBy);
+        report.VerificationQrText = SalesReportVerificationHelper.BuildQrContent(report.VerificationUrl);
+        report.VerificationQrPayload = SalesReportVerificationHelper.BuildQrPayloadJson(report, report.PrintedBy);
 
         report.VerificationQrPngBase64 = Convert.ToBase64String(
             SalesReportQrHelper.GeneratePng(report.VerificationUrl));
@@ -371,8 +378,8 @@ public class ReportService : IReportService
         if (!string.IsNullOrWhiteSpace(configured))
             return configured.Trim();
 
-        var host = _configuration["GENSANPOS_DOMAIN"]
-            ?? _configuration["GENSANPOS_PUBLIC_HOST"];
+        var host = _configuration["STEELTRACK_DOMAIN"]
+            ?? _configuration["STEELTRACK_PUBLIC_HOST"];
         if (string.IsNullOrWhiteSpace(host))
             return "http://localhost:3000";
 
@@ -433,7 +440,7 @@ public class ReportService : IReportService
         var ws = ExportSpreadsheetHelper.BeginReport(
             wb,
             "Sales",
-            "GensanPOS — Sales Report",
+            "SteelTrack — Sales Report",
             $"{report.From:yyyy-MM-dd} to {report.To:yyyy-MM-dd}  ·  Net invoice sales: ₱ {report.NetSales:N2}  ·  Collected in period: ₱ {report.CollectedInPeriod:N2}  ·  Transactions: {report.TransactionCount}",
             out var headerRow);
 
@@ -478,7 +485,7 @@ public class ReportService : IReportService
         var summary = ExportSpreadsheetHelper.BeginReport(
             wb,
             "Summary",
-            "GensanPOS — Profit Summary",
+            "SteelTrack — Profit Summary",
             $"{report.From:yyyy-MM-dd} to {report.To:yyyy-MM-dd}",
             out var summaryHeaderRow);
 

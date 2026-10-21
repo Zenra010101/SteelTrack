@@ -1,9 +1,9 @@
-using GensanPOS.Application.DTOs.Products;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.DTOs.Products;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.API;
+namespace SteelTrack.Api;
 
 internal static class CatalogImportCli
 {
@@ -29,7 +29,7 @@ internal static class CatalogImportCli
             return 1;
         }
 
-        GensanPOS.Infrastructure.Services.ProductCatalog.CatalogXlsxExporter.ExportCsvToXlsx(csvPath, xlsxPath);
+        SteelTrack.Infrastructure.Services.ProductCatalog.CatalogXlsxExporter.ExportCsvToXlsx(csvPath, xlsxPath);
         Console.WriteLine($"Wrote {xlsxPath}");
         return 0;
     }
@@ -82,7 +82,7 @@ internal static class CatalogImportCli
         var categoryService = scope.ServiceProvider.GetRequiredService<ICategoryService>();
 
         var ownerId = await context.Users
-            .Where(u => u.Email == "owner@gensanpos.com")
+            .Where(u => u.Email == "demo.owner@steeltrack.com")
             .Select(u => u.Id)
             .FirstOrDefaultAsync();
 
@@ -131,10 +131,10 @@ internal static class CatalogImportCli
     private static void PrintUsage()
     {
         Console.WriteLine("""
-            GensanPOS product catalog import
+            SteelTrack product catalog import
 
             Usage:
-              dotnet run --project backend/GensanPOS.API -- catalog-import --file <path.csv|xlsx> [options]
+              dotnet run --project backend/API/SteelTrack.Api.csproj -- catalog-import --file <path.csv|xlsx> [options]
 
             Options:
               --dry-run              Validate only; no database writes

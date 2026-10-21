@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.Audit;
+namespace SteelTrack.Application.DTOs.Audit;
 
 public class AuditLogDto
 {

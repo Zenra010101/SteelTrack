@@ -1,7 +1,7 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Sales;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Sales;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface ISaleService
 {

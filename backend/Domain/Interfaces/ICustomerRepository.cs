@@ -1,8 +1,8 @@
-using GensanPOS.Domain.Entities;
+using SteelTrack.Domain.Entities;
 
 
 
-namespace GensanPOS.Domain.Interfaces;
+namespace SteelTrack.Domain.Interfaces;
 
 
 

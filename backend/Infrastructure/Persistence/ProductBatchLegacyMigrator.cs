@@ -1,11 +1,11 @@
 using System;
-using GensanPOS.Infrastructure.Services;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Services;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 /// <summary>One-time migration: existing product stock → LEGACY batch rows.</summary>
 public static class ProductBatchLegacyMigrator

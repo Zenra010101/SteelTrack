@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Products;
+using SteelTrack.Application.DTOs.Products;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IBatchAllocationService
 {

@@ -1,4 +1,4 @@
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 public static class ExpenseDefaultCategories
 {

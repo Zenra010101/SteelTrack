@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Common;
-using GensanPOS.Domain.Enums;
-namespace GensanPOS.Domain.Entities;
+using SteelTrack.Domain.Common;
+using SteelTrack.Domain.Enums;
+namespace SteelTrack.Domain.Entities;
 
 public class Sale : BaseEntity
 {

@@ -1,6 +1,6 @@
-namespace GensanPOS.Application.Common;
+namespace SteelTrack.Application.Common;
 
-using GensanPOS.Application.Exceptions;
+using SteelTrack.Application.Exceptions;
 
 public static class ExpenseAttachmentPolicy
 {

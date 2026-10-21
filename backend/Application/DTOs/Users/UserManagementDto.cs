@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Users;
+namespace SteelTrack.Application.DTOs.Users;
 
 public class UserManagementDto
 {

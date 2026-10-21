@@ -1,7 +1,7 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Domain.Constants;
+using SteelTrack.Application.Common;
+using SteelTrack.Domain.Constants;
 
-namespace GensanPOS.Infrastructure.Services.Reports;
+namespace SteelTrack.Infrastructure.Services.Reports;
 
 public static class SalesReportSummaryAccess
 {

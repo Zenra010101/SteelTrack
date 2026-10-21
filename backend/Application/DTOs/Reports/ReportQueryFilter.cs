@@ -1,7 +1,7 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Application.Common;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.Reports;
+namespace SteelTrack.Application.DTOs.Reports;
 
 public class ReportQueryFilter
 {

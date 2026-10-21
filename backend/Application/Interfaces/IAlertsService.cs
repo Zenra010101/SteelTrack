@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Alerts;
+using SteelTrack.Application.DTOs.Alerts;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IAlertsService
 {

@@ -1,12 +1,12 @@
 using ClosedXML.Excel;
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Audit;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Interfaces;
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Audit;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Interfaces;
+using SteelTrack.Infrastructure.Services.Reports;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class AuditLogService : IAuditLogService
 {
@@ -62,7 +62,7 @@ public class AuditLogService : IAuditLogService
 
         using var wb = new XLWorkbook();
         var ws = wb.Worksheets.Add("Audit log");
-        ws.Cell(1, 1).Value = "GensanPOS Audit Log";
+        ws.Cell(1, 1).Value = "SteelTrack Audit Log";
         var headers = new[]
         {
             "When (UTC)", "User", "Log type", "Action", "Status", "Entity", "Entity ID",
@@ -120,7 +120,7 @@ public class AuditLogService : IAuditLogService
             );
         }).ToList();
 
-        return ReportDocumentHelper.BuildAuditPdf("GensanPOS Audit Log", rows);
+        return ReportDocumentHelper.BuildAuditPdf("SteelTrack Audit Log", rows);
     }
 
     private static AuditLogDto Map(Domain.Entities.AuditLog l)

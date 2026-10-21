@@ -1,7 +1,7 @@
-using GensanPOS.Application.DTOs.Cheques;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Application.DTOs.Cheques;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.Receivables;
+namespace SteelTrack.Application.DTOs.Receivables;
 
 public class ReceivableDto
 {

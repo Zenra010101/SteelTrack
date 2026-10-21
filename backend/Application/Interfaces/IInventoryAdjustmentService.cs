@@ -1,8 +1,8 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Inventory;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Inventory;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IInventoryAdjustmentService
 {

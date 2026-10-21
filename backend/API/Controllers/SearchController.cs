@@ -1,10 +1,10 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Search;
-using GensanPOS.Application.Interfaces;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Search;
+using SteelTrack.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GensanPOS.API.Controllers;
+namespace SteelTrack.Api.Controllers;
 
 [ApiController]
 [Route("api/search")]

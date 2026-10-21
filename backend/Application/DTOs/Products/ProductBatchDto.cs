@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Products;
+namespace SteelTrack.Application.DTOs.Products;
 
 public class ProductBatchDto
 {

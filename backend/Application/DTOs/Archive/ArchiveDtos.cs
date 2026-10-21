@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Archive;
+namespace SteelTrack.Application.DTOs.Archive;
 
 public class ArchiveRequest
 {

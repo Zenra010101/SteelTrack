@@ -1,4 +1,4 @@
-namespace GensanPOS.Domain.Helpers;
+namespace SteelTrack.Domain.Helpers;
 
 public static class BarcodeNormalizer
 {

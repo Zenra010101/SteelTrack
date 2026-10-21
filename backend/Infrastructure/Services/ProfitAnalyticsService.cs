@@ -1,22 +1,22 @@
-using GensanPOS.Application.DTOs.Analytics;
+using SteelTrack.Application.DTOs.Analytics;
 
-using GensanPOS.Application.DTOs.Reports;
+using SteelTrack.Application.DTOs.Reports;
 
-using GensanPOS.Application.Interfaces;
+using SteelTrack.Application.Interfaces;
 
-using GensanPOS.Domain.Constants;
+using SteelTrack.Domain.Constants;
 
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Enums;
 
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Persistence;
 
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Infrastructure.Services.Reports;
 
 using Microsoft.EntityFrameworkCore;
 
 
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 
 

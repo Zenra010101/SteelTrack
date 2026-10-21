@@ -1,7 +1,7 @@
-using GensanPOS.Application.DTOs.Audit;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Application.DTOs.Audit;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IAuditLogService
 {

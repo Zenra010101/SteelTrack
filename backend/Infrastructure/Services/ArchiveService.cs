@@ -1,10 +1,10 @@
-using GensanPOS.Application.DTOs.Archive;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.DTOs.Archive;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class ArchiveService : IArchiveService
 {

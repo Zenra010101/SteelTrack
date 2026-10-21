@@ -1,7 +1,7 @@
 using System.Globalization;
 using ClosedXML.Excel;
 
-namespace GensanPOS.Infrastructure.Services.ProductCatalog;
+namespace SteelTrack.Infrastructure.Services.ProductCatalog;
 
 public static class CatalogXlsxExporter
 {

@@ -1,11 +1,11 @@
-using GensanPOS.Application.DTOs.Auth;
-using GensanPOS.Application.Exceptions;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Interfaces;
+using SteelTrack.Application.DTOs.Auth;
+using SteelTrack.Application.Exceptions;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Interfaces;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {

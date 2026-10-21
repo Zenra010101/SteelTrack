@@ -1,10 +1,10 @@
 using System.Net;
 using System.Text.Json;
 using FluentValidation;
-using GensanPOS.Application.Common;
-using GensanPOS.Application.Exceptions;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.Exceptions;
 
-namespace GensanPOS.API.Middleware;
+namespace SteelTrack.Api.Middleware;
 
 public class ExceptionHandlingMiddleware
 {

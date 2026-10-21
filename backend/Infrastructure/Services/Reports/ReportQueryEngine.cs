@@ -1,13 +1,13 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Reports;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Reports;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services.Reports;
+namespace SteelTrack.Infrastructure.Services.Reports;
 
 public class ReportQueryEngine
 {

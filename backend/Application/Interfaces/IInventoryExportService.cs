@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Inventory;
+using SteelTrack.Application.DTOs.Inventory;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IInventoryExportService
 {

@@ -1,16 +1,16 @@
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
-using GensanPOS.Infrastructure.Repositories;
-using GensanPOS.Infrastructure.Services;
-using GensanPOS.Infrastructure.Services.ProductCatalog;
-using GensanPOS.Infrastructure.Services.Reports;
-using GensanPOS.Infrastructure.Settings;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Repositories;
+using SteelTrack.Infrastructure.Services;
+using SteelTrack.Infrastructure.Services.ProductCatalog;
+using SteelTrack.Infrastructure.Services.Reports;
+using SteelTrack.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace GensanPOS.Infrastructure;
+namespace SteelTrack.Infrastructure;
 
 public static class DependencyInjection
 {
@@ -20,7 +20,7 @@ public static class DependencyInjection
         services.Configure<ExchangeWorkflowOptions>(configuration.GetSection(ExchangeWorkflowOptions.SectionName));
 
         var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? "Data Source=gensanpos.db";
+            ?? "Data Source=steeltrack.db";
 
         services.AddDbContext<AppDbContext>(options =>
         {

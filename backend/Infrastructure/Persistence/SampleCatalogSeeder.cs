@@ -1,8 +1,8 @@
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Entities;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 /// <summary>Demo/sample catalog for development only. Never run in production go-live.</summary>
 public static class SampleCatalogSeeder
@@ -197,7 +197,7 @@ public static class SampleCatalogSeeder
             return;
 
         var ownerUserId = await context.Users
-            .Where(u => u.Email == "owner@gensanpos.com")
+            .Where(u => u.Email == "demo.owner@steeltrack.com")
             .Select(u => u.Id)
             .FirstAsync(cancellationToken);
 
@@ -225,10 +225,10 @@ public static class SampleCatalogSeeder
             },
             new Supplier
             {
-                Name = "GenSan Stainless Depot",
+                Name = "SteelTrack Stainless Depot",
                 ContactPerson = "Pedro Reyes",
                 Phone = "09201112233",
-                Address = "Sarangani Road, GenSan",
+                Address = "Sarangani Road, General Santos City",
                 CreatedByUserId = ownerUserId,
                 Status = Domain.Enums.SupplierStatus.Active,
                 PaymentTerms = Domain.Enums.SupplierPaymentTerms.Net15,

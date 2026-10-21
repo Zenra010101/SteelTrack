@@ -1,7 +1,7 @@
 using FluentValidation;
-using GensanPOS.Application.DTOs.StockReceiving;
+using SteelTrack.Application.DTOs.StockReceiving;
 
-namespace GensanPOS.Application.Validators;
+namespace SteelTrack.Application.Validators;
 
 public class CreateStockReceivingRequestValidator : AbstractValidator<CreateStockReceivingRequest>
 {

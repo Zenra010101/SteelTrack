@@ -1,4 +1,4 @@
-namespace GensanPOS.Domain.Common;
+namespace SteelTrack.Domain.Common;
 
 public abstract class BaseEntity
 {

@@ -1,12 +1,12 @@
 using System.Security.Claims;
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Auth;
-using GensanPOS.Application.Interfaces;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Auth;
+using SteelTrack.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace GensanPOS.API.Controllers;
+namespace SteelTrack.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

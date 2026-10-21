@@ -1,4 +1,4 @@
-namespace GensanPOS.Domain.Constants;
+namespace SteelTrack.Domain.Constants;
 
 public static class InventoryConstants
 {

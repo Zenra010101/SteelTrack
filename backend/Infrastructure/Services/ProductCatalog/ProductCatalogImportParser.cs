@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text;
 using ClosedXML.Excel;
-using GensanPOS.Application.DTOs.Products;
+using SteelTrack.Application.DTOs.Products;
 
-namespace GensanPOS.Infrastructure.Services.ProductCatalog;
+namespace SteelTrack.Infrastructure.Services.ProductCatalog;
 
 internal static class ProductCatalogImportParser
 {

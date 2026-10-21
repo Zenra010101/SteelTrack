@@ -1,4 +1,4 @@
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace SteelTrack.Infrastructure.Persistence;

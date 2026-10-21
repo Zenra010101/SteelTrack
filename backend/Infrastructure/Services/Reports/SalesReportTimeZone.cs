@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Reports;
+using SteelTrack.Application.DTOs.Reports;
 
-namespace GensanPOS.Infrastructure.Services.Reports;
+namespace SteelTrack.Infrastructure.Services.Reports;
 
 internal static class SalesReportTimeZone
 {

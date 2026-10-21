@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using GensanPOS.Infrastructure.Services;
+using SteelTrack.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 /// <summary>Assigns GSP barcodes to active products that have none (safe to re-run).</summary>
 public static class ProductBarcodeBackfillMigrator

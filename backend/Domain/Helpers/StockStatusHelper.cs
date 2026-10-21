@@ -1,7 +1,7 @@
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Domain.Helpers;
+namespace SteelTrack.Domain.Helpers;
 
 public static class StockStatusHelper
 {

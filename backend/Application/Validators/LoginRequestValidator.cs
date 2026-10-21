@@ -1,7 +1,7 @@
 using FluentValidation;
-using GensanPOS.Application.DTOs.Auth;
+using SteelTrack.Application.DTOs.Auth;
 
-namespace GensanPOS.Application.Validators;
+namespace SteelTrack.Application.Validators;
 
 public class LoginRequestValidator : AbstractValidator<LoginRequest>
 {

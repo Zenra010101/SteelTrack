@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 public static class SupplierSchemaMigrator
 {
@@ -50,7 +50,7 @@ public static class SupplierSchemaMigrator
         CancellationToken cancellationToken)
     {
         var ownerId = await context.Users
-            .Where(u => u.Email == "owner@gensanpos.com")
+            .Where(u => u.Email == "demo.owner@steeltrack.com")
             .Select(u => u.Id)
             .FirstOrDefaultAsync(cancellationToken);
 

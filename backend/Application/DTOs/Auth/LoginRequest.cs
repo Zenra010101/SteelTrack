@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Auth;
+namespace SteelTrack.Application.DTOs.Auth;
 
 public class LoginRequest
 {

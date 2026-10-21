@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Analytics;
+namespace SteelTrack.Application.DTOs.Analytics;
 
 public class OwnerDashboardProfitDto
 {

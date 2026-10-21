@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.Common;
+namespace SteelTrack.Application.Common;
 
 public static class TaxCalculator
 {

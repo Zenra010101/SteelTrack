@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Settings;
+namespace SteelTrack.Application.DTOs.Settings;
 
 public class StoreSettingsDto
 {

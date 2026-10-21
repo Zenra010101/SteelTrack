@@ -1,8 +1,8 @@
-using GensanPOS.Domain.Entities;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 /// <summary>
 /// Creates one <see cref="ProductBatch"/> per approved stock receiving line.

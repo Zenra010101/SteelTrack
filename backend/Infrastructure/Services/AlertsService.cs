@@ -1,12 +1,12 @@
-using GensanPOS.Application.DTOs.Alerts;
-using GensanPOS.Application.DTOs.Products;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
+using SteelTrack.Application.DTOs.Alerts;
+using SteelTrack.Application.DTOs.Products;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class AlertsService : IAlertsService
 {

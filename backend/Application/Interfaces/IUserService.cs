@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Users;
+using SteelTrack.Application.DTOs.Users;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IUserService
 {

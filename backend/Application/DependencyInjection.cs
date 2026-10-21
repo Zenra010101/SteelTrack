@@ -1,7 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace GensanPOS.Application;
+namespace SteelTrack.Application;
 
 public static class DependencyInjection
 {

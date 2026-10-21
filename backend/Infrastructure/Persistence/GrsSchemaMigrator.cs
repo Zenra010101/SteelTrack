@@ -1,7 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 /// <summary>Applies additive SQLite schema updates when <see cref="DatabaseFacade.EnsureCreatedAsync"/> cannot alter existing tables.</summary>
 public static class GrsSchemaMigrator

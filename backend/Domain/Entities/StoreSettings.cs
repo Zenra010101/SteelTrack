@@ -1,4 +1,4 @@
-namespace GensanPOS.Domain.Entities;
+namespace SteelTrack.Domain.Entities;
 
 /// <summary>Singleton row (Id = 1) for store-wide POS options.</summary>
 public class StoreSettings

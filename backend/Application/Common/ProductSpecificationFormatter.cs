@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Entities;
+using SteelTrack.Domain.Entities;
 
-namespace GensanPOS.Application.Common;
+namespace SteelTrack.Application.Common;
 
 public static class ProductSpecificationFormatter
 {

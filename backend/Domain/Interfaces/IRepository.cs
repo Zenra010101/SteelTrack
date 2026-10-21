@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
-using GensanPOS.Domain.Common;
+using SteelTrack.Domain.Common;
 
-namespace GensanPOS.Domain.Interfaces;
+namespace SteelTrack.Domain.Interfaces;
 
 public interface IRepository<T> where T : BaseEntity
 {

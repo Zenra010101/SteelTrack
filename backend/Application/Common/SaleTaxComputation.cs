@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.Common;
+namespace SteelTrack.Application.Common;
 
 public sealed class SaleTaxInput
 {

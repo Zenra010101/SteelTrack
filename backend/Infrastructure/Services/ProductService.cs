@@ -1,18 +1,18 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Products;
-using GensanPOS.Application.Exceptions;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Helpers;
-using GensanPOS.Domain.Interfaces;
-using GensanPOS.Infrastructure.Persistence;
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Products;
+using SteelTrack.Application.Exceptions;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Helpers;
+using SteelTrack.Domain.Interfaces;
+using SteelTrack.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Services.Reports;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class ProductService : IProductService
 {
@@ -458,7 +458,7 @@ public class ProductService : IProductService
         var ws = ExportSpreadsheetHelper.BeginReport(
             wb,
             "Product Sales",
-            "GensanPOS — Product Sales History",
+            "SteelTrack — Product Sales History",
             $"{product.Sku} · {product.Name} · {rows.Count} line(s)",
             out var headerRow);
         ExportSpreadsheetHelper.WriteHeaders(ws, headerRow, headers);
@@ -520,7 +520,7 @@ public class ProductService : IProductService
         var ws = ExportSpreadsheetHelper.BeginReport(
             wb,
             "Product Receiving",
-            "GensanPOS — Product Receiving History",
+            "SteelTrack — Product Receiving History",
             $"{product.Sku} · {product.Name} · {rows.Count} line(s)",
             out var headerRow);
         ExportSpreadsheetHelper.WriteHeaders(ws, headerRow, headers);

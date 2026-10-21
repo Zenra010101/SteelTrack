@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Audit;
+namespace SteelTrack.Application.DTOs.Audit;
 
 public class AuditLogSearchResult
 {

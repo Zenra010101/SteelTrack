@@ -1,16 +1,16 @@
 using ClosedXML.Excel;
 
-using GensanPOS.Application.Common;
+using SteelTrack.Application.Common;
 
-using GensanPOS.Application.DTOs.Returns;
+using SteelTrack.Application.DTOs.Returns;
 
-using GensanPOS.Application.Interfaces;
+using SteelTrack.Application.Interfaces;
 
-using GensanPOS.Infrastructure.Services.Reports;
+using SteelTrack.Infrastructure.Services.Reports;
 
 
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 
 
@@ -64,7 +64,7 @@ public class GrsExportService : IGrsExportService
 
             "GRS",
 
-            "GensanPOS — Goods Return Slips",
+            "SteelTrack — Goods Return Slips",
 
             $"Total records: {data.Items.Count}",
 
@@ -178,7 +178,7 @@ public class GrsExportService : IGrsExportService
 
         return ReportDocumentHelper.BuildTablePdf(
 
-            "GensanPOS — Goods Return Slips",
+            "SteelTrack — Goods Return Slips",
 
             $"Total records: {data.Items.Count}",
 

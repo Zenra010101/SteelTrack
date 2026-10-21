@@ -1,6 +1,6 @@
-using GensanPOS.Application.DTOs.Dashboard;
+using SteelTrack.Application.DTOs.Dashboard;
 
-namespace GensanPOS.Application.Interfaces;
+namespace SteelTrack.Application.Interfaces;
 
 public interface IDashboardService
 {

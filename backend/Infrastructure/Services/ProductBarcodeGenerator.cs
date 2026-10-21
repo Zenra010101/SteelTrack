@@ -1,4 +1,4 @@
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public static class ProductBarcodeGenerator
 {

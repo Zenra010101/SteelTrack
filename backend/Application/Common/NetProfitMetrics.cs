@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.Common;
+namespace SteelTrack.Application.Common;
 
 /// <summary>Net operational profit for a period (aligned with profit report).</summary>
 public sealed class NetProfitMetrics

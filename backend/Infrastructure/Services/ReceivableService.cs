@@ -1,15 +1,15 @@
-using GensanPOS.Application.Common;
-using GensanPOS.Application.DTOs.Cheques;
-using GensanPOS.Application.DTOs.Customers;
-using GensanPOS.Application.DTOs.Receivables;
-using GensanPOS.Application.Exceptions;
-using GensanPOS.Application.Interfaces;
-using GensanPOS.Domain.Constants;
-using GensanPOS.Domain.Entities;
-using GensanPOS.Domain.Enums;
-using GensanPOS.Domain.Interfaces;
+using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Cheques;
+using SteelTrack.Application.DTOs.Customers;
+using SteelTrack.Application.DTOs.Receivables;
+using SteelTrack.Application.Exceptions;
+using SteelTrack.Application.Interfaces;
+using SteelTrack.Domain.Constants;
+using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
+using SteelTrack.Domain.Interfaces;
 
-namespace GensanPOS.Infrastructure.Services;
+namespace SteelTrack.Infrastructure.Services;
 
 public class ReceivableService : IReceivableService
 {

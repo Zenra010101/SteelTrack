@@ -1,4 +1,4 @@
-namespace GensanPOS.Application.DTOs.Search;
+namespace SteelTrack.Application.DTOs.Search;
 
 public class GlobalSearchResultDto
 {

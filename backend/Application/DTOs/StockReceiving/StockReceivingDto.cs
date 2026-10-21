@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Enums;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.StockReceiving;
+namespace SteelTrack.Application.DTOs.StockReceiving;
 
 public class StockReceivingDto
 {

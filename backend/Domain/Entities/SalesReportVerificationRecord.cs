@@ -1,6 +1,6 @@
-using GensanPOS.Domain.Common;
+using SteelTrack.Domain.Common;
 
-namespace GensanPOS.Domain.Entities;
+namespace SteelTrack.Domain.Entities;
 
 /// <summary>
 /// Immutable snapshot issued when a daily sales report is printed or exported as PDF.

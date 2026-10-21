@@ -1,9 +1,9 @@
-using GensanPOS.Application.DTOs.Cheques;
-using GensanPOS.Application.DTOs.Receivables;
-using GensanPOS.Application.DTOs.Sales;
-using GensanPOS.Domain.Enums;
+using SteelTrack.Application.DTOs.Cheques;
+using SteelTrack.Application.DTOs.Receivables;
+using SteelTrack.Application.DTOs.Sales;
+using SteelTrack.Domain.Enums;
 
-namespace GensanPOS.Application.DTOs.Customers;
+namespace SteelTrack.Application.DTOs.Customers;
 
 public class CustomerDto
 {

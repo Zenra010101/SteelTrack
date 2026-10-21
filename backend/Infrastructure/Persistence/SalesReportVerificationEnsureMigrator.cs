@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace GensanPOS.Infrastructure.Persistence;
+namespace SteelTrack.Infrastructure.Persistence;
 
 /// <summary>
 /// Ensures sales report verification table exists (PostgreSQL production + SQLite dev).
