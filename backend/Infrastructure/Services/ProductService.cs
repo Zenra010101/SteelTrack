@@ -761,10 +761,19 @@ public class ProductService : IProductService
         };
     }
 
+    /// <summary>
+    /// Legacy seasonal estimate, kept for callers that need a forecast
+    /// without the Python forecasting service.
+    ///
+    /// The controller no longer calls this: it uses ILstmForecastService,
+    /// which serves real model forecasts and falls back to this estimate
+    /// only when the forecasting service is unreachable.
+    /// </summary>
     public async Task<IReadOnlyList<LstmForecastDto>> GetLstmForecastAsync(
         DateTime fromMonth,
         DateTime toMonth,
         Guid? categoryId,
+        Guid? branchId = null,
         CancellationToken cancellationToken = default)
     {
         // Enforce a start-of-month dates
@@ -834,17 +843,29 @@ public class ProductService : IProductService
         var productIds = activeProducts.Select(p => p.Id).ToList();
 
         // Get historical sales for these products to construct trend/baseline
-        var salesHistory = await _context.SaleItems
+        var salesQuery = _context.SaleItems
             .Include(si => si.Sale)
-            .Where(si => productIds.Contains(si.ProductId) 
-                      && si.Sale.Status == SaleStatus.Completed 
-                      && !si.Sale.IsArchived)
+            .Where(si => productIds.Contains(si.ProductId)
+                      && si.Sale.Status == SaleStatus.Completed
+                      && !si.Sale.IsArchived);
+
+        if (branchId.HasValue)
+            salesQuery = salesQuery.Where(si => si.Sale.BranchId == branchId.Value);
+
+        var salesHistory = await salesQuery
             .Select(si => new {
                 si.ProductId,
                 si.Quantity,
                 si.Sale.CreatedAt
             })
             .ToListAsync(cancellationToken);
+
+        // Units actually sold per (product, month). The chart shows actual
+        // consumption next to the forecast, so the actuals have to come
+        // from the same sales the estimate was built on.
+        var actualsByProductMonth = salesHistory
+            .GroupBy(s => (s.ProductId, Month: new DateTime(s.CreatedAt.Year, s.CreatedAt.Month, 1, 0, 0, 0, DateTimeKind.Utc)))
+            .ToDictionary(g => g.Key, g => g.Sum(s => s.Quantity));
 
         var forecasts = new List<LstmForecastDto>();
 
@@ -939,14 +960,24 @@ public class ProductService : IProductService
                     CategoryId = product.CategoryId,
                     CategoryName = productCat?.Name ?? "",
                     ParentCategoryId = productCat?.ParentCategoryId,
-                    ParentCategoryName = productCat?.ParentCategoryId.HasValue == true 
-                        ? categories.FirstOrDefault(c => c.Id == productCat.ParentCategoryId.Value)?.Name 
+                    ParentCategoryName = productCat?.ParentCategoryId.HasValue == true
+                        ? categories.FirstOrDefault(c => c.Id == productCat.ParentCategoryId.Value)?.Name
                         : null,
                     Month = targetMonth.ToString("yyyy-MM"),
                     PredictedQuantity = predictedQty,
                     PredictedRevenue = predictedRevenue,
                     ConfidenceInterval = confidence,
+                    // The legacy estimate has no calibrated band. Report a
+                    // nominal +/-8% band so the chart can still draw one
+                    // instead of a zero-width sliver.
+                    ConfidenceLower = (int)Math.Round(predictedQty * 0.92),
+                    ConfidenceUpper = (int)Math.Round(predictedQty * 1.08),
+                    ActualQuantity = actualsByProductMonth.GetValueOrDefault(
+                        (product.Id, targetMonth), 0),
                     Trend = trend,
+                    Source = "fallback",
+                    ModelVersion = "legacy-estimate",
+                    ServiceFallback = true,
                     CurrentStock = currentStock,
                     ReorderLevel = reorderLevel,
                     RecommendedRestock = recommendedRestock,

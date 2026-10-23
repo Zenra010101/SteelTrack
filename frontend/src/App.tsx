@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, Filter } from 'lucide-react';
+import { Search, Plus, Filter, Loader2 } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MetricsOverview } from './components/MetricsOverview';
@@ -26,19 +26,35 @@ import {
   fetchStats,
   createBatch,
   updateBatchStatus,
+  getAuthHeaders,
 } from './services/api';
+import {
+  clearAuthState,
+  decodeJwtPayload,
+  getStoredToken,
+  messageForReason,
+  notifySessionEnded,
+  onSessionEnd,
+} from './services/session';
 import type { SteelBatch, InventoryStats, BatchStatus, CreateSteelBatchDto } from './types/steel';
 import { UserRole, BranchLocation, type UserSession } from './types/auth';
 
+/**
+ * What the app knows about the session when it boots.
+ *
+ * 'checking'  — we are still asking the server whether the stored token is
+ *               good; the login screen must not flash on screen while this
+ *               is in flight.
+ * 'ready'     — the session is valid and unchanged.
+ * 'ended'     — the session is over; the user has to sign in again.
+ */
+type BootState = 'checking' | 'ready' | 'ended';
+
 export function App() {
-  const [userSession, setUserSession] = useState<UserSession | null>(() => {
-    try {
-      const saved = localStorage.getItem('steeltrack_user_session');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [bootState, setBootState] = useState<BootState>('checking');
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
+
+  const [userSession, setUserSession] = useState<UserSession | null>(null);
 
   const [activeTab, setActiveTab] = useState<string>(() => {
     try {
@@ -91,14 +107,26 @@ export function App() {
   };
 
   const handleLogout = () => {
+    // Tell the server first — it writes the audit row. Best effort: if the
+    // API is unreachable the local session still has to end.
+    void fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    }).catch(() => undefined);
+
     try {
-      localStorage.removeItem('steeltrack_user_session');
       localStorage.removeItem('steeltrack_active_tab');
       localStorage.removeItem('steeltrack_selected_branch');
     } catch (err) {
       console.warn('Failed clearing session from localStorage:', err);
     }
+
+    // Removes the token and the stored user as well as the session marker.
+    clearAuthState();
+
     setUserSession(null);
+    setBootState('ended');
+    setSessionNotice(null);
   };
 
   const handleSelectTab = (tab: string) => {
@@ -137,11 +165,91 @@ export function App() {
     }
   }, [search, gradeFilter, statusFilter, effectiveBranch]);
 
+  // Begin boot validation once. While it is running the login screen must
+  // not flash at somebody who is already signed in.
   useEffect(() => {
-    if (userSession) {
-      loadData();
+    let cancelled = false;
+
+    async function boot() {
+      const raw = localStorage.getItem('steeltrack_user_session');
+
+      // Nothing stored: there is no session to validate.
+      if (!raw) {
+        if (!cancelled) setBootState('ready');
+        return;
+      }
+
+      const token = getStoredToken();
+
+      if (!token) {
+        // The marker says we are logged in but there is no token. Toss the
+        // marker and start fresh.
+        try {
+          localStorage.removeItem('steeltrack_user_session');
+        } catch {
+          /* ignore */
+        }
+        if (!cancelled) setBootState('ready');
+        return;
+      }
+
+      const claim = decodeJwtPayload(token);
+
+      if (claim?.stt_instance) {
+        try {
+          const res = await fetch('/api/session/instance', {
+            headers: getAuthHeaders(),
+          });
+
+          if (res.ok) {
+            const serverInstanceId = (await res.json()).instanceId;
+            if (serverInstanceId && claim.stt_instance !== serverInstanceId) {
+              // The server restarted and no longer owns this token. Clear it
+              // and report "restarted" rather than letting the generic 401
+              // path call it an expiry.
+              clearAuthState();
+              if (!cancelled) {
+                notifySessionEnded('server_restarted');
+              }
+              return;
+            }
+          }
+        } catch {
+          // The API could not be reached. That is a connectivity problem, not
+          // a session problem — the token stays exactly where it is and the
+          // views report their own errors.
+        }
+      }
+
+      // Everything matched, or the server could not be asked. Restore the
+      // stored session exactly as it was: a browser reload is not a session
+      // change, and the token is not touched.
+      try {
+        const parsed = JSON.parse(raw) as UserSession;
+        if (!cancelled && parsed?.username) setUserSession(parsed);
+      } catch {
+        /* keep current state */
+      }
+
+      if (!cancelled) setBootState('ready');
     }
-  }, [userSession, loadData]);
+
+    void boot();
+
+    // A 401 from anywhere in the app ends the session. The interceptor has
+    // already cleared the stored token; drop the in-memory session too, so
+    // the app stops rendering data it can no longer fetch.
+    const unsubscribe = onSessionEnd((reason) => {
+      setUserSession(null);
+      setBootState('ended');
+      setSessionNotice(messageForReason(reason));
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
   // Auto-refresh stock lookup at 20-second interval when on inventory tab
   useEffect(() => {
@@ -163,9 +271,30 @@ export function App() {
     await loadData();
   };
 
-  // Render Login Screen if user is not authenticated
+  // Render Login Screen if user is not authenticated.
+  // While the boot check is in flight we hold the screen rather than flash the
+  // login form at somebody who is already signed in — a page reload must not
+  // look like a session ending.
   if (!userSession) {
-    return <LoginScreen onLogin={handleLogin} />;
+    if (bootState === 'checking') {
+      return (
+        <div className="login-wrapper">
+          <div className="login-container single-card">
+            <div
+              className="login-form-pane"
+              style={{ textAlign: 'center', color: '#64748B' }}
+            >
+              <Loader2 size={22} />
+              <p style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}>
+                Restoring your session…
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return <LoginScreen onLogin={handleLogin} notice={sessionNotice} />;
   }
 
   // Get current active tab human-readable title

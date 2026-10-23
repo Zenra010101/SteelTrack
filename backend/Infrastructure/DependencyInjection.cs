@@ -92,6 +92,28 @@ public static class DependencyInjection
         services.AddScoped<IExpenseService, ExpenseService>();
         services.AddScoped<IApprovalRequestService, ApprovalRequestService>();
 
+        // --- LSTM forecasting service -------------------------------------
+        // The Python forecasting service is a separate process. It is
+        // reached over HTTP with a shared secret, and the .NET API falls
+        // back to a legacy estimate when it is unreachable.
+        services.ConfigureLstmService(configuration);
+
+        services.AddHttpClient<ILstmForecastClient, LstmForecastClient>((sp, client) =>
+        {
+            var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<LstmServiceSettings>>().Value;
+            client.BaseAddress = new Uri(settings.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        })
+        // The forecasting service is a downstream dependency: a failure
+        // there must not fail the request, so errors are not retried here
+        // (the service falls back to the legacy estimate instead).
+        .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        });
+
+        services.AddScoped<ILstmForecastService, LstmForecastService>();
+
         services.AddHostedService<ExpenseAttachmentRetentionService>();
 
         return services;

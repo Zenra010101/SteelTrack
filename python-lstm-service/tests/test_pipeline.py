@@ -128,3 +128,56 @@ class TestSeriesEligibility:
 
         assert summary.trained == 1
         assert summary.results[0].key.product_id == wanted_product
+
+
+class TestArtifactKeyLookup:
+    """Regression cover for the trained-model lookup in the predictor.
+
+    The registry keys its artifacts by a plain ``(product_id, branch_id)``
+    tuple, while the series collection is keyed by the ``SeriesKey``
+    dataclass. The two hash identically but compare unequal, so a lookup
+    made with the wrong one silently misses and every series falls back
+    to seasonal-naive — the trained model is never actually served.
+
+    The test drives the real ``Predictor.predict`` path and asserts on the
+    ``source`` field, because that is the only place the distinction
+    between "served the trained LSTM" and "fell back" is observable.
+    """
+
+    def test_series_key_does_not_match_tuple_key(self):
+        """Guard the premise: the two key forms must not be interchangeable."""
+        key = SeriesKey(product_id=PRODUCT_ID, branch_id=BRANCH_ID)
+        assert key != (PRODUCT_ID, BRANCH_ID)
+
+    async def test_predictor_serves_trained_model_not_fallback(self, registry):
+        """A series with a trained artifact must be served by the LSTM."""
+        from src.inference.predictor import Predictor
+
+        series = {
+            SeriesKey(product_id=PRODUCT_ID, branch_id=BRANCH_ID): make_series([10] * 24),
+        }
+
+        summary = await train_series(
+            series,
+            lookback=24,
+            horizon=3,
+            version="v0.1.0-keylookup",
+            registry=registry,
+        )
+        assert summary.trained == 1, "fixture must actually train a model"
+
+        class _StubRepository:
+            """Returns the trained series regardless of the requested scope."""
+
+            async def get_monthly_series(self, **_kwargs):
+                return series
+
+        predictor = Predictor(registry, _StubRepository())
+        predictions = await predictor.predict(model_version="v0.1.0-keylookup")
+
+        assert predictions, "predictor must return predictions"
+        sources = {p.source for p in predictions}
+        assert sources == {"lstm"}, (
+            "expected the trained LSTM to serve every prediction, "
+            f"got sources={sources}"
+        )

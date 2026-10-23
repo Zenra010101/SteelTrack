@@ -19,17 +19,20 @@ public class ProductsController : ControllerBase
     private readonly IBatchAllocationService _batchAllocationService;
     private readonly IProductBatchService _productBatchService;
     private readonly IAuditService _auditService;
+    private readonly ILstmForecastService _lstmForecastService;
 
     public ProductsController(
         IProductService productService,
         IBatchAllocationService batchAllocationService,
         IProductBatchService productBatchService,
-        IAuditService auditService)
+        IAuditService auditService,
+        ILstmForecastService lstmForecastService)
     {
         _productService = productService;
         _batchAllocationService = batchAllocationService;
         _productBatchService = productBatchService;
         _auditService = auditService;
+        _lstmForecastService = lstmForecastService;
     }
 
     private Guid UserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -279,14 +282,27 @@ public class ProductsController : ControllerBase
         return Ok(ApiResponse<object>.Ok(new { }, "Product deactivated"));
     }
 
+    /// <summary>
+    /// Demand forecast for the given month range.
+    ///
+    /// The forecast is produced by the Python LSTM forecasting service, which
+    /// forecasts per (product, branch) pair; the rows here are aggregated
+    /// across branches to one row per (product, month).
+    ///
+    /// If that service is unreachable, the rows fall back to the legacy
+    /// seasonal estimate and the response's ServiceFallback flag is set, so
+    /// the client can tell a real model forecast from an estimate.
+    /// </summary>
     [HttpGet("lstm-forecast")]
-    public async Task<ActionResult<ApiResponse<IReadOnlyList<LstmForecastDto>>>> GetLstmForecast(
+    public async Task<ActionResult<ApiResponse<LstmForecastResponse>>> GetLstmForecast(
         [FromQuery] DateTime fromMonth,
         [FromQuery] DateTime toMonth,
         [FromQuery] Guid? categoryId,
+        [FromQuery] Guid? branchId,
         CancellationToken cancellationToken)
     {
-        var forecast = await _productService.GetLstmForecastAsync(fromMonth, toMonth, categoryId, cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<LstmForecastDto>>.Ok(forecast));
+        var forecast = await _lstmForecastService.GetForecastAsync(
+            fromMonth, toMonth, categoryId, branchId, cancellationToken);
+        return Ok(ApiResponse<LstmForecastResponse>.Ok(forecast));
     }
 }

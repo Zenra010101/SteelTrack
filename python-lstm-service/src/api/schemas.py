@@ -5,9 +5,14 @@ Keep them in sync with the .NET DTOs in SteelTrack.Application.DTOs.Forecast.
 """
 
 from datetime import date
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+
+# Which engine produced a forecast row: the trained LSTM, or the
+# seasonal-naive fallback used for series that have no trained model.
+ForecastSource = Literal["lstm", "seasonal_naive"]
 
 
 class TrainRequest(BaseModel):
@@ -66,6 +71,13 @@ class ForecastPrediction(BaseModel):
     confidence_upper: int = Field(..., ge=0, description="95% CI upper bound (inclusive)")
     trend: str = Field(..., pattern="^(up|down|stable)$", description="Direction vs prior month")
     model_version: str = Field(..., description="Model artifact version used for this prediction")
+    source: ForecastSource = Field(
+        ...,
+        description=(
+            "Which engine produced this row: the trained LSTM, or the "
+            "seasonal-naive fallback used for series without a trained model"
+        ),
+    )
 
 
 class PredictRequest(BaseModel):

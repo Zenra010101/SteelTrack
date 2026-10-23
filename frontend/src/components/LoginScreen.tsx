@@ -4,9 +4,11 @@ import { UserRole, BranchLocation, type UserSession } from '../types/auth';
 
 interface LoginScreenProps {
   onLogin: (session: UserSession) => void;
+  /** Why the previous session ended, shown above the form. */
+  notice?: string | null;
 }
 
-export function LoginScreen({ onLogin }: LoginScreenProps) {
+export function LoginScreen({ onLogin, notice }: LoginScreenProps) {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [redirectNotice, setRedirectNotice] = useState<string | null>(null);
@@ -154,6 +156,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <div className="login-auto-notice" style={{ background: '#ECFDF5', borderColor: '#A7F3D0', color: '#065F46', marginBottom: '1rem' }}>
               <Sparkles size={16} />
               <span>{redirectNotice}</span>
+            </div>
+          )}
+
+          {notice && (
+            <div className="login-auto-notice" style={{ background: '#FFFBEB', borderColor: '#FDE68A', color: '#92400E', marginBottom: '1rem' }}>
+              <AlertCircle size={16} />
+              <span>{notice}</span>
             </div>
           )}
 

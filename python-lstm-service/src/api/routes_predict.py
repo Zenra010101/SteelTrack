@@ -1,6 +1,13 @@
 """Prediction endpoint for the LSTM forecasting service.
 
-GET /predict — returns forecasted demand for (product, branch) pairs.
+GET /predict  — returns forecasted demand for (product, branch) pairs.
+POST /predict — same thing, with the scope in a JSON body.
+
+Both forms share one implementation. The GET form exists for ad-hoc
+tooling (curl, the e2e verifier); the POST form exists because a scope of
+several hundred product UUIDs does not belong in a URL — a 646-product
+query string is ~31 KB, which is well past what proxies and servers
+handle comfortably. The .NET API uses POST.
 """
 
 # B008: FastAPI's documented idiom is to call Query()/Depends() in the
@@ -13,7 +20,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from src.api.schemas import ForecastPrediction, PredictResponse
+from src.api.schemas import ForecastPrediction, PredictRequest, PredictResponse
 from src.config import get_settings
 from src.data.db import get_session
 from src.data.repository import ForecastRepository
@@ -25,31 +32,17 @@ router = APIRouter(prefix="/predict", tags=["predictions"])
 _settings = get_settings()
 
 
-@router.get(
-    "",
-    response_model=PredictResponse,
-    summary="Get LSTM demand forecasts for given products and branches",
-)
-async def get_predictions(
-    product_ids: list[UUID] | None = Query(
-        default=None, description="Repeat or comma-separate product UUIDs; omit for all"
-    ),
-    branch_ids: list[UUID] | None = Query(
-        default=None, description="Repeat or comma-separate branch UUIDs; omit for all"
-    ),
-    horizon_months: int = Query(
-        default=3, ge=1, le=12, description="Number of months to forecast"
-    ),
-    model_version: str | None = Query(
-        default=None, description="Specific model version; omit for latest"
-    ),
+async def _run_predictions(
+    *,
+    product_ids: list[UUID] | None,
+    branch_ids: list[UUID] | None,
+    horizon_months: int,
+    model_version: str | None,
 ) -> PredictResponse:
-    """
-    Return predicted quantities with 95% confidence intervals.
+    """Resolve the requested scope into a forecast response.
 
-    Each row covers one (product, branch, month) tuple. Series without a
-    trained model fall back to a seasonal-naive estimate, and the response
-    still includes them so the UI shows complete coverage.
+    Raises HTTPException(503) when the service has no trained model or
+    cannot reach the database.
     """
     registry = ModelRegistry(_settings.model_dir)
 
@@ -95,12 +88,68 @@ async def get_predictions(
                 confidence_upper=p.confidence_upper,
                 trend=p.trend,
                 model_version=p.model_version,
+                source=p.source,
             )
             for p in raw
         ],
         model_version=resolved_version,
         generated_at=now.isoformat(),
         count=len(raw),
+    )
+
+
+@router.get(
+    "",
+    response_model=PredictResponse,
+    summary="Get LSTM demand forecasts for given products and branches",
+)
+async def get_predictions(
+    product_ids: list[UUID] | None = Query(
+        default=None, description="Repeat or comma-separate product UUIDs; omit for all"
+    ),
+    branch_ids: list[UUID] | None = Query(
+        default=None, description="Repeat or comma-separate branch UUIDs; omit for all"
+    ),
+    horizon_months: int = Query(
+        default=3, ge=1, le=12, description="Number of months to forecast"
+    ),
+    model_version: str | None = Query(
+        default=None, description="Specific model version; omit for latest"
+    ),
+) -> PredictResponse:
+    """
+    Return predicted quantities with 95% confidence intervals.
+
+    Each row covers one (product, branch, month) tuple. Series without a
+    trained model fall back to a seasonal-naive estimate, and the response
+    still includes them so the UI shows complete coverage.
+    """
+    return await _run_predictions(
+        product_ids=product_ids,
+        branch_ids=branch_ids,
+        horizon_months=horizon_months,
+        model_version=model_version,
+    )
+
+
+@router.post(
+    "",
+    response_model=PredictResponse,
+    summary="Get LSTM demand forecasts (scope in the request body)",
+)
+async def post_predictions(request: PredictRequest) -> PredictResponse:
+    """
+    Body-based equivalent of GET /predict.
+
+    Prefer this over the GET form when scoping to many products: a scope
+    of several hundred UUIDs is a ~30 KB query string, which is not a
+    reasonable thing to put in a URL.
+    """
+    return await _run_predictions(
+        product_ids=request.product_ids,
+        branch_ids=request.branch_ids,
+        horizon_months=request.horizon_months,
+        model_version=request.model_version,
     )
 
 

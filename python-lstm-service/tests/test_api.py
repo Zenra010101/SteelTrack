@@ -62,6 +62,81 @@ class TestOpenApi:
         assert "/health" in schema["paths"]
 
 
+class TestSourceField:
+    """The response must say which engine produced each row.
+
+    A row served by the seasonal-naive fallback is indistinguishable from
+    a row served by the trained LSTM unless the engine is reported. The
+    e2e verifier asserts on this field, so it is part of the contract.
+    """
+
+    def test_prediction_schema_exposes_source(self, client):
+        resp = client.get("/openapi.json")
+        assert resp.status_code == 200
+        props = resp.json()["components"]["schemas"]["ForecastPrediction"]["properties"]
+        assert "source" in props, "ForecastPrediction must expose a source field"
+        assert props["source"]["enum"] == ["lstm", "seasonal_naive"]
+
+    def test_source_is_required(self, client):
+        resp = client.get("/openapi.json")
+        required = resp.json()["components"]["schemas"]["ForecastPrediction"]["required"]
+        assert "source" in required, "source must be required, not optional"
+
+    def test_prediction_rejects_unknown_source(self):
+        from pydantic import ValidationError
+
+        from src.api.schemas import ForecastPrediction
+
+        base = {
+            "product_id": "00000000-0000-0000-0000-000000000001",
+            "product_sku": "SKU-1",
+            "product_name": "Product",
+            "branch_id": "00000000-0000-0000-0000-000000000002",
+            "branch_code": "BR-1",
+            "forecast_month": "2026-11-01",
+            "predicted_quantity": 10,
+            "confidence_lower": 5,
+            "confidence_upper": 15,
+            "trend": "stable",
+            "model_version": "v0.1.0",
+        }
+
+        assert ForecastPrediction(**base, source="lstm").source == "lstm"
+        assert ForecastPrediction(**base, source="seasonal_naive").source == "seasonal_naive"
+
+        with pytest.raises(ValidationError):
+            ForecastPrediction(**base, source="magic")
+
+
+class TestPostPredict:
+    """POST /predict carries the scope in a body.
+
+    A scope of several hundred product UUIDs is a ~30 KB query string,
+    which is not a reasonable thing to put in a URL. The .NET API uses
+    the POST form.
+    """
+
+    def test_post_predict_requires_api_key(self, client):
+        resp = client.post("/predict", json={"product_ids": [], "branch_ids": []})
+        assert resp.status_code == 401
+
+    def test_post_predict_rejects_bad_horizon(self, client):
+        settings = get_settings()
+        resp = client.post(
+            "/predict",
+            json={"product_ids": [], "branch_ids": [], "horizon_months": 99},
+            headers={"X-LSTM-API-KEY": settings.api_key},
+        )
+        assert resp.status_code == 422
+
+    def test_post_predict_is_in_the_openapi_schema(self, client):
+        resp = client.get("/openapi.json")
+        assert resp.status_code == 200
+        paths = resp.json()["paths"]
+        assert "/predict" in paths
+        assert "post" in paths["/predict"], "POST /predict must be exposed"
+
+
 class TestValidation:
     def test_train_rejects_empty_scope(self, client):
         settings = get_settings()

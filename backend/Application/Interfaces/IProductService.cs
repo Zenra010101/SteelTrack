@@ -72,9 +72,19 @@ public interface IProductService
         bool includeFinancials,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Legacy seasonal estimate. The forecasting endpoint uses
+    /// ILstmForecastService instead; this remains the single source of
+    /// truth for the estimate used when the forecasting service is
+    /// unreachable.
+    ///
+    /// <paramref name="branchId"/> scopes both the estimate and the actual
+    /// quantities to one branch; null means enterprise-wide.
+    /// </summary>
     Task<IReadOnlyList<LstmForecastDto>> GetLstmForecastAsync(
         DateTime fromMonth,
         DateTime toMonth,
         Guid? categoryId,
+        Guid? branchId = null,
         CancellationToken cancellationToken = default);
 }

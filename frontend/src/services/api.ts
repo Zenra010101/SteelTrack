@@ -384,37 +384,242 @@ export async function processPosSale(
 // DEMAND FORECAST & ANALYTICS (Live DB Aggregations)
 // ============================================================================
 
-export interface LstmDemandPoint {
+/** A forecast row as returned by GET /api/products/lstm-forecast. */
+export interface LstmForecastRow {
+  productId: string;
+  productSku: string;
+  productName: string;
+  categoryId: string;
+  categoryName: string;
+  parentCategoryId?: string | null;
+  parentCategoryName?: string | null;
+  /** Format: "YYYY-MM" */
   month: string;
-  actualDemandTons?: number;
-  predictedDemandTons: number;
+  predictedQuantity: number;
+  predictedRevenue: number;
+  /** 0..1 — how tight the confidence band is around the point forecast. */
+  confidenceInterval: number;
+  /** Lower bound of the 95% confidence band, in units. */
   confidenceLower: number;
+  /** Upper bound of the 95% confidence band, in units. */
   confidenceUpper: number;
-  isForecast: boolean;
+  /** Units actually sold in this month. Zero for months that have not happened. */
+  actualQuantity: number;
+  trend: 'up' | 'down' | 'stable';
+  /**
+   * Which engine produced the row:
+   *   "lstm"          — served by the trained model
+   *   "seasonal_naive" — the forecasting service fell back for a series
+   *                      with no trained model
+   *   "fallback"      — the forecasting service was unreachable and the
+   *                      legacy seasonal estimate was used
+   */
+  source: 'lstm' | 'seasonal_naive' | 'fallback' | 'unknown';
+  modelVersion: string;
+  serviceFallback: boolean;
+  sourceMismatchCount: number;
+  currentStock: number;
+  reorderLevel: number;
+  recommendedRestock: number;
+  planningStatus: 'Restock Needed' | 'Optimal' | 'Overstocked';
 }
 
-export function fetchLstmDemandForecast(
-  branch?: BranchLocation | 'All',
-  grade?: string
-): LstmDemandPoint[] {
-  const months = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr (Forecast)', 'May (Forecast)', 'Jun (Forecast)'];
-  const gradeFactor = grade === 'A572_HighStrength' ? 1.25 : grade === 'SS304_Stainless' ? 0.75 : 1.0;
-  const baseTonnage = (branch === BranchLocation.Cagayan ? 140 : branch === BranchLocation.Davao ? 110 : 95) * gradeFactor;
+export interface LstmForecastResponse {
+  count: number;
+  modelVersion: string;
+  serviceReachable: boolean;
+  serviceFallback: boolean;
+  sourceMismatchCount: number;
+  /** Rows in the window served by the trained model. */
+  modelServedCount: number;
+  /** Rows in the window served by the legacy seasonal estimate. */
+  fallbackCount: number;
+  /**
+   * HTTP status the forecasting service answered with, or null when it never
+   * answered at all. 401 means it rejected the shared API key; 503 means it
+   * has no trained model; 5xx means it failed.
+   */
+  serviceStatusCode: number | null;
+  /** Short excerpt of the forecasting service's error message, when it failed. */
+  serviceError: string | null;
+  /** Rows in the forecast region of the window (the months the model can forecast). */
+  forecastWindowCount: number;
+  /** Forecast-region rows that fell back to the legacy estimate. */
+  forecastFallbackCount: number;
+  forecasts: LstmForecastRow[];
+}
 
-  return months.map((m, idx) => {
-    const isForecast = idx >= 6;
-    const variation = Math.sin(idx * 0.8) * 15 + (idx * 4);
-    const predicted = Math.round(baseTonnage + variation);
+/**
+ * Why a forecast request failed. Each cause needs a different message — a
+ * blanket "the API did not respond" is wrong for all but one of them.
+ */
+export type LstmForecastFailureKind =
+  | 'unauthorized'
+  | 'forbidden'
+  | 'not_found'
+  | 'bad_request'
+  | 'server_error'
+  | 'network'
+  | 'malformed';
+
+export type LstmForecastResult =
+  | { ok: true; data: LstmForecastResponse }
+  | {
+      ok: false;
+      kind: LstmForecastFailureKind;
+      status?: number;
+      message: string;
+      reason?: string;
+    };
+
+/**
+ * Fetch the demand forecast from the .NET API, which delegates to the
+ * Python LSTM forecasting service.
+ *
+ * Returns a discriminated result rather than null, so the caller can tell
+ * an expired session from a server error from an unreachable API and say
+ * something true about each.
+ */
+export async function fetchLstmForecast(
+  fromMonth: string,
+  toMonth: string,
+  categoryId?: string,
+  branchId?: string
+): Promise<LstmForecastResult> {
+  const params = new URLSearchParams();
+  params.append('fromMonth', fromMonth);
+  params.append('toMonth', toMonth);
+  if (categoryId) params.append('categoryId', categoryId);
+  if (branchId) params.append('branchId', branchId);
+
+  let res: Response;
+  try {
+    res = await fetch(`/api/products/lstm-forecast?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
+  } catch {
+    // The request never completed: the API is not reachable at all.
+    return {
+      ok: false,
+      kind: 'network',
+      message:
+        'Could not reach the .NET API. The browser could not complete the request — confirm the API is running and reachable.',
+    };
+  }
+
+  if (!res.ok) {
+    let serverMessage: string | undefined;
+    let reason: string | undefined;
+    try {
+      const body = await res.json();
+      serverMessage = body?.message;
+      reason = body?.reason;
+    } catch {
+      // A non-JSON error body; the status alone still tells us something.
+    }
+
+    const detail = serverMessage ? ` ${serverMessage}` : '';
+
+    if (res.status === 401) {
+      return {
+        ok: false,
+        kind: 'unauthorized',
+        status: res.status,
+        reason,
+        message:
+          'Your session has ended. Sign in again to view the demand forecast.',
+      };
+    }
+
+    if (res.status === 403) {
+      return {
+        ok: false,
+        kind: 'forbidden',
+        status: res.status,
+        reason,
+        message:
+          'Your account does not have permission to view the demand forecast.',
+      };
+    }
+
+    if (res.status === 404) {
+      return {
+        ok: false,
+        kind: 'not_found',
+        status: res.status,
+        message:
+          'The forecast endpoint was not found (HTTP 404). The frontend and the .NET API are out of sync.',
+      };
+    }
+
+    if (res.status === 400) {
+      return {
+        ok: false,
+        kind: 'bad_request',
+        status: res.status,
+        message: `The API rejected the forecast request (HTTP 400).${detail}`,
+      };
+    }
+
+    if (res.status >= 500) {
+      return {
+        ok: false,
+        kind: 'server_error',
+        status: res.status,
+        message: `The .NET API failed while building the forecast (HTTP ${res.status}).${detail} Check the API logs.`,
+      };
+    }
 
     return {
-      month: m,
-      actualDemandTons: isForecast ? undefined : Math.round(predicted + (Math.sin(idx) * 6)),
-      predictedDemandTons: predicted,
-      confidenceLower: Math.round(predicted * 0.92),
-      confidenceUpper: Math.round(predicted * 1.08),
-      isForecast,
+      ok: false,
+      kind: 'bad_request',
+      status: res.status,
+      message: `The API rejected the forecast request (HTTP ${res.status}).${detail}`,
     };
-  });
+  }
+
+  let json: any;
+  try {
+    json = await res.json();
+  } catch {
+    return {
+      ok: false,
+      kind: 'malformed',
+      status: res.status,
+      message:
+        'The .NET API returned a response the frontend could not read as JSON.',
+    };
+  }
+
+  const data = json?.data;
+  if (!data) {
+    return {
+      ok: false,
+      kind: 'malformed',
+      status: res.status,
+      message: json?.message
+        ? `The .NET API returned no forecast data. ${json.message}`
+        : 'The .NET API returned no forecast data.',
+    };
+  }
+
+  return {
+    ok: true,
+    data: {
+      count: data.count ?? 0,
+      modelVersion: data.modelVersion ?? 'unknown',
+      serviceReachable: data.serviceReachable ?? false,
+      serviceFallback: data.serviceFallback ?? true,
+      sourceMismatchCount: data.sourceMismatchCount ?? 0,
+      modelServedCount: data.modelServedCount ?? 0,
+      fallbackCount: data.fallbackCount ?? 0,
+      serviceStatusCode: data.serviceStatusCode ?? null,
+      serviceError: data.serviceError ?? null,
+      forecastWindowCount: data.forecastWindowCount ?? 0,
+      forecastFallbackCount: data.forecastFallbackCount ?? 0,
+      forecasts: Array.isArray(data.forecasts) ? data.forecasts : [],
+    },
+  };
 }
 
 // ============================================================================

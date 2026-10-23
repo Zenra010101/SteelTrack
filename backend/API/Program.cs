@@ -3,14 +3,56 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using FluentValidation.AspNetCore;
 using SteelTrack.Api;
+using SteelTrack.Api.Common;
 using SteelTrack.Api.Middleware;
 using SteelTrack.Application;
 using SteelTrack.Infrastructure;
 using SteelTrack.Infrastructure.Persistence;
+using SteelTrack.Infrastructure.Services;
 using SteelTrack.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
+/// <summary>
+/// Key under which the reason a session ended is stashed on the request, so
+/// the challenge handler can report it.
+/// </summary>
+const string SessionEndReasonKey = "SteelTrack.SessionEndReason";
+
+static string ResolveChallengeReason(JwtBearerChallengeContext context)
+{
+    var failure = context.AuthenticateFailure;
+
+    if (failure is SecurityTokenExpiredException)
+        return SessionEndReasons.TokenExpired;
+
+    if (failure is SecurityTokenInvalidSignatureException
+        or SecurityTokenInvalidIssuerException
+        or SecurityTokenInvalidAudienceException
+        or SecurityTokenInvalidAlgorithmException)
+        return SessionEndReasons.InvalidToken;
+
+    // No token at all.
+    if (string.IsNullOrEmpty(context.ErrorDescription) && failure is null)
+        return SessionEndReasons.MissingToken;
+
+    return SessionEndReasons.InvalidToken;
+}
+
+static string MessageForReason(string reason) => reason switch
+{
+    SessionEndReasons.ServerRestarted =>
+        "The server was restarted, so your session ended. Please sign in again.",
+    SessionEndReasons.TokenExpired =>
+        "Your session expired. Please sign in again.",
+    SessionEndReasons.MissingToken =>
+        "No session token was supplied. Please sign in again.",
+    SessionEndReasons.Forbidden =>
+        "Your account does not have access to this area.",
+    _ =>
+        "Your session is no longer valid. Please sign in again."
+};
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,14 +69,16 @@ builder.Services.AddControllers()
 builder.Services.AddFluentValidationAutoValidation();
 
 // JWT Authentication Setup
-var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() 
-    ?? new JwtSettings
-    {
-        Secret = "SteelTrack_Enterprise_Super_Secret_Key_2026_Secure_JWT_Key_XYZ123!",
-        Issuer = "SteelTrack",
-        Audience = "SteelTrack",
-        ExpirationHours = 12
-    };
+//
+// The server instance owns the JWT secret and the process instance id, so the
+// value tokens are signed with and the value they are validated against can
+// never drift apart. See ServerInstance for what the instance id is for.
+//
+// It is registered as a singleton here so the token service signs with the
+// very same instance id the validation path checks against. Constructing a
+// second one would give it a different id and reject every token it issued.
+var serverInstance = ServerInstance.Create(builder.Configuration);
+builder.Services.AddSingleton(serverInstance);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -45,9 +89,64 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidAudience = jwtSettings.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+            ValidIssuer = serverInstance.Issuer,
+            ValidAudience = serverInstance.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(serverInstance.Secret))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            // A token minted by a process that is no longer running must not
+            // keep working after a restart. The instance claim tells us which
+            // process minted the token; if it is not this one, the session
+            // predates the restart and has to end.
+            OnTokenValidated = context =>
+            {
+                var mintedBy = context.Principal?.FindFirst(ServerInstance.InstanceClaimType)?.Value;
+
+                if (string.IsNullOrEmpty(mintedBy) || mintedBy != serverInstance.InstanceId)
+                {
+                    context.HttpContext.Items[SessionEndReasonKey] = SessionEndReasons.ServerRestarted;
+                    context.Fail("The token was issued by a previous instance of the server.");
+                }
+
+                return Task.CompletedTask;
+            },
+
+            // A 401 today has an empty body, so the browser cannot tell an
+            // expired session from a server restart from a bad token. Write
+            // the reason into the body.
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+
+                var reason = context.HttpContext.Items[SessionEndReasonKey] as string
+                    ?? ResolveChallengeReason(context);
+
+                var message = MessageForReason(reason);
+
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    success = false,
+                    message,
+                    reason
+                });
+            },
+
+            // A 403 is an empty body too.
+            OnForbidden = async context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    success = false,
+                    message = MessageForReason(SessionEndReasons.Forbidden),
+                    reason = SessionEndReasons.Forbidden
+                });
+            }
         };
     });
 

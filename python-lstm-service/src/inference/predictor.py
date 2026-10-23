@@ -21,6 +21,7 @@ from uuid import UUID
 import numpy as np
 import torch
 
+from src.api.schemas import ForecastSource
 from src.config import get_settings
 from src.data.preprocessing import (
     classify_trend,
@@ -56,7 +57,7 @@ class RawPrediction:
     confidence_upper: int
     trend: str
     model_version: str
-    source: str  # "lstm" | "seasonal_naive"
+    source: ForecastSource  # "lstm" | "seasonal_naive"
 
 
 class Predictor:
@@ -131,7 +132,12 @@ class Predictor:
         predictions: list[RawPrediction] = []
 
         for key, points in series.items():
-            artifact = artifacts.get(key)
+            # The registry keys artifacts by a plain (product_id, branch_id)
+            # tuple, while `series` is keyed by the SeriesKey dataclass. The
+            # two hash identically but are not equal, so the lookup has to
+            # be done against the tuple form or every series would miss its
+            # trained model and silently fall back to seasonal-naive.
+            artifact = artifacts.get((key.product_id, key.branch_id))
             if artifact is None:
                 # No trained model for this series — seasonal-naive fallback.
                 predictions.extend(
