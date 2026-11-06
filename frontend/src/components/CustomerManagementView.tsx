@@ -284,7 +284,7 @@ export function CustomerManagementView() {
       {/* OWNER EDIT CREDIT LIMIT MODAL */}
       {editingCreditCustomer && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', color: '#F8FAFC', borderRadius: '12px', border: '1px solid #38BDF8', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
+          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#38BDF8' }}>
@@ -309,7 +309,7 @@ export function CustomerManagementView() {
 
             <form onSubmit={handleSaveCreditLimit}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   New Approved Credit Limit (PHP) <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
@@ -318,12 +318,12 @@ export function CustomerManagementView() {
                   required
                   value={newCreditLimitPHP}
                   onChange={(e) => setNewCreditLimitPHP(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #38BDF8', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px', fontSize: '1.05rem', fontWeight: 700, fontFamily: 'monospace' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #0284C7', color: '#0F172A', padding: '0.6rem', borderRadius: '6px', fontSize: '1.05rem', fontWeight: 700, fontFamily: 'monospace' }}
                 />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   Executive Justification / Reason Note
                 </label>
                 <textarea
@@ -331,7 +331,7 @@ export function CustomerManagementView() {
                   value={creditJustification}
                   onChange={(e) => setCreditJustification(e.target.value)}
                   placeholder="e.g. Board resolution approval, audited financial statement verification..."
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
                 />
               </div>
 
@@ -351,17 +351,17 @@ export function CustomerManagementView() {
       {/* REGISTER CUSTOMER MODAL */}
       {isAddModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', color: '#F8FAFC', borderRadius: '12px', border: '1px solid #334155', width: '92%', maxWidth: '540px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '92%', maxWidth: '540px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>Register Corporate Customer Account</h3>
-              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleRegisterCustomer}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   Customer / Trade Name <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
@@ -370,84 +370,84 @@ export function CustomerManagementView() {
                   placeholder="e.g. Mindanao Steelworks Corp."
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Registered Company Name</label>
+                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Registered Company Name</label>
                   <input
                     type="text"
                     placeholder="e.g. Mindanao Steelworks Corporation"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Tax TIN Number</label>
+                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Tax TIN Number</label>
                   <input
                     type="text"
                     placeholder="241-890-112-000"
                     value={tin}
                     onChange={(e) => setTin(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Business Address</label>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Business Address</label>
                 <input
                   type="text"
                   placeholder="e.g. Panacan Industrial Estate, Davao City"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Primary Contact Person</label>
+                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Primary Contact Person</label>
                   <input
                     type="text"
                     placeholder="e.g. Engr. Roberto Dela Cruz"
                     value={contactPerson}
                     onChange={(e) => setContactPerson(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Contact Phone</label>
+                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Contact Phone</label>
                   <input
                     type="text"
                     placeholder="+63 82 291 4000"
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Initial Credit Limit (PHP)</label>
+                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Initial Credit Limit (PHP)</label>
                   <input
                     type="number"
                     step="10000"
                     value={creditLimit}
                     onChange={(e) => setCreditLimit(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Assigned Branch</label>
+                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Assigned Branch</label>
                   <select
                     value={branch}
                     onChange={(e) => setBranch(e.target.value as BranchLocation)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   >
                     <option value={BranchLocation.Davao}>Davao Branch</option>
                     <option value={BranchLocation.Cagayan}>Cagayan Branch</option>

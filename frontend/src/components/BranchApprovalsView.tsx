@@ -19,14 +19,14 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
     setLoading(true);
     try {
       const statusParam = filterStatus === 'All' ? undefined : filterStatus;
-      const data = await fetchApprovals(statusParam);
+      const data = await fetchApprovals(statusParam, branch);
       setApprovals(data);
     } catch (err) {
       console.error('Failed to load approvals:', err);
     } finally {
       setLoading(false);
     }
-  }, [filterStatus]);
+  }, [filterStatus, branch]);
 
   useEffect(() => {
     loadData();
@@ -103,24 +103,24 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
     <div className="approvals-container">
       <div className="controls-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.3rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0F172A', margin: 0 }}>
             <ShieldCheck size={22} color="#0284C7" />
             Quality Control & Status Approvals ({branch} Branch)
           </h3>
-          <p style={{ fontSize: '0.85rem', color: '#94A3B8' }}>
+          <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
             Supervised by {managerName} • Authorize stock releases, return slips, and special overrides from the database
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', background: '#1E293B', padding: '0.2rem', borderRadius: '8px', border: '1px solid #334155' }}>
+          <div style={{ display: 'flex', background: '#FFFFFF', padding: '0.2rem', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
             {['All', 'Pending', 'Approved', 'Rejected'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
                 style={{
                   background: filterStatus === status ? '#0284C7' : 'transparent',
-                  color: filterStatus === status ? '#FFF' : '#94A3B8',
+                  color: filterStatus === status ? '#FFF' : '#475569',
                   border: 'none',
                   padding: '0.35rem 0.75rem',
                   borderRadius: '6px',
@@ -137,7 +137,7 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
 
           <button
             className="btn-primary"
-            style={{ background: '#334155', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.85rem', fontSize: '0.8rem' }}
+            style={{ background: '#0284C7', color: '#FFF', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.85rem', fontSize: '0.8rem', fontWeight: 600 }}
             onClick={loadData}
             disabled={loading}
           >
@@ -148,23 +148,26 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
       </div>
 
       {actionMessage && (
-        <div style={{ margin: '0.75rem 0', padding: '0.65rem 1rem', background: '#0F172A', border: '1px solid #0284C7', borderRadius: '8px', color: '#38BDF8', fontSize: '0.85rem' }}>
+        <div style={{ margin: '0.75rem 0', padding: '0.75rem 1rem', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px', color: '#0369A1', fontSize: '0.85rem', fontWeight: 600 }}>
           {actionMessage}
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', margin: '1rem 0' }}>
-        <div style={{ background: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '1rem' }}>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>Total Requests</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#F8FAFC', marginTop: '0.25rem' }}>{approvals.length}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', margin: '1.25rem 0' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '1.1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Total Requests</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A', marginTop: '0.35rem' }}>{approvals.length}</div>
+          <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.2rem' }}>All logged quality & override requests</div>
         </div>
-        <div style={{ background: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '1rem' }}>
-          <div style={{ fontSize: '0.75rem', color: '#F59E0B', textTransform: 'uppercase', fontWeight: 600 }}>Pending Review</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#FBBF24', marginTop: '0.25rem' }}>{pendingCount}</div>
+        <div style={{ background: '#FFFFFF', border: '1px solid #FEF3C7', borderRadius: '10px', padding: '1.1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '0.75rem', color: '#D97706', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Pending Review</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#D97706', marginTop: '0.35rem' }}>{pendingCount}</div>
+          <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.2rem' }}>Awaiting manager authorization</div>
         </div>
-        <div style={{ background: '#0F172A', border: '1px solid #1E293B', borderRadius: '8px', padding: '1rem' }}>
-          <div style={{ fontSize: '0.75rem', color: '#10B981', textTransform: 'uppercase', fontWeight: 600 }}>Approved / Cleared</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#34D399', marginTop: '0.25rem' }}>{approvedCount}</div>
+        <div style={{ background: '#FFFFFF', border: '1px solid #D1FAE5', borderRadius: '10px', padding: '1.1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ fontSize: '0.75rem', color: '#059669', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Approved / Cleared</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#059669', marginTop: '0.35rem' }}>{approvedCount}</div>
+          <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.2rem' }}>Successfully cleared and authorized</div>
         </div>
       </div>
 
@@ -210,22 +213,22 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
                     <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0284C7', fontWeight: 600 }}>
                       {app.id.length > 12 ? `${app.id.slice(0, 8)}...` : app.id}
                     </td>
-                    <td style={{ fontWeight: 600, color: '#F1F5F9' }}>{app.type}</td>
-                    <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#38BDF8' }}>
+                    <td style={{ fontWeight: 600, color: '#0F172A' }}>{app.type}</td>
+                    <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0284C7', fontWeight: 600 }}>
                       {app.referenceNumber}
                     </td>
-                    <td style={{ color: '#CBD5E1', maxWidth: '300px' }}>
-                      <div>{app.details}</div>
+                    <td style={{ color: '#334155', maxWidth: '300px' }}>
+                      <div style={{ fontSize: '0.88rem' }}>{app.details}</div>
                       {app.rejectionReason && (
-                        <div style={{ fontSize: '0.75rem', color: '#EF4444', marginTop: '0.2rem' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#DC2626', marginTop: '0.2rem', fontWeight: 600 }}>
                           Reason: {app.rejectionReason}
                         </div>
                       )}
                     </td>
-                    <td style={{ color: '#94A3B8', fontSize: '0.85rem' }}>
-                      <div>{app.requestedBy}</div>
+                    <td style={{ color: '#475569', fontSize: '0.85rem' }}>
+                      <div style={{ fontWeight: 600, color: '#0F172A' }}>{app.requestedBy}</div>
                       <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                        {new Date(app.requestedAt).toLocaleDateString()}
+                        {new Date(app.requestedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </div>
                     </td>
                     <td>

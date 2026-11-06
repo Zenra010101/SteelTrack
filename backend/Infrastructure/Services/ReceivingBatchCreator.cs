@@ -38,6 +38,7 @@ internal static class ReceivingBatchCreator
         new()
         {
             ProductId = product.Id,
+            BranchId = receiving.BranchId,
             BatchCode = batchCode,
             CostPrice = line.CostPrice,
             SellingPrice = line.SellingPrice,

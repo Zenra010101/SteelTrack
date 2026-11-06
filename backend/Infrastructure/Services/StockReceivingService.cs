@@ -253,6 +253,11 @@ public class StockReceivingService : IStockReceivingService
             throw new AppException("Only pending receivings can be approved");
 
         var receivedDate = DateOnly.FromDateTime(receiving.DeliveryDate);
+        if (!receiving.BranchId.HasValue)
+        {
+            var defaultBranch = await _context.Branches.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+            if (defaultBranch != null) receiving.BranchId = defaultBranch.Id;
+        }
         var batchSeq = await ReceivingBatchCreator.CountExistingCodesForDateAsync(
             _context, receivedDate, cancellationToken);
         var batchesCreated = 0;

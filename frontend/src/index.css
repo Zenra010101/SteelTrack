@@ -1511,6 +1511,68 @@ tbody td {
   background: #F8FAFC;
 }
 
+/* ==========================================================================
+   MODAL TEXT FIELDS & FORM CONTROLS (GLOBAL WHITE THEME ENFORCEMENT)
+   ========================================================================== */
+
+.modal-overlay input[type="text"],
+.modal-overlay input[type="number"],
+.modal-overlay input[type="password"],
+.modal-overlay input[type="email"],
+.modal-overlay input[type="search"],
+.modal-overlay textarea,
+.modal-overlay select,
+.modal-content input[type="text"],
+.modal-content input[type="number"],
+.modal-content input[type="password"],
+.modal-content input[type="email"],
+.modal-content input[type="search"],
+.modal-content textarea,
+.modal-content select,
+.modal-body input,
+.modal-body textarea,
+.modal-body select,
+div[style*="position: fixed"] input[type="text"],
+div[style*="position: fixed"] input[type="number"],
+div[style*="position: fixed"] input[type="password"],
+div[style*="position: fixed"] input[type="email"],
+div[style*="position: fixed"] input[type="search"],
+div[style*="position: fixed"] textarea,
+div[style*="position: fixed"] select {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+}
+
+.modal-overlay input::placeholder,
+.modal-overlay textarea::placeholder,
+.modal-content input::placeholder,
+.modal-content textarea::placeholder,
+.modal-body input::placeholder,
+.modal-body textarea::placeholder,
+div[style*="position: fixed"] input::placeholder,
+div[style*="position: fixed"] textarea::placeholder {
+  color: #64748B !important;
+  opacity: 1 !important;
+}
+
+.modal-overlay input:focus,
+.modal-overlay textarea:focus,
+.modal-overlay select:focus,
+.modal-content input:focus,
+.modal-content textarea:focus,
+.modal-content select:focus,
+div[style*="position: fixed"] input:focus,
+div[style*="position: fixed"] textarea:focus,
+div[style*="position: fixed"] select:focus {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: #0284C7 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+
 /* Thermal Paper Styling */
 .receipt-paper {
   background: #FFFFFF;
@@ -1960,7 +2022,7 @@ tbody td {
 
 .forecast-insights-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
 }
 
@@ -2070,4 +2132,34 @@ tbody td {
     border: none !important;
     padding: 0 !important;
   }
+}
+
+/* Scoped Dashboard Background */
+.dashboard-container {
+  background-color: #F4F6F9;
+}
+
+/* Branch Products Actions Grid */
+.branch-products-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 30px) auto;
+  gap: 0.35rem;
+  justify-content: end;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .branch-products-actions-grid {
+    grid-template-columns: repeat(3, 28px);
+    gap: 0.25rem;
+  }
+}
+
+/* Catalog Products Actions Grid */
+.catalog-products-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 32px);
+  gap: 0.35rem;
+  justify-content: end;
+  align-items: center;
 }

@@ -186,8 +186,6 @@ var app = builder.Build();
 if (CatalogImportCli.IsCatalogToXlsxCommand(args))
     Environment.Exit(CatalogImportCli.RunToXlsx(args));
 
-await DataSeeder.SeedAsync(app.Services);
-
 if (CatalogImportCli.IsCatalogImportCommand(args))
     Environment.Exit(await CatalogImportCli.RunAsync(app, args));
 

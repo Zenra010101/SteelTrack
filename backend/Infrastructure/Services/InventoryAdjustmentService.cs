@@ -157,9 +157,14 @@ public class InventoryAdjustmentService : IInventoryAdjustmentService
             if (actualQty == 0)
                 throw new AppException("Count matches system quantity (0) — no adjustment needed");
 
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            var defaultBranchId = user?.BranchId
+                ?? await _context.Branches.AsNoTracking().Where(b => b.IsActive).Select(b => (Guid?)b.Id).FirstOrDefaultAsync(cancellationToken);
+
             var seedBatch = new ProductBatch
             {
                 ProductId = product.Id,
+                BranchId = defaultBranchId,
                 BatchCode = $"INIT-{DateTime.UtcNow:yyyyMMdd}",
                 CostPrice = product.CostPrice,
                 SellingPrice = product.UnitPrice,

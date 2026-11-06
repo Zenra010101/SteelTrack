@@ -44,10 +44,26 @@ public class AppDbContext : DbContext
     public DbSet<SteelTrack.Domain.Entities.StockTransfer> StockTransfers => Set<SteelTrack.Domain.Entities.StockTransfer>();
     public DbSet<SteelTrack.Domain.Entities.UserBranchAccess> UserBranchAccesses => Set<SteelTrack.Domain.Entities.UserBranchAccess>();
     public DbSet<SteelTrack.Domain.Entities.SteelBatch> SteelBatches => Set<SteelTrack.Domain.Entities.SteelBatch>();
+    public DbSet<BranchProduct> BranchProducts => Set<BranchProduct>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<BranchProduct>(e =>
+        {
+            e.ToTable("BranchProducts");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.BranchId);
+            e.HasIndex(x => x.ProductId);
+            e.Property(x => x.SellingPrice).HasPrecision(18, 2);
+            e.Property(x => x.DefaultCostPrice).HasPrecision(18, 2);
+            e.Property(x => x.HalfPrice).HasPrecision(18, 2);
+            e.Property(x => x.QuarterPrice).HasPrecision(18, 2);
+            e.Property(x => x.ThreeQuarterPrice).HasPrecision(18, 2);
+            e.HasOne(x => x.Branch).WithMany().HasForeignKey(x => x.BranchId);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId);
+        });
 
         modelBuilder.Entity<Branch>(e =>
         {

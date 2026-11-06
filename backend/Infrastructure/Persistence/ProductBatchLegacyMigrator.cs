@@ -22,9 +22,12 @@ public static class ProductBatchLegacyMigrator
             if (productsNeedingBatch.Count == 0)
                 return;
 
+            var defaultBranchId = await context.Branches.Where(b => b.IsActive).Select(b => (Guid?)b.Id).FirstOrDefaultAsync()
+                ?? await context.Branches.Select(b => (Guid?)b.Id).FirstOrDefaultAsync();
+
             foreach (var product in productsNeedingBatch)
             {
-                context.ProductBatches.Add(ProductBatchStockHelper.CreateLegacyBatch(product));
+                context.ProductBatches.Add(ProductBatchStockHelper.CreateLegacyBatch(product, defaultBranchId));
             }
 
             await context.SaveChangesAsync();

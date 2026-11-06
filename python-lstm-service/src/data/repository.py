@@ -109,6 +109,9 @@ class ForecastRepository:
         deliberately a flat select (no ORM joins / entity materialisation)
         so it stays fast even with millions of rows.
         """
+        if self._session is None:
+            return []
+
         # NOTE ON SQL CONSTRUCTION:
         # `text()` returns a TextClause, which does NOT support `+`
         # concatenation with a plain string. The query is therefore built
@@ -155,17 +158,20 @@ class ForecastRepository:
         for name in expanding:
             sql = sql.bindparams(bindparam(name, expanding=True))
 
-        result = await self._session.execute(sql, params)
-        rows = result.all()
-        return [
-            SaleItemRow(
-                product_id=r.product_id,
-                branch_id=r.branch_id,
-                sale_date=r.sale_date,
-                quantity=int(r.quantity),
-            )
-            for r in rows
-        ]
+        try:
+            result = await self._session.execute(sql, params)
+            rows = result.all()
+            return [
+                SaleItemRow(
+                    product_id=r.product_id,
+                    branch_id=r.branch_id,
+                    sale_date=r.sale_date,
+                    quantity=int(r.quantity),
+                )
+                for r in rows
+            ]
+        except Exception:
+            return []
 
     async def get_products(self, *, only_active: bool = True) -> list[EntityRef]:
         """Return all products (optionally only active ones)."""
@@ -173,8 +179,22 @@ class ForecastRepository:
         if only_active:
             sql_parts.append(' WHERE "IsActive" = TRUE')
 
-        result = await self._session.execute(text("".join(sql_parts)))
-        return [EntityRef(id=r.id, sku=r.sku, name=r.name) for r in result.all()]
+        if self._session is not None:
+            try:
+                result = await self._session.execute(text("".join(sql_parts)))
+                return [EntityRef(id=r.id, sku=r.sku, name=r.name) for r in result.all()]
+            except Exception:
+                pass
+
+        try:
+            from src.data.csv_dataset import load_catalog_products
+            catalog = load_catalog_products()
+            return [
+                EntityRef(id=UUID(str(p["Id"])), sku=str(p.get("Sku") or p.get("SKU") or ""), name=str(p.get("Name") or ""))
+                for p in catalog if p.get("Id")
+            ]
+        except Exception:
+            return []
 
     async def get_branches(self, *, only_active: bool = True) -> list[EntityRef]:
         """Return all branches (optionally only active ones)."""
@@ -182,8 +202,21 @@ class ForecastRepository:
         if only_active:
             sql_parts.append(' WHERE "IsActive" = TRUE')
 
-        result = await self._session.execute(text("".join(sql_parts)))
-        return [EntityRef(id=r.id, sku=r.code, name=r.name, code=r.code) for r in result.all()]
+        if self._session is not None:
+            try:
+                result = await self._session.execute(text("".join(sql_parts)))
+                return [EntityRef(id=r.id, sku=r.code, name=r.name, code=r.code) for r in result.all()]
+            except Exception:
+                pass
+
+        try:
+            from src.data.csv_dataset import ALL_BRANCH_IDS, BRANCH_CODES, BRANCH_NAMES
+            return [
+                EntityRef(id=bid, sku=BRANCH_CODES.get(bid, ""), name=BRANCH_NAMES.get(bid, ""), code=BRANCH_CODES.get(bid, ""))
+                for bid in ALL_BRANCH_IDS
+            ]
+        except Exception:
+            return []
 
     # ------------------------------------------------------------------
     # Aggregation
@@ -253,6 +286,22 @@ class ForecastRepository:
             branch_ids=branch_ids,
             since=since,
         )
+
+        if not rows:
+            # If PostgreSQL has no completed sales rows, fall back to the
+            # comprehensive 10-year CSV dataset from CSV_for_LSTM.
+            try:
+                from src.data.csv_dataset import get_csv_series_for_scope
+
+                return get_csv_series_for_scope(
+                    lookback_months=lookback_months,
+                    product_ids=list(product_ids) if product_ids else None,
+                    branch_ids=list(branch_ids) if branch_ids else None,
+                    end_month=last,
+                )
+            except Exception:
+                pass
+
         series = self.build_monthly_series(rows, lookback_months=lookback_months, end_month=last)
 
         # Attach human-readable product/branch metadata.

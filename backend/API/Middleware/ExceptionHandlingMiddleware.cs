@@ -35,7 +35,8 @@ public class ExceptionHandlingMiddleware
         {
             AppException appEx => (appEx.StatusCode, appEx.Message, (IEnumerable<string>?)null),
             ValidationException valEx => (400, "Validation failed", valEx.Errors.Select(e => e.ErrorMessage)),
-            _ => (500, "An unexpected error occurred", (IEnumerable<string>?)null)
+            Microsoft.EntityFrameworkCore.DbUpdateException dbEx => (400, $"Database constraint error: {dbEx.InnerException?.Message ?? dbEx.Message}", (IEnumerable<string>?)null),
+            _ => (500, exception.Message ?? "An unexpected error occurred", (IEnumerable<string>?)null)
         };
 
         if (statusCode == 500)

@@ -110,7 +110,6 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
             <Search size={16} style={{ color: '#94A3B8' }} />
             <input
               type="text"
-              placeholder="Search by invoice number or customer name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: '100%' }}
@@ -131,9 +130,11 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
           >
             <option value="All">All Payment Types</option>
             <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
             <option value="Bank Transfer">Bank Transfer</option>
             <option value="Corporate Credit Line">Corporate Credit Line</option>
             <option value="Cheque">Cheque</option>
+            <option value="Split Payment">Split Payment</option>
           </select>
         </div>
 

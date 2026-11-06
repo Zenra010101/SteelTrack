@@ -66,4 +66,31 @@ public sealed class LstmForecastDto
     public int ReorderLevel { get; set; }
     public int RecommendedRestock { get; set; }
     public string PlanningStatus { get; set; } = "Optimal"; // "Restock Needed", "Optimal", "Overstocked"
+
+    // --- Post-LSTM Rule-Based Decision Support System (Section 2.3.2.2) ---
+    /// <summary>Formula 1: PAS = Current Stock + Incoming Stock - Reserved/Allocated Stock</summary>
+    public int ProjectedAvailableStock { get; set; }
+    public int IncomingStock { get; set; }
+    public int ReservedStock { get; set; }
+    public int SafetyStock { get; set; }
+
+    /// <summary>Formula 2: RS = Forecasted Demand + Safety Stock</summary>
+    public int RequiredStock { get; set; }
+
+    /// <summary>Formula 3: NIR = max(0, RS - PAS)</summary>
+    public int NetInventoryRequirement { get; set; }
+
+    /// <summary>Formula 4: ES = max(0, PAS - RS)</summary>
+    public int ExcessStock { get; set; }
+
+    /// <summary>Formula 5: TQ = min(ES of Donor Branch, NIR of Recipient Branch)</summary>
+    public int TransferQuantity { get; set; }
+
+    /// <summary>Formula 6: PQ = max(0, NIR - TQ)</summary>
+    public int ProcurementQuantity { get; set; }
+
+    /// <summary>Evaluated IF-THEN rule (Rule 1 to Rule 5)</summary>
+    public string DecisionRule { get; set; } = "Rule 1 - Sufficient Inventory";
+    public string? DonorBranch { get; set; }
+    public string? RecipientBranch { get; set; }
 }

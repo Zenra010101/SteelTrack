@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Printer,
 } from 'lucide-react';
+import { getAuthHeaders } from '../services/api';
 
 export interface AuditRecord {
   id: string;
@@ -104,28 +105,56 @@ export function AuditLogView() {
   const syncWithBackend = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch('/api/auditlogs?pageSize=100');
+      const res = await fetch('/api/auditlogs?pageSize=200', { headers: getAuthHeaders() });
       if (res.ok) {
         const json = await res.json();
-        if (json && Array.isArray(json.data)) {
-          const mapped: AuditRecord[] = json.data.map((l: any) => ({
-            id: l.id,
-            timestamp: l.createdAt,
-            userName: l.userEmail || l.userId || 'System',
-            userRole: l.category === 2 ? 'Security' : 'User',
-            userEmail: l.userEmail,
-            branch: 'Enterprise',
-            action: l.action,
-            entityName: l.entityType || 'General',
-            entityId: l.entityId || '—',
-            ipAddress: l.ipAddress || '127.0.0.1',
-            userAgent: l.userAgent || 'Web Client',
-            status: (l.status as 'SUCCESS' | 'FAILED' | 'WARNING') || 'SUCCESS',
-            category: l.category === 2 ? 'SecurityAccess' : 'EntityMutation',
-            details: l.details || '',
-            beforeStateJson: l.oldValue || 'null',
-            afterStateJson: l.newValue || 'null',
-          }));
+        const rawItems: any[] = Array.isArray(json)
+          ? json
+          : Array.isArray(json?.data)
+          ? json.data
+          : Array.isArray(json?.data?.items)
+          ? json.data.items
+          : Array.isArray(json?.items)
+          ? json.items
+          : [];
+
+        if (rawItems.length > 0) {
+          const mapped: AuditRecord[] = rawItems.map((l: any) => {
+            const isSecurity =
+              l.category === 0 ||
+              l.category === 'Security' ||
+              (typeof l.action === 'string' && l.action.toLowerCase().includes('login')) ||
+              (typeof l.action === 'string' && l.action.toLowerCase().includes('logout')) ||
+              l.entityType === 'Security' ||
+              l.entityType === 'Auth';
+
+            const rawStatus = (l.status || 'SUCCESS').toUpperCase();
+            const status: 'SUCCESS' | 'FAILED' | 'WARNING' =
+              rawStatus.includes('FAIL') || rawStatus.includes('ERR')
+                ? 'FAILED'
+                : rawStatus.includes('WARN')
+                ? 'WARNING'
+                : 'SUCCESS';
+
+            return {
+              id: l.id,
+              timestamp: l.createdAt,
+              userName: l.userEmail || (l.userId ? `User #${String(l.userId).slice(0, 8)}` : 'System'),
+              userRole: l.userEmail?.toLowerCase().includes('owner') ? 'Owner' : isSecurity ? 'Security' : 'User',
+              userEmail: l.userEmail,
+              branch: 'Enterprise',
+              action: l.action || 'MUTATION',
+              entityName: l.entityType || 'General',
+              entityId: l.entityId || '—',
+              ipAddress: l.ipAddress || '127.0.0.1',
+              userAgent: l.userAgent || 'SteelTrack Client',
+              status,
+              category: isSecurity ? 'SecurityAccess' : 'EntityMutation',
+              details: l.details || '',
+              beforeStateJson: l.oldValue || 'null',
+              afterStateJson: l.newValue || 'null',
+            };
+          });
 
           setLogs(mapped);
         }
@@ -443,7 +472,7 @@ export function AuditLogView() {
       {/* HUMAN-READABLE VISUAL DIFF INSPECTION MODAL */}
       {selectedLog && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div style={{ background: '#1E293B', color: '#F8FAFC', borderRadius: '12px', border: '1px solid #334155', width: '100%', maxWidth: '900px', padding: '1.5rem', maxHeight: '92vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #334155', width: '100%', maxWidth: '900px', padding: '1.5rem', maxHeight: '92vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', borderBottom: '1px solid #334155', paddingBottom: '0.85rem' }}>
               <div>
@@ -516,7 +545,7 @@ export function AuditLogView() {
               <div style={{ background: '#0F172A', borderRadius: '8px', border: '1px solid #334155', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                   <thead>
-                    <tr style={{ background: '#1E293B', color: '#94A3B8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #334155' }}>
+                    <tr style={{ background: '#F8FAFC', color: '#94A3B8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #334155' }}>
                       <th style={{ padding: '0.65rem 1rem' }}>Field Name</th>
                       <th style={{ padding: '0.65rem 1rem' }}>Previous Value (Before)</th>
                       <th style={{ padding: '0.65rem 1rem' }}>New Mutated Value (After)</th>

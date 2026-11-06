@@ -1,0 +1,895 @@
+{
+  "recommendations": [
+    {
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "current_stock": 150.0,
+      "incoming_stock": 30.0,
+      "reserved_stock": 20.0,
+      "safety_stock": 20.0,
+      "forecasted_demand": 60.0,
+      "pas": 160.0,
+      "rs": 80.0,
+      "nir": 0.0,
+      "es": 80.0,
+      "rule_triggered": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "transfer_quantity": 50.0,
+      "procurement_quantity": 0.0,
+      "explanation": "Sufficient inventory (PAS = 160.0 >= RS = 80.0, initial ES = 80.0). Dispatched 50.0 units to BR-CDO as inter-branch donor. Retained 30.0 units of excess stock above required buffer.",
+      "status": "Pending Management Approval",
+      "transfers": [
+        {
+          "donor_branch_id": "BR-DVO",
+          "recipient_branch_id": "BR-CDO",
+          "product_id": "STEEL-DB-16MM",
+          "period": "2026-12",
+          "transfer_quantity": 50.0
+        }
+      ]
+    },
+    {
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "current_stock": 20.0,
+      "incoming_stock": 0.0,
+      "reserved_stock": 10.0,
+      "safety_stock": 20.0,
+      "forecasted_demand": 40.0,
+      "pas": 10.0,
+      "rs": 60.0,
+      "nir": 50.0,
+      "es": 0.0,
+      "rule_triggered": "Rule 3 (Inter-Branch Transfer)",
+      "action": "TRANSFER",
+      "transfer_quantity": 50.0,
+      "procurement_quantity": 0.0,
+      "explanation": "Rule 2 detected shortage (NIR = 50.0). Donor branches hold sufficient excess stock. Triggered Rule 3: Rebalanced internally via inter-branch transfer of 50.0 units from BR-DVO (50.0 units). No external procurement needed.",
+      "status": "Pending Management Approval",
+      "transfers": [
+        {
+          "donor_branch_id": "BR-DVO",
+          "recipient_branch_id": "BR-CDO",
+          "product_id": "STEEL-DB-16MM",
+          "period": "2026-12",
+          "transfer_quantity": 50.0
+        }
+      ]
+    },
+    {
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "current_stock": 80.0,
+      "incoming_stock": 20.0,
+      "reserved_stock": 10.0,
+      "safety_stock": 30.0,
+      "forecasted_demand": 50.0,
+      "pas": 90.0,
+      "rs": 80.0,
+      "nir": 0.0,
+      "es": 10.0,
+      "rule_triggered": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "transfer_quantity": 0,
+      "procurement_quantity": 0.0,
+      "explanation": "Sufficient inventory (PAS = 90.0 >= RS = 80.0). Excess stock (ES = 10.0) retained at branch. No transfers required.",
+      "status": "Pending Management Approval",
+      "transfers": []
+    },
+    {
+      "branch_id": "BR-MND",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "current_stock": 60.0,
+      "incoming_stock": 10.0,
+      "reserved_stock": 10.0,
+      "safety_stock": 15.0,
+      "forecasted_demand": 40.0,
+      "pas": 60.0,
+      "rs": 55.0,
+      "nir": 0.0,
+      "es": 5.0,
+      "rule_triggered": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "transfer_quantity": 0,
+      "procurement_quantity": 0.0,
+      "explanation": "Sufficient inventory (PAS = 60.0 >= RS = 55.0). Excess stock (ES = 5.0) retained at branch. No transfers required.",
+      "status": "Pending Management Approval",
+      "transfers": []
+    },
+    {
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-FB-1X1P4",
+      "period": "2026-12",
+      "current_stock": 50.0,
+      "incoming_stock": 10.0,
+      "reserved_stock": 10.0,
+      "safety_stock": 10.0,
+      "forecasted_demand": 40.0,
+      "pas": 50.0,
+      "rs": 50.0,
+      "nir": 0.0,
+      "es": 0.0,
+      "rule_triggered": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "transfer_quantity": 0,
+      "procurement_quantity": 0.0,
+      "explanation": "Sufficient inventory (PAS = 50.0 >= RS = 50.0). Excess stock (ES = 0.0) retained at branch. No transfers required.",
+      "status": "Pending Management Approval",
+      "transfers": []
+    },
+    {
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-FB-1X1P4",
+      "period": "2026-12",
+      "current_stock": 40.0,
+      "incoming_stock": 0.0,
+      "reserved_stock": 0.0,
+      "safety_stock": 15.0,
+      "forecasted_demand": 25.0,
+      "pas": 40.0,
+      "rs": 40.0,
+      "nir": 0.0,
+      "es": 0.0,
+      "rule_triggered": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "transfer_quantity": 0,
+      "procurement_quantity": 0.0,
+      "explanation": "Sufficient inventory (PAS = 40.0 >= RS = 40.0). Excess stock (ES = 0.0) retained at branch. No transfers required.",
+      "status": "Pending Management Approval",
+      "transfers": []
+    },
+    {
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "current_stock": 30.0,
+      "incoming_stock": 10.0,
+      "reserved_stock": 5.0,
+      "safety_stock": 10.0,
+      "forecasted_demand": 15.0,
+      "pas": 35.0,
+      "rs": 25.0,
+      "nir": 0.0,
+      "es": 10.0,
+      "rule_triggered": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "transfer_quantity": 10.0,
+      "procurement_quantity": 0.0,
+      "explanation": "Sufficient inventory (PAS = 35.0 >= RS = 25.0, initial ES = 10.0). Dispatched 10.0 units to BR-CDO as inter-branch donor. Retained 0.0 units of excess stock above required buffer.",
+      "status": "Pending Management Approval",
+      "transfers": [
+        {
+          "donor_branch_id": "BR-DVO",
+          "recipient_branch_id": "BR-CDO",
+          "product_id": "STEEL-PL-304-4MM",
+          "period": "2026-12",
+          "transfer_quantity": 10.0
+        }
+      ]
+    },
+    {
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "current_stock": 10.0,
+      "incoming_stock": 0.0,
+      "reserved_stock": 5.0,
+      "safety_stock": 10.0,
+      "forecasted_demand": 45.0,
+      "pas": 5.0,
+      "rs": 55.0,
+      "nir": 50.0,
+      "es": 0.0,
+      "rule_triggered": "Rule 4 (Partial Transfer + Procurement)",
+      "action": "TRANSFER + PROCURE",
+      "transfer_quantity": 10.0,
+      "procurement_quantity": 40.0,
+      "explanation": "Rule 2 detected shortage (NIR = 50.0). Internal surplus partially satisfies demand. Triggered Rule 4: Transfer all available excess stock (10.0 units from BR-DVO (10.0 units)) and procure remaining deficit of 40.0 units externally.",
+      "status": "Pending Management Approval",
+      "transfers": [
+        {
+          "donor_branch_id": "BR-DVO",
+          "recipient_branch_id": "BR-CDO",
+          "product_id": "STEEL-PL-304-4MM",
+          "period": "2026-12",
+          "transfer_quantity": 10.0
+        }
+      ]
+    },
+    {
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "current_stock": 15.0,
+      "incoming_stock": 5.0,
+      "reserved_stock": 5.0,
+      "safety_stock": 10.0,
+      "forecasted_demand": 15.0,
+      "pas": 15.0,
+      "rs": 25.0,
+      "nir": 10.0,
+      "es": 0.0,
+      "rule_triggered": "Rule 5 (Procurement)",
+      "action": "PROCURE",
+      "transfer_quantity": 0,
+      "procurement_quantity": 10.0,
+      "explanation": "Rule 2 detected shortage (NIR = 10.0). No other branch has excess stock (Total network ES = 0.0). Triggered Rule 5: Procure full requirement of 10.0 units externally.",
+      "status": "Pending Management Approval",
+      "transfers": []
+    },
+    {
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "current_stock": 10.0,
+      "incoming_stock": 0.0,
+      "reserved_stock": 5.0,
+      "safety_stock": 20.0,
+      "forecasted_demand": 35.0,
+      "pas": 5.0,
+      "rs": 55.0,
+      "nir": 50.0,
+      "es": 0.0,
+      "rule_triggered": "Rule 5 (Procurement)",
+      "action": "PROCURE",
+      "transfer_quantity": 0,
+      "procurement_quantity": 50.0,
+      "explanation": "Rule 2 detected shortage (NIR = 50.0). No other branch has excess stock (Total network ES = 0.0). Triggered Rule 5: Procure full requirement of 50.0 units externally.",
+      "status": "Pending Management Approval",
+      "transfers": []
+    },
+    {
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "current_stock": 15.0,
+      "incoming_stock": 0.0,
+      "reserved_stock": 5.0,
+      "safety_stock": 15.0,
+      "forecasted_demand": 25.0,
+      "pas": 10.0,
+      "rs": 40.0,
+      "nir": 30.0,
+      "es": 0.0,
+      "rule_triggered": "Rule 5 (Procurement)",
+      "action": "PROCURE",
+      "transfer_quantity": 0,
+      "procurement_quantity": 30.0,
+      "explanation": "Rule 2 detected shortage (NIR = 30.0). No other branch has excess stock (Total network ES = 0.0). Triggered Rule 5: Procure full requirement of 30.0 units externally.",
+      "status": "Pending Management Approval",
+      "transfers": []
+    },
+    {
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "current_stock": 5.0,
+      "incoming_stock": 0.0,
+      "reserved_stock": 0.0,
+      "safety_stock": 10.0,
+      "forecasted_demand": 15.0,
+      "pas": 5.0,
+      "rs": 25.0,
+      "nir": 20.0,
+      "es": 0.0,
+      "rule_triggered": "Rule 5 (Procurement)",
+      "action": "PROCURE",
+      "transfer_quantity": 0,
+      "procurement_quantity": 20.0,
+      "explanation": "Rule 2 detected shortage (NIR = 20.0). No other branch has excess stock (Total network ES = 0.0). Triggered Rule 5: Procure full requirement of 20.0 units externally.",
+      "status": "Pending Management Approval",
+      "transfers": []
+    },
+    {
+      "branch_id": "BR-MND",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "current_stock": 10.0,
+      "incoming_stock": 0.0,
+      "reserved_stock": 0.0,
+      "safety_stock": 10.0,
+      "forecasted_demand": 0.0,
+      "pas": 10.0,
+      "rs": 10.0,
+      "nir": 0.0,
+      "es": 0.0,
+      "rule_triggered": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "transfer_quantity": 0,
+      "procurement_quantity": 0.0,
+      "explanation": "Sufficient inventory (PAS = 10.0 >= RS = 10.0). Excess stock (ES = 0.0) retained at branch. No transfers required.",
+      "status": "Pending Management Approval",
+      "transfers": []
+    }
+  ],
+  "transfers": [
+    {
+      "donor_branch_id": "BR-DVO",
+      "recipient_branch_id": "BR-CDO",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "transfer_quantity": 50.0
+    },
+    {
+      "donor_branch_id": "BR-DVO",
+      "recipient_branch_id": "BR-CDO",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "transfer_quantity": 10.0
+    }
+  ],
+  "procurement_summary": [
+    {
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "total_procurement_quantity": 50.0,
+      "branch_breakdown": [
+        {
+          "branch_id": "BR-CDO",
+          "procurement_quantity": 40.0,
+          "current_pas": 5.0,
+          "required_rs": 55.0
+        },
+        {
+          "branch_id": "BR-CEB",
+          "procurement_quantity": 10.0,
+          "current_pas": 15.0,
+          "required_rs": 25.0
+        }
+      ]
+    },
+    {
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "total_procurement_quantity": 100.0,
+      "branch_breakdown": [
+        {
+          "branch_id": "BR-DVO",
+          "procurement_quantity": 50.0,
+          "current_pas": 5.0,
+          "required_rs": 55.0
+        },
+        {
+          "branch_id": "BR-CDO",
+          "procurement_quantity": 30.0,
+          "current_pas": 10.0,
+          "required_rs": 40.0
+        },
+        {
+          "branch_id": "BR-CEB",
+          "procurement_quantity": 20.0,
+          "current_pas": 5.0,
+          "required_rs": 25.0
+        }
+      ]
+    }
+  ],
+  "allocation_summary": [
+    {
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "pas": 160.0,
+      "rs": 80.0,
+      "net_transfers": -50.0,
+      "procurement": 0.0,
+      "projected_closing_stock": 50.0,
+      "inventory_posture": "Surplus Donor"
+    },
+    {
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "pas": 10.0,
+      "rs": 60.0,
+      "net_transfers": 50.0,
+      "procurement": 0.0,
+      "projected_closing_stock": 20.0,
+      "inventory_posture": "Replenished by Transfer"
+    },
+    {
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "pas": 90.0,
+      "rs": 80.0,
+      "net_transfers": 0,
+      "procurement": 0.0,
+      "projected_closing_stock": 40.0,
+      "inventory_posture": "Sufficient"
+    },
+    {
+      "branch_id": "BR-MND",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "pas": 60.0,
+      "rs": 55.0,
+      "net_transfers": 0,
+      "procurement": 0.0,
+      "projected_closing_stock": 20.0,
+      "inventory_posture": "Sufficient"
+    },
+    {
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-FB-1X1P4",
+      "period": "2026-12",
+      "pas": 50.0,
+      "rs": 50.0,
+      "net_transfers": 0,
+      "procurement": 0.0,
+      "projected_closing_stock": 10.0,
+      "inventory_posture": "Sufficient"
+    },
+    {
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-FB-1X1P4",
+      "period": "2026-12",
+      "pas": 40.0,
+      "rs": 40.0,
+      "net_transfers": 0,
+      "procurement": 0.0,
+      "projected_closing_stock": 15.0,
+      "inventory_posture": "Sufficient"
+    },
+    {
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "pas": 35.0,
+      "rs": 25.0,
+      "net_transfers": -10.0,
+      "procurement": 0.0,
+      "projected_closing_stock": 10.0,
+      "inventory_posture": "Surplus Donor"
+    },
+    {
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "pas": 5.0,
+      "rs": 55.0,
+      "net_transfers": 10.0,
+      "procurement": 40.0,
+      "projected_closing_stock": 10.0,
+      "inventory_posture": "Procuring"
+    },
+    {
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "pas": 15.0,
+      "rs": 25.0,
+      "net_transfers": 0,
+      "procurement": 10.0,
+      "projected_closing_stock": 10.0,
+      "inventory_posture": "Procuring"
+    },
+    {
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "pas": 5.0,
+      "rs": 55.0,
+      "net_transfers": 0,
+      "procurement": 50.0,
+      "projected_closing_stock": 20.0,
+      "inventory_posture": "Procuring"
+    },
+    {
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "pas": 10.0,
+      "rs": 40.0,
+      "net_transfers": 0,
+      "procurement": 30.0,
+      "projected_closing_stock": 15.0,
+      "inventory_posture": "Procuring"
+    },
+    {
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "pas": 5.0,
+      "rs": 25.0,
+      "net_transfers": 0,
+      "procurement": 20.0,
+      "projected_closing_stock": 10.0,
+      "inventory_posture": "Procuring"
+    },
+    {
+      "branch_id": "BR-MND",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "pas": 10.0,
+      "rs": 10.0,
+      "net_transfers": 0,
+      "procurement": 0.0,
+      "projected_closing_stock": 10.0,
+      "inventory_posture": "Sufficient"
+    }
+  ],
+  "audit_logs": [
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 150.0,
+        "incoming_stock": 30.0,
+        "reserved_stock": 20.0,
+        "safety_stock": 20.0,
+        "forecasted_demand": 60.0
+      },
+      "computed": {
+        "pas": 160.0,
+        "rs": 80.0,
+        "nir": 0.0,
+        "es": 80.0
+      }
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 20.0,
+        "incoming_stock": 0.0,
+        "reserved_stock": 10.0,
+        "safety_stock": 20.0,
+        "forecasted_demand": 40.0
+      },
+      "computed": {
+        "pas": 10.0,
+        "rs": 60.0,
+        "nir": 50.0,
+        "es": 0.0
+      }
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 80.0,
+        "incoming_stock": 20.0,
+        "reserved_stock": 10.0,
+        "safety_stock": 30.0,
+        "forecasted_demand": 50.0
+      },
+      "computed": {
+        "pas": 90.0,
+        "rs": 80.0,
+        "nir": 0.0,
+        "es": 10.0
+      }
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-MND",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 60.0,
+        "incoming_stock": 10.0,
+        "reserved_stock": 10.0,
+        "safety_stock": 15.0,
+        "forecasted_demand": 40.0
+      },
+      "computed": {
+        "pas": 60.0,
+        "rs": 55.0,
+        "nir": 0.0,
+        "es": 5.0
+      }
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "rule": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "dispatched_transfer_quantity": 50.0,
+      "retained_excess": 30.0
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "rule": "Rule 3 (Inter-Branch Transfer)",
+      "action": "TRANSFER",
+      "transfer_quantity": 50.0,
+      "procurement_quantity": 0.0
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "rule": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "dispatched_transfer_quantity": 0,
+      "retained_excess": 10.0
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-MND",
+      "product_id": "STEEL-DB-16MM",
+      "period": "2026-12",
+      "rule": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "dispatched_transfer_quantity": 0,
+      "retained_excess": 5.0
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-FB-1X1P4",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 50.0,
+        "incoming_stock": 10.0,
+        "reserved_stock": 10.0,
+        "safety_stock": 10.0,
+        "forecasted_demand": 40.0
+      },
+      "computed": {
+        "pas": 50.0,
+        "rs": 50.0,
+        "nir": 0.0,
+        "es": 0.0
+      }
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-FB-1X1P4",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 40.0,
+        "incoming_stock": 0.0,
+        "reserved_stock": 0.0,
+        "safety_stock": 15.0,
+        "forecasted_demand": 25.0
+      },
+      "computed": {
+        "pas": 40.0,
+        "rs": 40.0,
+        "nir": 0.0,
+        "es": 0.0
+      }
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-FB-1X1P4",
+      "period": "2026-12",
+      "rule": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "dispatched_transfer_quantity": 0,
+      "retained_excess": 0.0
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-FB-1X1P4",
+      "period": "2026-12",
+      "rule": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "dispatched_transfer_quantity": 0,
+      "retained_excess": 0.0
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 30.0,
+        "incoming_stock": 10.0,
+        "reserved_stock": 5.0,
+        "safety_stock": 10.0,
+        "forecasted_demand": 15.0
+      },
+      "computed": {
+        "pas": 35.0,
+        "rs": 25.0,
+        "nir": 0.0,
+        "es": 10.0
+      }
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 10.0,
+        "incoming_stock": 0.0,
+        "reserved_stock": 5.0,
+        "safety_stock": 10.0,
+        "forecasted_demand": 45.0
+      },
+      "computed": {
+        "pas": 5.0,
+        "rs": 55.0,
+        "nir": 50.0,
+        "es": 0.0
+      }
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 15.0,
+        "incoming_stock": 5.0,
+        "reserved_stock": 5.0,
+        "safety_stock": 10.0,
+        "forecasted_demand": 15.0
+      },
+      "computed": {
+        "pas": 15.0,
+        "rs": 25.0,
+        "nir": 10.0,
+        "es": 0.0
+      }
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "rule": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "dispatched_transfer_quantity": 10.0,
+      "retained_excess": 0.0
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "rule": "Rule 4 (Partial Transfer + Procurement)",
+      "action": "TRANSFER + PROCURE",
+      "transfer_quantity": 10.0,
+      "procurement_quantity": 40.0
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-PL-304-4MM",
+      "period": "2026-12",
+      "rule": "Rule 5 (Procurement)",
+      "action": "PROCURE",
+      "transfer_quantity": 0,
+      "procurement_quantity": 10.0
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 10.0,
+        "incoming_stock": 0.0,
+        "reserved_stock": 5.0,
+        "safety_stock": 20.0,
+        "forecasted_demand": 35.0
+      },
+      "computed": {
+        "pas": 5.0,
+        "rs": 55.0,
+        "nir": 50.0,
+        "es": 0.0
+      }
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 15.0,
+        "incoming_stock": 0.0,
+        "reserved_stock": 5.0,
+        "safety_stock": 15.0,
+        "forecasted_demand": 25.0
+      },
+      "computed": {
+        "pas": 10.0,
+        "rs": 40.0,
+        "nir": 30.0,
+        "es": 0.0
+      }
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 5.0,
+        "incoming_stock": 0.0,
+        "reserved_stock": 0.0,
+        "safety_stock": 10.0,
+        "forecasted_demand": 15.0
+      },
+      "computed": {
+        "pas": 5.0,
+        "rs": 25.0,
+        "nir": 20.0,
+        "es": 0.0
+      }
+    },
+    {
+      "phase": "metrics_computed",
+      "branch_id": "BR-MND",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "inputs": {
+        "current_stock": 10.0,
+        "incoming_stock": 0.0,
+        "reserved_stock": 0.0,
+        "safety_stock": 10.0,
+        "forecasted_demand": 0.0
+      },
+      "computed": {
+        "pas": 10.0,
+        "rs": 10.0,
+        "nir": 0.0,
+        "es": 0.0
+      }
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-DVO",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "rule": "Rule 5 (Procurement)",
+      "action": "PROCURE",
+      "transfer_quantity": 0,
+      "procurement_quantity": 50.0
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-CDO",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "rule": "Rule 5 (Procurement)",
+      "action": "PROCURE",
+      "transfer_quantity": 0,
+      "procurement_quantity": 30.0
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-CEB",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "rule": "Rule 5 (Procurement)",
+      "action": "PROCURE",
+      "transfer_quantity": 0,
+      "procurement_quantity": 20.0
+    },
+    {
+      "phase": "rule_fired",
+      "branch_id": "BR-MND",
+      "product_id": "STEEL-SQ-TUBE-2X2",
+      "period": "2026-12",
+      "rule": "Rule 1 (Sufficient Inventory)",
+      "action": "KEEP",
+      "dispatched_transfer_quantity": 0,
+      "retained_excess": 0.0
+    }
+  ]
+}

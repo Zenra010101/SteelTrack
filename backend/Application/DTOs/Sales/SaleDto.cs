@@ -8,6 +8,8 @@ public class SaleListItemDto
     public Guid Id { get; set; }
     public string SaleNumber { get; set; } = string.Empty;
     public string CashierName { get; set; } = string.Empty;
+    public string? Branch { get; set; }
+    public Guid? BranchId { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal GrossProfit { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
@@ -25,6 +27,8 @@ public class SaleDto
     public string SaleNumber { get; set; } = string.Empty;
     public Guid UserId { get; set; }
     public string CashierName { get; set; } = string.Empty;
+    public string? Branch { get; set; }
+    public Guid? BranchId { get; set; }
     public decimal SubTotal { get; set; }
     public decimal DiscountPercent { get; set; }
     public decimal DiscountAmount { get; set; }
@@ -134,6 +138,8 @@ public class OnlineBankPaymentRequest
 
 public class CreateSaleRequest
 {
+    public string? Branch { get; set; }
+    public Guid? BranchId { get; set; }
     public List<CreateSaleItemRequest> Items { get; set; } = [];
     public decimal DiscountPercent { get; set; }
     public SaleTaxMode TaxMode { get; set; }

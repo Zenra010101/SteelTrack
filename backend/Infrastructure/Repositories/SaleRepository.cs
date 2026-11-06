@@ -134,10 +134,11 @@ public class SaleRepository : Repository<Sale>, ISaleRepository
         CancellationToken cancellationToken = default)
     {
         var query = DbSet
-            .Include(s => s.User)
+            .Include(s => s.User).ThenInclude(u => u!.Branch)
+            .Include(s => s.Branch)
             .Include(s => s.Items).ThenInclude(i => i.ProductBatch)
             .Include(s => s.Payment)
-            .Where(s => s.Status == SaleStatus.Completed)
+            .Include(s => s.Cheque)
             .AsQueryable();
 
         if (filterByUserId.HasValue)

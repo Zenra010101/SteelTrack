@@ -14,5 +14,6 @@ public interface ILstmForecastService
         DateTime toMonth,
         Guid? categoryId,
         Guid? branchId = null,
+        string? modelVersion = null,
         CancellationToken cancellationToken = default);
 }

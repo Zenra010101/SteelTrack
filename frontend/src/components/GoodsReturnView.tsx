@@ -14,6 +14,7 @@ import {
   Check,
   RefreshCw,
   Ban,
+  RotateCcw,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { GoodsReturnSlip, CreateGrsDto, ReturnReason, HeatLookupResult } from '../types/returns';
@@ -288,10 +289,10 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
       </div>
 
       {/* TABLE WITH WHITE BACKGROUND */}
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #94A3B8', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+            <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #94A3B8' }}>
               <th style={{ padding: '0.75rem 1rem' }}>GRS # & Invoice</th>
               <th style={{ padding: '0.75rem 1rem' }}>Customer & Branch</th>
               <th style={{ padding: '0.75rem 1rem' }}>Returned Items</th>
@@ -337,7 +338,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#0F172A' }}>
-                    ₱{r.totalReturnValuePHP.toLocaleString()}
+                    ₱{r.totalReturnAmount.toLocaleString()}
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
@@ -411,37 +412,47 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
 
       {/* CREATE RETURN SLIP MODAL (WITH HEAT NUMBER AUTOCOMPLETE) */}
       {isCreateModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', borderRadius: '12px', border: '1px solid #334155', width: '92%', maxWidth: '640px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div>
-                <h3 style={{ margin: 0, color: '#F8FAFC', fontSize: '1.2rem', fontWeight: 700 }}>
-                  Issue Goods Return Slip (GRS)
-                </h3>
-                <p style={{ margin: '0.2rem 0 0 0', color: '#94A3B8', fontSize: '0.8rem' }}>
-                  Search the Heat Number to auto-fill purchase history, customer specs, and maximum return limits.
-                </p>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #CBD5E1', width: '100%', maxWidth: '680px', padding: '1.75rem', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(15, 23, 42, 0.2), 0 8px 10px -6px rgba(15, 23, 42, 0.1)' }}>
+            
+            {/* MODAL HEADER */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', borderBottom: '1px solid #F1F5F9', paddingBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: 44, height: 44, borderRadius: '12px', background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <RotateCcw size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, color: '#0F172A', fontSize: '1.25rem', fontWeight: 700 }}>
+                    Issue Goods Return Slip (GRS)
+                  </h3>
+                  <p style={{ margin: '0.2rem 0 0 0', color: '#64748B', fontSize: '0.82rem' }}>
+                    Lookup Heat Number to auto-fill purchase history, customer specs, and maximum return limits.
+                  </p>
+                </div>
               </div>
-              <button onClick={() => setIsCreateModalOpen(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
-                <X size={20} />
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', color: '#64748B', cursor: 'pointer', padding: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleCreateReturn}>
-              {/* HEAT NUMBER LOOKUP SECTION */}
-              <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '8px', border: '1px solid #38BDF8', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                  <label style={{ color: '#38BDF8', fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Sparkles size={14} /> Batch / Heat Number Search <span style={{ color: '#EF4444' }}>*</span>
+              {/* SMART HEAT NUMBER LOOKUP SECTION */}
+              <div style={{ background: '#F8FAFC', padding: '1rem 1.15rem', borderRadius: '10px', border: '1px solid #BAE6FD', marginBottom: '1.15rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label style={{ color: '#0369A1', fontSize: '0.82rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Sparkles size={15} color="#0284C7" /> Batch / Heat Number Search <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   {isLookingUp && (
-                    <span style={{ fontSize: '0.75rem', color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#0284C7', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 600 }}>
                       <RefreshCw size={12} className="spin-icon" /> Querying Sales Ledger...
                     </span>
                   )}
                   {autoMatched && (
-                    <span style={{ fontSize: '0.75rem', color: '#34D399', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
-                      <Check size={14} /> Auto-Filled from Sales Record
+                    <span style={{ fontSize: '0.75rem', color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '0.15rem 0.5rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600 }}>
+                      <Check size={13} /> Auto-Filled from Sales Record
                     </span>
                   )}
                 </div>
@@ -453,27 +464,27 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                     placeholder="Enter or paste Heat # (e.g. HT-2026-8841)..."
                     value={heatNumber}
                     onChange={(e) => handleHeatLookup(e.target.value)}
-                    style={{ flex: 1, background: '#1E293B', border: '1px solid #475569', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 600 }}
+                    style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem 0.85rem', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}
                   />
                   <button
                     type="button"
-                    className="btn-secondary"
+                    className="btn-primary"
                     onClick={() => handleHeatLookup(heatNumber)}
-                    style={{ padding: '0.6rem 1rem', fontSize: '0.85rem' }}
+                    style={{ padding: '0.6rem 1.1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
                   >
                     Lookup
                   </button>
                 </div>
 
                 {/* QUICK SUGGESTION CHIPS */}
-                <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                <div style={{ marginTop: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                   <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Quick sample heats:</span>
                   {COMMON_HEAT_SUGGESTIONS.map((h) => (
                     <button
                       key={h}
                       type="button"
                       onClick={() => handleHeatLookup(h)}
-                      style={{ background: '#1E293B', color: '#94A3B8', border: '1px solid #334155', borderRadius: '4px', padding: '0.15rem 0.45rem', fontSize: '0.75rem', cursor: 'pointer' }}
+                      style={{ background: '#FFFFFF', color: '#0369A1', border: '1px solid #CBD5E1', borderRadius: '6px', padding: '0.2rem 0.55rem', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'JetBrains Mono, monospace', fontWeight: 500 }}
                     >
                       {h}
                     </button>
@@ -481,16 +492,16 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                 </div>
 
                 {lookupFeedback && (
-                  <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: autoMatched ? '#34D399' : '#FBBF24' }}>
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: autoMatched ? '#059669' : '#D97706', fontWeight: 500 }}>
                     {lookupFeedback}
                   </div>
                 )}
               </div>
 
               {/* AUTO-FILLED SALES METADATA */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1.15rem' }}>
                 <div>
-                  <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>
+                  <label style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>
                     Original Sales Invoice # <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -499,11 +510,11 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                     value={invoiceNumber}
                     onChange={(e) => setInvoiceNumber(e.target.value)}
                     placeholder="e.g. INV-2026-0041"
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.875rem' }}
                   />
                 </div>
                 <div>
-                  <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>
+                  <label style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>
                     Customer / Buyer Name <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -512,71 +523,71 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="e.g. Mindanao Steelworks Corp."
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.875rem' }}
                   />
                 </div>
               </div>
 
-              {/* ITEM SPECIFICATIONS & PURCHASED QUANTITY */}
-              <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '8px', border: '1px solid #334155', marginBottom: '1rem' }}>
-                <div style={{ color: '#CBD5E1', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              {/* PRODUCT SPECIFICATIONS & PRICE BASIS */}
+              <div style={{ background: '#F8FAFC', padding: '1.1rem', borderRadius: '10px', border: '1px solid #E2E8F0', marginBottom: '1.15rem' }}>
+                <div style={{ color: '#0F172A', fontSize: '0.82rem', fontWeight: 700, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Product Specifications & Price Basis
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   <div>
-                    <label style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Steel Grade</label>
+                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Steel Grade</label>
                     <input
                       type="text"
                       required
                       value={grade}
                       onChange={(e) => setGrade(e.target.value)}
                       placeholder="e.g. A36_Structural"
-                      style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                     />
                   </div>
                   <div>
-                    <label style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Batch Dimensions</label>
+                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Batch Dimensions</label>
                     <input
                       type="text"
                       required
                       value={dimensions}
                       onChange={(e) => setDimensions(e.target.value)}
                       placeholder="e.g. 12mm x 1500mm x 6000mm"
-                      style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   <div>
-                    <label style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Original Purchased Qty</label>
-                    <div style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#38BDF8', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 600 }}>
+                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Original Purchased Qty</label>
+                    <div style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0284C7', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
                       {purchasedQtyTons > 0 ? `${purchasedQtyTons} Tons (${purchasedQtyPieces ?? 'N/A'} Pieces)` : 'Not specified'}
                     </div>
                   </div>
                   <div>
-                    <label style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Unit Price (PHP / Ton)</label>
+                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Unit Price (PHP / Ton)</label>
                     <input
                       type="number"
                       required
                       value={unitPrice}
                       onChange={(e) => setUnitPrice(e.target.value)}
                       placeholder="85000"
-                      style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
 
-                {/* RETURN QUANTITY WITH STRICT MAX VALIDATION */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                {/* RETURN QUANTITY & CALCULATED CREDIT */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label style={{ color: '#94A3B8', fontSize: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                      <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600 }}>
                         Return Quantity (Tons) <span style={{ color: '#EF4444' }}>*</span>
                       </label>
                       {maxReturnableTons > 0 && (
-                        <span style={{ fontSize: '0.7rem', color: '#38BDF8' }}>Max: {maxReturnableTons} Tons</span>
+                        <span style={{ fontSize: '0.7rem', color: '#0284C7', fontWeight: 600 }}>Max: {maxReturnableTons} Tons</span>
                       )}
                     </div>
                     <input
@@ -588,45 +599,46 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                       placeholder="0.00"
                       style={{
                         width: '100%',
-                        background: '#1E293B',
-                        border: qtyError ? '1px solid #EF4444' : '1px solid #334155',
-                        color: '#F8FAFC',
-                        padding: '0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.85rem',
+                        background: '#FFFFFF',
+                        border: qtyError ? '1px solid #EF4444' : '1px solid #CBD5E1',
+                        color: '#0F172A',
+                        padding: '0.55rem 0.75rem',
+                        borderRadius: '6px',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
                         fontFamily: 'monospace',
                       }}
                     />
                     {qtyError && (
-                      <div style={{ color: '#EF4444', fontSize: '0.72rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <div style={{ color: '#DC2626', fontSize: '0.72rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         <AlertCircle size={12} /> {qtyError}
                       </div>
                     )}
                   </div>
 
                   <div>
-                    <label style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Calculated Total Credit (PHP)</label>
-                    <div style={{ width: '100%', background: '#1E293B', border: '1px solid #059669', color: '#34D399', padding: '0.5rem', borderRadius: '4px', fontSize: '0.95rem', fontWeight: 700 }}>
+                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Calculated Total Credit</label>
+                    <div style={{ width: '100%', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#059669', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
                       ₱{calculatedCreditTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* REASON FOR RETURN & INSPECTION NOTES (MANUALLY EDITABLE) */}
-              <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '8px', border: '1px solid #334155', marginBottom: '1.25rem' }}>
-                <div style={{ color: '#CBD5E1', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+              {/* REASON FOR RETURN & INSPECTION NOTES */}
+              <div style={{ background: '#F8FAFC', padding: '1.1rem', borderRadius: '10px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
+                <div style={{ color: '#0F172A', fontSize: '0.82rem', fontWeight: 700, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Material Inspection & Return Justification
                 </div>
 
                 <div style={{ marginBottom: '0.75rem' }}>
-                  <label style={{ color: '#94A3B8', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>
-                    Reason for Return (Select or Customize)
+                  <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                    Reason for Return
                   </label>
                   <select
                     value={reason}
                     onChange={(e) => setReason(e.target.value as ReturnReason)}
-                    style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                   >
                     <option value="Quality_Defect_Rust">Quality Defect / Surface Rust / Lamination</option>
                     <option value="Damaged_In_Transit">Damaged in Transit / Crushed Bundles</option>
@@ -637,37 +649,39 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                 </div>
 
                 <div style={{ marginBottom: '0.75rem' }}>
-                  <label style={{ color: '#94A3B8', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>
-                    Inspection Notes & Quality Condition (Editable)
+                  <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                    Inspection Notes & Quality Condition
                   </label>
                   <textarea
                     rows={2}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Detail physical inspection findings, defect photos reference, or receiver remarks..."
-                    style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#FFFFFF', padding: '0.55rem 0.75rem', borderRadius: '6px', border: '1px solid #CBD5E1' }}>
                   <input
                     type="checkbox"
                     id="restockChk"
                     checked={restockEligible}
                     onChange={(e) => setRestockEligible(e.target.checked)}
+                    style={{ accentColor: '#0284C7', cursor: 'pointer' }}
                   />
-                  <label htmlFor="restockChk" style={{ color: '#CBD5E1', fontSize: '0.8rem', cursor: 'pointer' }}>
+                  <label htmlFor="restockChk" style={{ color: '#334155', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}>
                     Material is in reusable condition — Eligible for Yard Restock upon Approval
                   </label>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              {/* FOOTER ACTIONS */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #F1F5F9', paddingTop: '1rem' }}>
                 <button type="button" className="btn-secondary" onClick={() => setIsCreateModalOpen(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary" disabled={!!qtyError}>
-                  Submit Goods Return Slip
+                <button type="submit" className="btn-primary" disabled={!!qtyError} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.25rem' }}>
+                  <RotateCcw size={16} /> Submit Goods Return Slip
                 </button>
               </div>
             </form>
@@ -678,7 +692,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
       {/* REJECT RETURN SLIP MODAL (OWNER / MANAGER REJECTION FLOW) */}
       {rejectingSlip && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', borderRadius: '12px', border: '1px solid #EF4444', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #FCA5A5', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0, color: '#F8FAFC', fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <Ban size={18} style={{ color: '#EF4444' }} /> Reject Return Slip #{rejectingSlip.grsNumber}
@@ -691,7 +705,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
             <div style={{ background: '#0F172A', padding: '0.85rem', borderRadius: '6px', border: '1px solid #334155', marginBottom: '1rem', fontSize: '0.85rem' }}>
               <div><strong>Customer:</strong> {rejectingSlip.customerName}</div>
               <div><strong>Ref Invoice:</strong> {rejectingSlip.invoiceNumber}</div>
-              <div><strong>Return Value:</strong> ₱{rejectingSlip.totalReturnValuePHP.toLocaleString()}</div>
+              <div><strong>Return Value:</strong> ₱{rejectingSlip.totalReturnAmount.toLocaleString()}</div>
             </div>
 
             <form onSubmit={handleConfirmReject}>
@@ -705,7 +719,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="Specify why the return request is denied (e.g. buyer alteration, elapsed warranty, non-compliant return)..."
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #475569', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                  style={{ width: '100%', background: '#0F172A', border: '1px solid #475569', color: '#242222ff', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
                 />
               </div>
 
@@ -756,24 +770,24 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
               </div>
             </div>
 
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #CBD5E1', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #94A3B8', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
               <thead>
                 <tr style={{ background: '#E2E8F0', color: '#334155' }}>
-                  <th style={{ padding: '0.55rem', border: '1px solid #CBD5E1', textAlign: 'left' }}>Heat #</th>
-                  <th style={{ padding: '0.55rem', border: '1px solid #CBD5E1', textAlign: 'left' }}>Grade & Dimensions</th>
-                  <th style={{ padding: '0.55rem', border: '1px solid #CBD5E1', textAlign: 'center' }}>Tons</th>
-                  <th style={{ padding: '0.55rem', border: '1px solid #CBD5E1', textAlign: 'right' }}>Unit Price (PHP)</th>
-                  <th style={{ padding: '0.55rem', border: '1px solid #CBD5E1', textAlign: 'right' }}>Credit Total</th>
+                  <th style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'left' }}>Heat #</th>
+                  <th style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'left' }}>Grade & Dimensions</th>
+                  <th style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'center' }}>Tons</th>
+                  <th style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'right' }}>Unit Price (PHP)</th>
+                  <th style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'right' }}>Credit Total</th>
                 </tr>
               </thead>
               <tbody>
                 {creditNoteModalSlip.items.map((i) => (
                   <tr key={i.id}>
-                    <td style={{ padding: '0.55rem', border: '1px solid #CBD5E1', fontWeight: 600 }}>{i.heatNumber}</td>
-                    <td style={{ padding: '0.55rem', border: '1px solid #CBD5E1' }}>{i.grade} ({i.dimensions})</td>
-                    <td style={{ padding: '0.55rem', border: '1px solid #CBD5E1', textAlign: 'center' }}>{i.quantityReturnedTons}</td>
-                    <td style={{ padding: '0.55rem', border: '1px solid #CBD5E1', textAlign: 'right' }}>₱{i.unitPricePerTonPHP.toLocaleString()}</td>
-                    <td style={{ padding: '0.55rem', border: '1px solid #CBD5E1', textAlign: 'right', fontWeight: 700, color: '#059669' }}>
+                    <td style={{ padding: '0.55rem', border: '1px solid #94A3B8', fontWeight: 600 }}>{i.heatNumber}</td>
+                    <td style={{ padding: '0.55rem', border: '1px solid #94A3B8' }}>{i.grade} ({i.dimensions})</td>
+                    <td style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'center' }}>{i.quantityReturnedTons}</td>
+                    <td style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'right' }}>₱{i.unitPricePerTonPHP.toLocaleString()}</td>
+                    <td style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'right', fontWeight: 700, color: '#059669' }}>
                       ₱{i.subtotalPHP.toLocaleString()}
                     </td>
                   </tr>
@@ -782,10 +796,10 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
             </table>
 
             <div style={{ textAlign: 'right', fontSize: '1.25rem', fontWeight: 800, color: '#059669', marginBottom: '1.5rem' }}>
-              Total Credit Allowed: ₱{creditNoteModalSlip.totalReturnValuePHP.toLocaleString()}
+              Total Credit Allowed: ₱{creditNoteModalSlip.totalReturnAmount.toLocaleString()}
             </div>
 
-            <div style={{ borderTop: '1px solid #CBD5E1', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', textAlign: 'center', fontSize: '0.8rem', color: '#64748B' }}>
+            <div style={{ borderTop: '1px solid #94A3B8', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', textAlign: 'center', fontSize: '0.8rem', color: '#64748B' }}>
               <div>
                 <div style={{ borderBottom: '1px solid #0F172A', height: '2rem', marginBottom: '0.35rem' }}></div>
                 <div style={{ fontWeight: 700, color: '#0F172A' }}>{creditNoteModalSlip.approvedBy || 'Branch Controller'}</div>

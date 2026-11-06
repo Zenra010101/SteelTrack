@@ -48,6 +48,7 @@ Only ONE line of JSON is written to stdout. Everything else goes to stderr.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import logging
 import sys
@@ -178,17 +179,24 @@ def main() -> int:
         predictions = asyncio.run(_run())
     except RuntimeError as exc:
         msg = str(exc)
-        code = "no_model" if "No trained models" in msg or "no model versions" in msg
-        if code == "no_model":
-            return EXIT_NO_MODEL
-        code = "transport_failure" if "unreachable" in msg or "Database" in msg
+        if "No trained models" in msg or "no model versions" in msg:
+            code = "no_model"
+        elif "unreachable" in msg or "Database" in msg:
+            code = "transport_failure"
+        else:
+            code = "internal_error"
+
         _write_error({
             "code": code,
             "message": msg,
             "status_code": 503 if code == "no_model" else 500,
             "detail": msg[:500],
         })
-        return EXIT_TRANSPORT_FAILURE if code == "transport_failure" else EXIT_INTERNAL_ERROR
+        return (
+            EXIT_NO_MODEL if code == "no_model"
+            else EXIT_TRANSPORT_FAILURE if code == "transport_failure"
+            else EXIT_INTERNAL_ERROR
+        )
     except Exception as exc:
         logger.exception("unexpected inference error")
         _write_error({

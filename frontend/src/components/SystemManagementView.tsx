@@ -8,9 +8,6 @@ import {
   Phone,
   MapPin,
   UserCheck,
-  Database,
-  RefreshCw,
-  AlertCircle,
   UserPlus,
   ShieldAlert,
 } from 'lucide-react';
@@ -45,11 +42,6 @@ export function SystemManagementView() {
   const [newUserRole, setNewUserRole] = useState<UserRole>(UserRole.Cashier);
   const [newUserBranch, setNewUserBranch] = useState<BranchLocation>(BranchLocation.Davao);
 
-  // Database Seeder State
-  const [isSeeding, setIsSeeding] = useState(false);
-  const [seedResult, setSeedResult] = useState<{ message: string; counts?: Record<string, number> } | null>(null);
-  const [seedError, setSeedError] = useState<string | null>(null);
-
   useEffect(() => {
     loadBranches();
     loadStaffUsers();
@@ -63,28 +55,6 @@ export function SystemManagementView() {
   const loadStaffUsers = async () => {
     const data = await fetchStaffUsers();
     setStaffUsers(data);
-  };
-
-  const handleTriggerSeed = async () => {
-    if (!confirm('Run the SteelTrack database seeder? This will populate the 645 steel products, 4 branches, 52 user accounts, and 50+ operational records.')) {
-      return;
-    }
-    setIsSeeding(true);
-    setSeedResult(null);
-    setSeedError(null);
-    try {
-      const res = await fetch('/api/admin/seed', { method: 'POST' });
-      if (!res.ok) {
-        throw new Error(`Seeder request failed with HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      setSeedResult(data);
-      await loadBranches();
-    } catch (err: any) {
-      setSeedError(err.message || 'Failed to trigger database seeder.');
-    } finally {
-      setIsSeeding(false);
-    }
   };
 
   const handleOpenEdit = (branch: BranchRecord) => {
@@ -309,101 +279,10 @@ export function SystemManagementView() {
         </table>
       </div>
 
-      {/* 3. Database Seeder & Live Enterprise Provisioning Section */}
-      <div className="controls-bar" style={{ marginTop: '1rem' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#0284C7', marginBottom: '0.25rem', fontWeight: 600 }}>
-            <Database size={18} /> Database Seeder & Live Provisioning
-          </div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-            Enterprise Data Initialization & Verification
-          </h3>
-          <p style={{ fontSize: '0.85rem', color: '#94A3B8', margin: '0.25rem 0 0' }}>
-            Populate or re-sync the PostgreSQL database with 645 imported steel products, 4 branches, 52 user accounts, and 50+ records for all operational tables.
-          </p>
-        </div>
-      </div>
-
-      <div style={{
-        background: '#1E293B',
-        border: '1px solid #334155',
-        borderRadius: '12px',
-        padding: '1.5rem',
-        marginBottom: '2.5rem',
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h4 style={{ margin: '0 0 0.5rem', fontSize: '1.05rem', color: '#F8FAFC', fontWeight: 600 }}>
-              One-Click Database Seeder
-            </h4>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: '#94A3B8', maxWidth: '650px', lineHeight: 1.5 }}>
-              Executes the comprehensive SQL seeding script directly against your connected database (Local PostgreSQL or MonsterASP host). Validates table constraints and displays record counts.
-            </p>
-          </div>
-          <div>
-            <button
-              type="button"
-              className="btn-primary"
-              disabled={isSeeding}
-              onClick={handleTriggerSeed}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem', fontWeight: 600, fontSize: '0.9rem' }}
-            >
-              {isSeeding ? (
-                <>
-                  <RefreshCw size={16} className="animate-spin" /> Seeding Database...
-                </>
-              ) : (
-                <>
-                  <Database size={16} /> Seed Database Now
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Live Seed Result Stats */}
-        {seedResult && (
-          <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #059669', borderRadius: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10B981', fontWeight: 600, marginBottom: '0.5rem' }}>
-              <CheckCircle2 size={18} /> {seedResult.message}
-            </div>
-            {seedResult.counts && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
-                {Object.entries(seedResult.counts).map(([tbl, count]) => (
-                  <span
-                    key={tbl}
-                    style={{
-                      background: '#0F172A',
-                      border: '1px solid #334155',
-                      padding: '0.3rem 0.65rem',
-                      borderRadius: '6px',
-                      fontSize: '0.8rem',
-                      fontFamily: 'JetBrains Mono, monospace',
-                      color: '#E2E8F0'
-                    }}
-                  >
-                    <strong style={{ color: '#38BDF8' }}>{tbl}:</strong> {count} records
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Seed Error Banner */}
-        {seedError && (
-          <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #DC2626', borderRadius: '8px', color: '#F87171', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <AlertCircle size={18} />
-            <span><strong>Seeding Error:</strong> {seedError}</span>
-          </div>
-        )}
-      </div>
-
       {/* EDIT BRANCH MODAL */}
       {editingBranch && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', color: '#F8FAFC', borderRadius: '12px', border: '1px solid #334155', width: '90%', maxWidth: '520px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}>
+          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #334155', width: '90%', maxWidth: '520px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>
@@ -428,53 +307,53 @@ export function SystemManagementView() {
             <form onSubmit={handleSaveBranch}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <div>
-                  <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Branch Code</label>
+                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Branch Code</label>
                   <input
                     type="text"
                     disabled
                     value={editingBranch.code}
-                    style={{ width: '100%', background: '#0B132B', border: '1px solid #1E293B', color: '#64748B', padding: '0.6rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
+                    style={{ width: '100%', background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
                   />
                 </div>
                 <div>
-                  <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Branch Name</label>
+                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Branch Name</label>
                   <input
                     type="text"
                     required
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
 
               <div style={{ marginBottom: '0.75rem' }}>
-                <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Physical Facility Address</label>
+                <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Physical Facility Address</label>
                 <input
                   type="text"
                   required
                   value={editAddress}
                   onChange={(e) => setEditAddress(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <div>
-                  <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Contact Phone / Landline</label>
+                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Contact Phone / Landline</label>
                   <input
                     type="text"
                     value={editContact}
                     onChange={(e) => setEditContact(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
                   />
                 </div>
                 <div>
-                  <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Branch Manager Name</label>
+                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Branch Manager Name</label>
                   <select
                     value={editManager}
                     onChange={(e) => setEditManager(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem', marginBottom: '0.35rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem', marginBottom: '0.35rem' }}
                   >
                     <option value="">Select registered Branch Manager...</option>
                     {staffUsers
@@ -493,17 +372,17 @@ export function SystemManagementView() {
                     placeholder="Or type custom manager name..."
                     value={editManager}
                     onChange={(e) => setEditManager(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.45rem', borderRadius: '4px', fontSize: '0.8rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.45rem', borderRadius: '4px', fontSize: '0.8rem' }}
                   />
                 </div>
               </div>
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Operational Status</label>
+                <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Operational Status</label>
                 <select
                   value={editIsActive ? 'true' : 'false'}
                   onChange={(e) => setEditIsActive(e.target.value === 'true')}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                 >
                   <option value="true">Active Facility (Open for Operations)</option>
                   <option value="false">Maintenance / Inactive</option>
@@ -533,59 +412,59 @@ export function SystemManagementView() {
       {/* ADD STAFF ACCOUNT MODAL */}
       {isAddUserModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', color: '#F8FAFC', borderRadius: '12px', border: '1px solid #334155', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
+          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <UserPlus size={18} color="#38BDF8" /> Add Staff User Account
+                <UserPlus size={18} color="#0284C7" /> Add Staff User Account
               </h3>
-              <button onClick={() => setIsAddUserModalOpen(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+              <button onClick={() => setIsAddUserModalOpen(false)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleCreateUser}>
               <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Full Legal Name</label>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Full Legal Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Gabriel Alcantara"
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.55rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Email / Login Username</label>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Email / Login Username</label>
                 <input
                   type="email"
                   required
                   placeholder="e.g. g.alcantara@steeltrack.com"
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.55rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Initial Temporary Password</label>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Initial Temporary Password</label>
                 <input
                   type="text"
                   required
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.55rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Assigned Role</label>
+                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Assigned Role</label>
                   <select
                     value={newUserRole}
                     onChange={(e) => setNewUserRole(e.target.value as UserRole)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
                   >
                     <option value={UserRole.Cashier}>Cashier</option>
                     <option value={UserRole.BranchManager}>Branch Manager</option>
@@ -593,12 +472,12 @@ export function SystemManagementView() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Facility Branch</label>
+                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Facility Branch</label>
                   <select
                     disabled={newUserRole === UserRole.Owner}
                     value={newUserBranch}
                     onChange={(e) => setNewUserBranch(e.target.value as BranchLocation)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.55rem', borderRadius: '6px', opacity: newUserRole === UserRole.Owner ? 0.5 : 1 }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', opacity: newUserRole === UserRole.Owner ? 0.5 : 1 }}
                   >
                     <option value={BranchLocation.Davao}>Davao Branch</option>
                     <option value={BranchLocation.Cagayan}>Cagayan Branch</option>

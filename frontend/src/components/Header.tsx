@@ -3,7 +3,6 @@ import { Server, Layers, RefreshCw } from 'lucide-react';
 import type { UserSession } from '../types/auth';
 
 interface HeaderProps {
-  isLiveBackend: boolean;
   userSession: UserSession;
   activeTabTitle: string;
   onRefresh?: () => Promise<void> | void;
@@ -11,7 +10,6 @@ interface HeaderProps {
 }
 
 export function Header({
-  isLiveBackend,
   userSession,
   activeTabTitle,
   onRefresh,
@@ -68,10 +66,10 @@ export function Header({
           </button>
         )}
 
-        <div className={`status-pill ${isLiveBackend ? '' : 'offline'}`}>
+        <div className="status-pill">
           <div className="dot" />
           <Server size={14} />
-          {isLiveBackend ? 'Active Database' : 'Offline Mode'}
+          Active Database
         </div>
       </div>
     </header>

@@ -290,8 +290,25 @@ public class ApprovalRequestService : IApprovalRequestService
             q = q.Where(x => x.Status == query.Status.Value);
         if (query.Type.HasValue)
             q = q.Where(x => x.Type == query.Type.Value);
-        if (!RoleNames.IsOwner(role))
+
+        var isOwner = string.Equals(role, RoleNames.Owner, StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase);
+
+        var isBranchManager = string.Equals(role, RoleNames.BranchManager, StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(role, "BranchManager", StringComparison.OrdinalIgnoreCase);
+
+        if (isBranchManager)
+        {
+            var currentUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            if (currentUser?.BranchId != null)
+            {
+                q = q.Where(x => x.RequestedByUser.BranchId == currentUser.BranchId);
+            }
+        }
+        else if (!isOwner)
+        {
             q = q.Where(x => x.RequestedByUserId == userId);
+        }
 
         var total = await q.CountAsync(cancellationToken);
         var items = await q

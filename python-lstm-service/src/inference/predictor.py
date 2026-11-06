@@ -132,12 +132,14 @@ class Predictor:
         predictions: list[RawPrediction] = []
 
         for key, points in series.items():
-            # The registry keys artifacts by a plain (product_id, branch_id)
-            # tuple, while `series` is keyed by the SeriesKey dataclass. The
-            # two hash identically but are not equal, so the lookup has to
-            # be done against the tuple form or every series would miss its
-            # trained model and silently fall back to seasonal-naive.
-            artifact = artifacts.get((key.product_id, key.branch_id))
+            # Lookup artifact by (UUID, UUID), (str, str), or global fallback
+            artifact = (
+                artifacts.get((key.product_id, key.branch_id))
+                or artifacts.get((str(key.product_id), str(key.branch_id)))
+                or artifacts.get((str(key.product_id), key.branch_id))
+                or artifacts.get((key.product_id, str(key.branch_id)))
+                or artifacts.get(("global", "all"))
+            )
             if artifact is None:
                 # No trained model for this series — seasonal-naive fallback.
                 predictions.extend(

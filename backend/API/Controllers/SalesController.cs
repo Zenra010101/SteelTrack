@@ -24,6 +24,7 @@ public class SalesController : ControllerBase
     public async Task<ActionResult> GetAll(
         [FromQuery] DateTime? from,
         [FromQuery] DateTime? to,
+        [FromQuery] string? branch,
         CancellationToken cancellationToken,
         [FromQuery] bool history = false,
         [FromQuery] int? page = null,
@@ -54,7 +55,7 @@ public class SalesController : ControllerBase
 
         var sales = history
             ? await _saleService.GetHistoryAsync(from, to, UserId, Role, cancellationToken)
-            : await _saleService.GetAllAsync(from, to, UserId, Role, cancellationToken);
+            : await _saleService.GetAllAsync(from, to, branch, UserId, Role, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<SaleDto>>.Ok(sales));
     }
 

@@ -12,6 +12,7 @@ public class LstmServiceSettings
     public string ApiKey { get; set; } = "dev-api-key-change-me";
     public int LookbackMonths { get; set; } = 24;
     public int HorizonMonths { get; set; } = 3;
+    public string ModelVersion { get; set; } = "v0.2.0-csv-20261102T133101Z";
 }
 
 public static class LstmServiceSettingsExtensions

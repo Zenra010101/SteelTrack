@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, Filter, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Search, Plus, Filter, Loader2, LogOut, X } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MetricsOverview } from './components/MetricsOverview';
 import { InventoryTable } from './components/InventoryTable';
 import { AddBatchModal } from './components/AddBatchModal';
 import { LoginScreen } from './components/LoginScreen';
+import { DashboardView } from './components/DashboardView';
 import { OwnerForecastView } from './components/OwnerForecastView';
 import { InterBranchTransferView } from './components/InterBranchTransferView';
 import { CashierPosView } from './components/CashierPosView';
@@ -22,8 +23,7 @@ import { AuditLogView } from './components/AuditLogView';
 import { ProductsManagementView } from './components/ProductsManagementView';
 
 import {
-  fetchInventory,
-  fetchStats,
+  fetchBranchProducts,
   createBatch,
   updateBatchStatus,
   getAuthHeaders,
@@ -33,10 +33,10 @@ import {
   decodeJwtPayload,
   getStoredToken,
   messageForReason,
-  notifySessionEnded,
   onSessionEnd,
 } from './services/session';
-import type { SteelBatch, InventoryStats, BatchStatus, CreateSteelBatchDto } from './types/steel';
+import type { BranchProductItem, InventoryStats, BatchStatus, CreateSteelBatchDto } from './types/steel';
+// SteelBatch removed — inventory is now read live via fetchBranchProducts.
 import { UserRole, BranchLocation, type UserSession } from './types/auth';
 
 /**
@@ -60,15 +60,14 @@ export function App() {
     try {
       const savedTab = localStorage.getItem('steeltrack_active_tab');
       if (savedTab) return savedTab;
-    } catch {}
-    return 'inventory';
+    } catch { }
+    return 'dashboard';
   });
 
-  // Inventory State
-  const [batches, setBatches] = useState<SteelBatch[]>([]);
+  // Branch products — read live from the branch_products table via /api/inventory/stock-list
+  const [branchProducts, setBranchProducts] = useState<BranchProductItem[]>([]);
   const [stats, setStats] = useState<InventoryStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isLiveBackend, setIsLiveBackend] = useState<boolean>(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
 
   // Filters
@@ -76,9 +75,19 @@ export function App() {
     return localStorage.getItem('steeltrack_selected_branch') || 'All';
   });
   const [search, setSearch] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [gradeFilter, setGradeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
+
+  // Debounce search keystrokes to prevent table reload jitter
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const handleLogin = (session: UserSession) => {
     try {
@@ -97,13 +106,13 @@ export function App() {
       localStorage.setItem('steeltrack_selected_branch', 'All');
     }
 
-    // Set appropriate initial tab if none stored
-    const existingTab = localStorage.getItem('steeltrack_active_tab');
-    if (!existingTab) {
-      const defaultTab = session.role === UserRole.Cashier ? 'pos' : 'inventory';
-      setActiveTab(defaultTab);
-      localStorage.setItem('steeltrack_active_tab', defaultTab);
-    }
+    // Landing page: always route to Role Dashboard on login
+
+    setActiveTab('dashboard');
+    try {
+
+      localStorage.setItem('steeltrack_active_tab', 'dashboard');
+    } catch { }
   };
 
   const handleLogout = () => {
@@ -133,37 +142,52 @@ export function App() {
     setActiveTab(tab);
     try {
       localStorage.setItem('steeltrack_active_tab', tab);
-    } catch {}
+    } catch { }
   };
 
   const handleSelectBranch = (branch: string) => {
     setSelectedBranch(branch);
     try {
       localStorage.setItem('steeltrack_selected_branch', branch);
-    } catch {}
+    } catch { }
   };
 
   const effectiveBranch = userSession?.role === UserRole.Owner
     ? (selectedBranch === 'All' ? undefined : selectedBranch)
     : userSession?.branch;
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async (isSilent = false) => {
+    if (!isSilent && branchProducts.length === 0) {
+      setLoading(true);
+    }
     try {
-      const [invResult, statsData] = await Promise.all([
-        fetchInventory(search, gradeFilter, statusFilter, effectiveBranch),
-        fetchStats(effectiveBranch),
-      ]);
-      setBatches(invResult.data);
-      setIsLiveBackend(invResult.isLiveBackend);
-      setStats(statsData);
+      const prodResult = await fetchBranchProducts(debouncedSearch, undefined, gradeFilter, false, effectiveBranch);
+      setBranchProducts(prodResult.data);
+
+      const items = prodResult.data;
+      const totalBatches = prodResult.totalCount || items.length;
+      const totalTonnage = Number(items.reduce((sum, p) => sum + (Number(p.weightInTons ?? (Number(p.stockQuantity ?? 0) * 0.1))), 0).toFixed(2));
+      const availableCount = items.filter(p => p.isAvailable !== false && p.status !== 'Shipped').length;
+      const qualityCheckCount = items.filter(p => p.status === 'QualityCheck' || (((p.currentStock ?? 0) <= (p.reorderLevel ?? 0)) && (p.currentStock ?? 0) > 0)).length;
+      const inProductionCount = items.filter(p => p.status === 'InProduction').length;
+      const shippedCount = items.filter(p => p.status === 'Shipped' || (p.currentStock ?? 0) <= 0).length;
+
+      setStats({
+        totalBatches,
+        totalTonnage,
+        availableCount,
+        qualityCheckCount,
+        inProductionCount,
+        shippedCount,
+      });
+
       setLastRefreshedAt(new Date());
     } catch (err) {
-      console.error('Failed loading inventory data:', err);
+      console.error('Failed loading branch products from database:', err);
     } finally {
       setLoading(false);
     }
-  }, [search, gradeFilter, statusFilter, effectiveBranch]);
+  }, [debouncedSearch, gradeFilter, effectiveBranch, branchProducts.length]);
 
   // Begin boot validation once. While it is running the login screen must
   // not flash at somebody who is already signed in.
@@ -204,13 +228,9 @@ export function App() {
           if (res.ok) {
             const serverInstanceId = (await res.json()).instanceId;
             if (serverInstanceId && claim.stt_instance !== serverInstanceId) {
-              // The server restarted and no longer owns this token. Clear it
-              // and report "restarted" rather than letting the generic 401
-              // path call it an expiry.
+              // Server restarted — do not show intrusive startup alert
               clearAuthState();
-              if (!cancelled) {
-                notifySessionEnded('server_restarted');
-              }
+              if (!cancelled) setBootState('ready');
               return;
             }
           }
@@ -251,15 +271,27 @@ export function App() {
     };
   }, []);
 
-  // Auto-refresh stock lookup at 20-second interval when on inventory tab
+  // Auto-refresh stock lookup at 30-second interval when on inventory tab (silent in background)
   useEffect(() => {
-    if (userSession && activeTab === 'inventory') {
-      const timer = setInterval(() => {
-        loadData();
-      }, 20000);
-      return () => clearInterval(timer);
-    }
-  }, [userSession, activeTab, loadData]);
+    if (!userSession || activeTab !== 'inventory') return;
+
+    // Load immediately on tab open or filter changes
+    void loadData(false);
+
+    const timer = setInterval(() => {
+      void loadData(true);
+    }, 30000);
+
+    return () => clearInterval(timer);
+  }, [userSession, activeTab, debouncedSearch, gradeFilter, effectiveBranch]);
+
+  const displayedBranchProducts = useMemo(() => {
+    if (!statusFilter) return branchProducts;
+    return branchProducts.filter((p) => {
+      const displayStatus = p.status || (p.isAvailable !== false ? 'Available' : 'Reserved');
+      return displayStatus === statusFilter;
+    });
+  }, [branchProducts, statusFilter]);
 
   const handleCreateBatch = async (dto: CreateSteelBatchDto) => {
     await createBatch(dto);
@@ -300,26 +332,29 @@ export function App() {
   // Get current active tab human-readable title
   const getTabTitle = () => {
     switch (activeTab) {
+      case 'dashboard':
+        return userSession.role === UserRole.Owner
+          ? 'Enterprise Executive Dashboard — Overview & KPIs'
+          : userSession.role === UserRole.BranchManager
+            ? `${userSession.branch} Branch Operations Dashboard`
+            : `Cashier POS Terminal Dashboard — ${userSession.branch} Branch`;
       case 'inventory':
         return userSession.role === UserRole.Owner
           ? 'All Branches Steel Inventory'
-          : `${userSession.branch} Branch Inventory Supervision`;
+          : `${userSession.branch} Branch Products Supervision`;
       case 'products':
         return userSession.role === UserRole.Owner
           ? 'Master Products Catalog & Specifications — All Categories'
           : `Products Catalog & Specifications — ${userSession.branch} Branch`;
       case 'receivables':
-        return `Accounts Receivable & Credit Control — ${
-          userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
-        }`;
+        return `Accounts Receivable & Credit Control — ${userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
+          }`;
       case 'cheques':
-        return `Post-Dated Cheque (PDC) Register — ${
-          userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
-        }`;
+        return `Post-Dated Cheque (PDC) Register — ${userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
+          }`;
       case 'returns':
-        return `Goods Return Slips (GRS) & Restock — ${
-          userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
-        }`;
+        return `Goods Return Slips (GRS) & Restock — ${userSession.role === UserRole.Owner ? 'All Branches' : `${userSession.branch} Branch`
+          }`;
       case 'suppliers':
         return 'Supplier Master Directory & Mill Test Certificates (MTC)';
       case 'customers':
@@ -354,15 +389,13 @@ export function App() {
         onSelectTab={handleSelectTab}
         selectedBranch={selectedBranch}
         onSelectBranch={handleSelectBranch}
-        isLiveBackend={isLiveBackend}
         onRefresh={loadData}
-        onLogout={handleLogout}
+        onLogout={() => setShowLogoutConfirm(true)}
       />
 
       {/* Main Workspace Area */}
       <main className="app-main">
         <Header
-          isLiveBackend={isLiveBackend}
           userSession={userSession}
           activeTabTitle={getTabTitle()}
           onRefresh={loadData}
@@ -370,6 +403,15 @@ export function App() {
         />
 
         <div className="main-content">
+          {/* TAB 0: DASHBOARD (LANDING PAGE FOR ALL ROLES) */}
+          {activeTab === 'dashboard' && (
+            <DashboardView
+              userSession={userSession}
+              selectedBranch={selectedBranch}
+              onSelectTab={handleSelectTab}
+              onSelectBranch={handleSelectBranch}
+            />
+          )}
           {/* TAB 1: POS VIEW (CASHIER ONLY) */}
           {activeTab === 'pos' && (
             <CashierPosView
@@ -445,7 +487,7 @@ export function App() {
               </div>
 
               <InventoryTable
-                batches={batches}
+                batches={displayedBranchProducts as unknown as import('./types/steel').SteelBatch[]}
                 loading={loading}
                 onUpdateStatus={handleUpdateStatus}
               />
@@ -526,6 +568,133 @@ export function App() {
             <SystemManagementView />
           )}
         </div>
+
+        {/* LOGOUT CONFIRMATION MODAL */}
+        {showLogoutConfirm && (
+          <div className="modal-overlay" onClick={() => setShowLogoutConfirm(false)}>
+            <div
+              className="modal-content"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: 440, borderRadius: 12, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}
+            >
+              <div className="modal-header" style={{ borderBottom: '1px solid #E2E8F0', padding: '1rem 1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <div
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: '50%',
+                      background: '#FEE2E2',
+                      color: '#DC2626',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <LogOut size={17} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A' }}>
+                      Confirm Sign Out
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  className="btn-secondary"
+                  onClick={() => setShowLogoutConfirm(false)}
+                  style={{ padding: '0.25rem 0.5rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                  title="Close"
+                >
+                  <X size={18} style={{ color: '#64748B' }} />
+                </button>
+              </div>
+
+              <div className="modal-body" style={{ padding: '1.25rem', color: '#334155', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                <p style={{ margin: '0 0 1rem 0' }}>
+                  Are you sure you want to end your current session and sign out of <strong>SteelTrack Enterprise Hub</strong>?
+                </p>
+
+                {userSession && (
+                  <div
+                    style={{
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: 8,
+                      padding: '0.75rem 1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600, color: '#0F172A', fontSize: '0.85rem' }}>
+                        {userSession.name}
+                      </div>
+                      <div style={{ color: '#64748B', fontSize: '0.75rem', marginTop: 2 }}>
+                        {userSession.role} • {userSession.branch ? `${userSession.branch} Branch` : 'Executive Scope (All Branches)'}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: 4,
+                        background: '#E2E8F0',
+                        color: '#475569',
+                      }}
+                    >
+                      Active Session
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div
+                className="modal-footer"
+                style={{
+                  borderTop: '1px solid #E2E8F0',
+                  padding: '0.85rem 1.25rem',
+                  background: '#F8FAFC',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '0.75rem',
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowLogoutConfirm(false)}
+                  style={{ padding: '0.55rem 1rem', fontSize: '0.85rem', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLogoutConfirm(false);
+                    handleLogout();
+                  }}
+                  style={{
+                    background: '#DC2626',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '0.55rem 1.15rem',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                  }}
+                >
+                  <LogOut size={15} /> Yes, Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ADD BATCH MODAL */}
         <AddBatchModal

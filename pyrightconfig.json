@@ -1,0 +1,10 @@
+{
+  "venvPath": "python-lstm-service",
+  "venv": ".venv",
+  "extraPaths": [
+    ".",
+    "python-lstm-service",
+    "python-lstm-service/.venv/Lib/site-packages"
+  ]
+}
+

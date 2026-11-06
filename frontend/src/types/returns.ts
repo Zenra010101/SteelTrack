@@ -31,7 +31,8 @@ export interface GoodsReturnSlip {
   branch: BranchLocation;
   status: ReturnStatus;
   items: GoodsReturnSlipItem[];
-  totalReturnValuePHP: number;
+  totalReturnAmount: number;
+  totalReturnValuePHP?: number;
   creditNoteNumber?: string;
   requestedBy: string;
   approvedBy?: string;

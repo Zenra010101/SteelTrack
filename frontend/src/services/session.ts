@@ -71,7 +71,7 @@ export function getLastEndReason(): string | undefined {
 export function messageForReason(reason?: string): string {
   switch (reason) {
     case 'server_restarted':
-      return 'The server was restarted, so your session ended. Please sign in again.';
+      return '';
     case 'token_expired':
       return 'Your session expired. Please sign in again.';
     case 'missing_token':

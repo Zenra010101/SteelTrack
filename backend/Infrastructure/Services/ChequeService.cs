@@ -102,8 +102,8 @@ public class ChequeService : IChequeService
         var cheque = await _chequeRepository.GetByIdWithSaleAsync(id, cancellationToken)
             ?? throw new NotFoundException("Cheque not found");
 
-        if (cheque.Status != ChequeStatus.Pending)
-            throw new AppException("Only pending cheques can be updated");
+        if (cheque.Status != ChequeStatus.Pending && cheque.Status != ChequeStatus.Deposited)
+            throw new AppException("Only pending or deposited cheques can be updated");
 
         var sale = await _saleRepository.GetByIdWithDetailsAsync(cheque.SaleId, cancellationToken)
             ?? throw new NotFoundException("Sale not found");
@@ -139,7 +139,7 @@ public class ChequeService : IChequeService
         await _chequeRepository.UpdateAsync(cheque, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var actionLabel = request.Status == ChequeStatus.Cleared ? "CHEQUE_CLEARED" : "CHEQUE_BOUNCED";
+        var actionLabel = request.Status == ChequeStatus.Cleared ? "CHEQUE_CLEARED" : request.Status == ChequeStatus.Deposited ? "CHEQUE_DEPOSITED" : "CHEQUE_BOUNCED";
         await _auditService.LogAsync(
             userId, null, AuditLogCategory.Operational, actionLabel, "SaleCheque", id.ToString(),
             $"Cheque {cheque.ChequeNumber} on invoice {sale.SaleNumber}. {request.Reason ?? request.Notes ?? ""}".Trim(),

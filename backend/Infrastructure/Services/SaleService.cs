@@ -58,314 +58,396 @@ public class SaleService : ISaleService
 
     public async Task<SaleDto> CreateAsync(CreateSaleRequest request, Guid userId, CancellationToken cancellationToken = default)
     {
-        var isSplit = request.Payments is { Count: > 0 };
-        if (isSplit)
-            ValidateSplitPayment(request);
-        else
-            ValidatePayment(request);
-
-        var saleNumber = await _saleRepository.GenerateSaleNumberAsync(cancellationToken);
-        var saleItems = new List<SaleItem>();
-        decimal subTotal = 0;
-
-        var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
-        var products = await _productRepository.GetByIdsAsync(productIds, cancellationToken);
-        var byId = products.ToDictionary(p => p.Id);
-
-        foreach (var item in request.Items)
+        await using var tx = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            if (!byId.TryGetValue(item.ProductId, out var product))
-                throw new NotFoundException($"Product {item.ProductId} not found");
+            var isSplit = request.PaymentMethod == PaymentMethod.Split || (request.Payments is { Count: > 0 });
+            if (isSplit)
+                ValidateSplitPayment(request);
+            else
+                ValidatePayment(request);
 
-            if (!product.IsActive)
-                throw new AppException($"Product '{product.Name}' is inactive");
+            // Resolve cashier user and branch
+            var user = await _context.Users.Include(u => u.Branch).FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            var effectiveUserId = user?.Id ?? (await _context.Users.Select(u => u.Id).FirstOrDefaultAsync(cancellationToken));
 
-            if (item.ProductBatchId.HasValue)
+            Guid? resolvedBranchId = request.BranchId;
+            if (!resolvedBranchId.HasValue && !string.IsNullOrWhiteSpace(request.Branch) && !string.Equals(request.Branch, "All", StringComparison.OrdinalIgnoreCase))
             {
-                var batch = await _context.ProductBatches
-                    .FirstOrDefaultAsync(b => b.Id == item.ProductBatchId.Value && b.ProductId == product.Id && b.IsActive, cancellationToken)
-                    ?? throw new AppException($"Invalid batch for product '{product.Name}'");
+                var cleanBranch = request.Branch.Trim().ToLower();
+                var matchedBranch = await _context.Branches
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(b =>
+                        b.Name.ToLower() == cleanBranch ||
+                        b.Code.ToLower() == cleanBranch ||
+                        b.Name.ToLower().Contains(cleanBranch) ||
+                        cleanBranch.Contains(b.Name.ToLower()),
+                        cancellationToken);
+                if (matchedBranch != null)
+                    resolvedBranchId = matchedBranch.Id;
+            }
+            if (!resolvedBranchId.HasValue && user?.BranchId != null)
+            {
+                resolvedBranchId = user.BranchId;
+            }
+            if (!resolvedBranchId.HasValue)
+            {
+                var firstBranch = await _context.Branches.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+                resolvedBranchId = firstBranch?.Id;
+            }
 
-                if (batch.Quantity < item.Quantity)
-                    throw new AppException($"Insufficient stock in batch for '{product.Name}'. Available: {batch.Quantity}");
+            var saleNumber = await _saleRepository.GenerateSaleNumberAsync(cancellationToken);
+            var saleItems = new List<SaleItem>();
+            decimal subTotal = 0;
 
-                var lineTotal = Math.Round(batch.SellingPrice * item.Quantity - item.Discount, 2);
-                subTotal += lineTotal;
+            var productIds = request.Items.Select(i => i.ProductId).Distinct().ToList();
+            var products = await _productRepository.GetByIdsAsync(productIds, cancellationToken);
+            var byId = products.ToDictionary(p => p.Id);
 
-                var (sellingAtSale, costAtSale, profitAmount) = SaleItemProfit.Compute(
-                    batch.SellingPrice,
-                    batch.CostPrice,
-                    item.Quantity,
-                    item.Discount);
-
-                saleItems.Add(new SaleItem
+            foreach (var item in request.Items)
+            {
+                Product? product = null;
+                if (byId.TryGetValue(item.ProductId, out var foundProduct))
                 {
-                    ProductId = product.Id,
-                    ProductBatchId = batch.Id,
-                    BatchCodeAtSale = batch.BatchCode,
-                    BatchReceivedDate = batch.ReceivedDate,
-                    ProductName = product.Name,
-                    ProductSku = product.Sku,
-                    Quantity = item.Quantity,
-                    UnitPrice = sellingAtSale,
-                    SellingPriceAtSale = sellingAtSale,
-                    CostPriceAtSale = costAtSale,
-                    ProfitAmount = profitAmount,
-                    Discount = item.Discount,
-                    LineTotal = lineTotal
-                });
-
-                var stockBefore = product.StockQuantity;
-                batch.Quantity -= item.Quantity;
-                batch.UpdatedAt = DateTime.UtcNow;
-                await ProductBatchStockHelper.SyncProductStockAsync(_context, product, cancellationToken);
-                await _productRepository.UpdateAsync(product, cancellationToken);
-
-                await _inventoryRepository.AddAsync(new InventoryTransaction
+                    product = foundProduct;
+                }
+                else
                 {
-                    ProductId = product.Id,
-                    ProductBatchId = batch.Id,
-                    Type = InventoryTransactionType.Sale,
-                    Quantity = -item.Quantity,
-                    StockBefore = stockBefore,
-                    StockAfter = product.StockQuantity,
-                    Reference = saleNumber,
-                    Notes = batch.BatchCode is not null ? $"Batch {batch.BatchCode}" : null,
-                    UserId = userId
-                }, cancellationToken);
+                    // Check if item.ProductId is a ProductBatch Id
+                    var matchingBatch = await _context.ProductBatches
+                        .Include(b => b.Product)
+                        .FirstOrDefaultAsync(b => b.Id == item.ProductId, cancellationToken);
+                    if (matchingBatch?.Product != null)
+                    {
+                        product = matchingBatch.Product;
+                        item.ProductBatchId ??= matchingBatch.Id;
+                    }
+                    else
+                    {
+                        // Check if item.ProductId is a BranchProduct Id
+                        var matchingBp = await _context.BranchProducts
+                            .Include(bp => bp.Product)
+                            .FirstOrDefaultAsync(bp => bp.Id == item.ProductId, cancellationToken);
+                        if (matchingBp?.Product != null)
+                        {
+                            product = matchingBp.Product;
+                        }
+                    }
+                }
+
+                if (product == null)
+                    throw new NotFoundException($"Product {item.ProductId} not found");
+
+                if (!product.IsActive)
+                    throw new AppException($"Product '{product.Name}' is inactive");
+
+                ProductBatch? batch = null;
+                if (item.ProductBatchId.HasValue)
+                {
+                    batch = await _context.ProductBatches
+                        .FirstOrDefaultAsync(b => b.Id == item.ProductBatchId.Value && b.ProductId == product.Id && b.IsActive, cancellationToken);
+                }
+
+                // If not found by ID or null, fallback to oldest active batch with stock (FIFO)
+                if (batch == null)
+                {
+                    var queryBatches = _context.ProductBatches
+                        .Where(b => b.ProductId == product.Id && b.IsActive && b.Quantity > 0);
+                    if (resolvedBranchId.HasValue)
+                    {
+                        queryBatches = queryBatches.Where(b => b.BranchId == resolvedBranchId.Value || b.BranchId == null);
+                    }
+                    batch = await queryBatches
+                        .OrderBy(b => b.ReceivedDate)
+                        .ThenBy(b => b.CreatedAt)
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
+
+                if (batch != null)
+                {
+                    if (batch.Quantity < item.Quantity)
+                        throw new AppException($"Insufficient stock in batch for '{product.Name}'. Available: {batch.Quantity}");
+
+                    var lineTotal = Math.Round(batch.SellingPrice * item.Quantity - item.Discount, 2);
+                    subTotal += lineTotal;
+
+                    var (sellingAtSale, costAtSale, profitAmount) = SaleItemProfit.Compute(
+                        batch.SellingPrice,
+                        batch.CostPrice,
+                        item.Quantity,
+                        item.Discount);
+
+                    saleItems.Add(new SaleItem
+                    {
+                        ProductId = product.Id,
+                        ProductBatchId = batch.Id,
+                        BatchCodeAtSale = batch.BatchCode,
+                        BatchReceivedDate = batch.ReceivedDate,
+                        ProductName = product.Name,
+                        ProductSku = product.Sku,
+                        Quantity = item.Quantity,
+                        UnitPrice = sellingAtSale,
+                        SellingPriceAtSale = sellingAtSale,
+                        CostPriceAtSale = costAtSale,
+                        ProfitAmount = profitAmount,
+                        Discount = item.Discount,
+                        LineTotal = lineTotal
+                    });
+
+                    var stockBefore = product.StockQuantity;
+                    batch.Quantity -= item.Quantity;
+                    batch.UpdatedAt = DateTime.UtcNow;
+                    await ProductBatchStockHelper.SyncProductStockAsync(_context, product, cancellationToken);
+                    await _productRepository.UpdateAsync(product, cancellationToken);
+
+                    await _inventoryRepository.AddAsync(new InventoryTransaction
+                    {
+                        ProductId = product.Id,
+                        ProductBatchId = batch.Id,
+                        Type = InventoryTransactionType.Sale,
+                        Quantity = -item.Quantity,
+                        StockBefore = stockBefore,
+                        StockAfter = product.StockQuantity,
+                        Reference = saleNumber,
+                        Notes = batch.BatchCode is not null ? $"Batch {batch.BatchCode}" : null,
+                        UserId = effectiveUserId
+                    }, cancellationToken);
+                }
+                else
+                {
+                    if (product.StockQuantity < item.Quantity)
+                        throw new AppException($"Insufficient stock for '{product.Name}'. Available: {product.StockQuantity}");
+
+                    var lineTotal = (product.UnitPrice * item.Quantity) - item.Discount;
+                    subTotal += lineTotal;
+
+                    var (sellingAtSale, costAtSale, profitAmount) = SaleItemProfit.Compute(
+                        product.UnitPrice,
+                        product.CostPrice,
+                        item.Quantity,
+                        item.Discount);
+
+                    saleItems.Add(new SaleItem
+                    {
+                        ProductId = product.Id,
+                        ProductName = product.Name,
+                        ProductSku = product.Sku,
+                        Quantity = item.Quantity,
+                        UnitPrice = sellingAtSale,
+                        SellingPriceAtSale = sellingAtSale,
+                        CostPriceAtSale = costAtSale,
+                        ProfitAmount = profitAmount,
+                        Discount = item.Discount,
+                        LineTotal = lineTotal
+                    });
+
+                    var stockBefore = product.StockQuantity;
+                    product.StockQuantity -= item.Quantity;
+                    await _productRepository.UpdateAsync(product, cancellationToken);
+
+                    await _inventoryRepository.AddAsync(new InventoryTransaction
+                    {
+                        ProductId = product.Id,
+                        Type = InventoryTransactionType.Sale,
+                        Quantity = -item.Quantity,
+                        StockBefore = stockBefore,
+                        StockAfter = product.StockQuantity,
+                        Reference = saleNumber,
+                        UserId = effectiveUserId
+                    }, cancellationToken);
+                }
+            }
+
+            ValidateTax(request);
+
+            var tax = SaleTaxCalculator.Compute(new SaleTaxInput
+            {
+                SubTotal = subTotal,
+                DiscountPercent = request.DiscountPercent,
+                TaxMode = request.TaxMode,
+                ManualTaxName = request.ManualTaxName,
+                ManualTaxIsPercent = request.ManualTaxIsPercent,
+                ManualTaxValue = request.ManualTaxValue,
+                ManualTaxIsDeduction = request.ManualTaxIsDeduction
+            });
+
+            SplitPlan? splitPlan = null;
+            PaymentMethod headerMethod;
+            decimal amountPaid;
+            decimal changeAmount;
+            string? splitJson = null;
+
+            if (isSplit)
+            {
+                splitPlan = BuildSplitPlan(request, tax.TotalAmount);
+                headerMethod = PaymentMethod.Split;
+                amountPaid = splitPlan.PaidNow;
+                changeAmount = splitPlan.Change;
+                splitJson = splitPlan.Json;
             }
             else
             {
-                var hasBatches = await _context.ProductBatches
-                    .AnyAsync(b => b.ProductId == product.Id && b.IsActive, cancellationToken);
-                if (hasBatches)
-                    throw new AppException($"Product '{product.Name}' requires batch allocation. Refresh POS and try again.");
-
-                if (product.StockQuantity < item.Quantity)
-                    throw new AppException($"Insufficient stock for '{product.Name}'. Available: {product.StockQuantity}");
-
-                var lineTotal = (product.UnitPrice * item.Quantity) - item.Discount;
-                subTotal += lineTotal;
-
-                var (sellingAtSale, costAtSale, profitAmount) = SaleItemProfit.Compute(
-                    product.UnitPrice,
-                    product.CostPrice,
-                    item.Quantity,
-                    item.Discount);
-
-                saleItems.Add(new SaleItem
+                ValidateAmountPaid(request, tax.TotalAmount);
+                headerMethod = request.PaymentMethod;
+                amountPaid = request.PaymentMethod switch
                 {
-                    ProductId = product.Id,
-                    ProductName = product.Name,
-                    ProductSku = product.Sku,
-                    Quantity = item.Quantity,
-                    UnitPrice = sellingAtSale,
-                    SellingPriceAtSale = sellingAtSale,
-                    CostPriceAtSale = costAtSale,
-                    ProfitAmount = profitAmount,
-                    Discount = item.Discount,
-                    LineTotal = lineTotal
-                });
-
-                var stockBefore = product.StockQuantity;
-                product.StockQuantity -= item.Quantity;
-                await _productRepository.UpdateAsync(product, cancellationToken);
-
-                await _inventoryRepository.AddAsync(new InventoryTransaction
-                {
-                    ProductId = product.Id,
-                    Type = InventoryTransactionType.Sale,
-                    Quantity = -item.Quantity,
-                    StockBefore = stockBefore,
-                    StockAfter = product.StockQuantity,
-                    Reference = saleNumber,
-                    UserId = userId
-                }, cancellationToken);
+                    PaymentMethod.Charged => request.AmountPaid,
+                    PaymentMethod.Cheque => 0,
+                    _ => request.AmountPaid
+                };
+                changeAmount = request.PaymentMethod == PaymentMethod.Cash
+                    ? amountPaid - tax.TotalAmount
+                    : 0;
             }
-        }
 
-        ValidateTax(request);
+            string? customerName = request.CustomerName;
+            if (headerMethod == PaymentMethod.Charged
+                || (isSplit && splitPlan!.RequiresCustomer && request.CustomerId.HasValue))
+                customerName = await ResolveCustomerNameAsync(request, cancellationToken);
 
-        var tax = SaleTaxCalculator.Compute(new SaleTaxInput
-        {
-            SubTotal = subTotal,
-            DiscountPercent = request.DiscountPercent,
-            TaxMode = request.TaxMode,
-            ManualTaxName = request.ManualTaxName,
-            ManualTaxIsPercent = request.ManualTaxIsPercent,
-            ManualTaxValue = request.ManualTaxValue,
-            ManualTaxIsDeduction = request.ManualTaxIsDeduction
-        });
-
-        SplitPlan? splitPlan = null;
-        PaymentMethod headerMethod;
-        decimal amountPaid;
-        decimal changeAmount;
-        string? splitJson = null;
-
-        if (isSplit)
-        {
-            splitPlan = BuildSplitPlan(request, tax.TotalAmount);
-            headerMethod = PaymentMethod.Split;
-            amountPaid = splitPlan.PaidNow;
-            changeAmount = splitPlan.Change;
-            splitJson = splitPlan.Json;
-        }
-        else
-        {
-            ValidateAmountPaid(request, tax.TotalAmount);
-            headerMethod = request.PaymentMethod;
-            amountPaid = request.PaymentMethod switch
+            var sale = new Sale
             {
-                PaymentMethod.Charged => request.AmountPaid,
-                PaymentMethod.Cheque => 0,
-                _ => request.AmountPaid
-            };
-            changeAmount = request.PaymentMethod == PaymentMethod.Cash
-                ? amountPaid - tax.TotalAmount
-                : 0;
-        }
-
-        string? customerName = request.CustomerName;
-        if (headerMethod == PaymentMethod.Charged
-            || (isSplit && splitPlan!.RequiresCustomer && request.CustomerId.HasValue))
-            customerName = await ResolveCustomerNameAsync(request, cancellationToken);
-
-        var sale = new Sale
-        {
-            SaleNumber = saleNumber,
-            UserId = userId,
-            SubTotal = subTotal,
-            DiscountPercent = tax.DiscountPercent,
-            DiscountAmount = tax.DiscountAmount,
-            TaxMode = tax.TaxMode,
-            TaxTypeLabel = tax.TaxTypeLabel,
-            TaxRate = tax.TaxRate,
-            TaxAmount = tax.TaxAmount,
-            WithholdingAmount = tax.WithholdingAmount,
-            ManualTaxName = tax.ManualTaxName,
-            ManualTaxIsPercent = request.ManualTaxIsPercent,
-            ManualTaxValue = request.ManualTaxValue,
-            ManualTaxIsDeduction = request.ManualTaxIsDeduction,
-            TotalAmount = tax.TotalAmount,
-            GrossProfit = saleItems.Sum(i => i.ProfitAmount),
-            AmountPaid = amountPaid,
-            ChangeAmount = changeAmount,
-            PaymentMethod = headerMethod,
-            SplitPaymentsJson = splitJson,
-            CustomerName = customerName,
-            CustomerId = request.CustomerId,
-            Notes = request.Notes,
-            Items = saleItems
-        };
-
-        await _saleRepository.AddAsync(sale, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        if (isSplit)
-        {
-            await CreateSplitArtifactsAsync(sale, request, splitPlan!, tax.TotalAmount, saleNumber, userId, cancellationToken);
-        }
-        else
-        {
-            var payment = new SalePayment
-            {
-                SaleId = sale.Id,
-                Method = request.PaymentMethod,
-                Amount = amountPaid,
-                QrphReference = request.QrphReference,
-                BankName = request.OnlineBank?.BankName,
-                BankBranch = request.OnlineBank?.Branch?.Trim(),
-                BankReferenceNumber = request.OnlineBank?.ReferenceNumber,
-                SenderName = request.OnlineBank?.SenderName,
-                DatePaid = request.OnlineBank?.DatePaid ?? DateTime.UtcNow
-            };
-            await _paymentRepository.AddAsync(payment, cancellationToken);
-
-        if (request.PaymentMethod == PaymentMethod.Charged)
-        {
-            var resolvedCustomerName = await ResolveCustomerNameAsync(request, cancellationToken);
-            var dueDate = (request.DueDate ?? DateTime.UtcNow.AddDays(30)).Date;
-            var remaining = tax.TotalAmount - amountPaid;
-
-            var receivable = new CustomerReceivable
-            {
-                SaleId = sale.Id,
-                CustomerId = request.CustomerId,
-                CustomerName = resolvedCustomerName,
+                SaleNumber = saleNumber,
+                UserId = effectiveUserId,
+                BranchId = resolvedBranchId,
+                SubTotal = subTotal,
+                DiscountPercent = tax.DiscountPercent,
+                DiscountAmount = tax.DiscountAmount,
+                TaxMode = tax.TaxMode,
+                TaxTypeLabel = tax.TaxTypeLabel,
+                TaxRate = tax.TaxRate,
+                TaxAmount = tax.TaxAmount,
+                WithholdingAmount = tax.WithholdingAmount,
+                ManualTaxName = tax.ManualTaxName,
+                ManualTaxIsPercent = request.ManualTaxIsPercent,
+                ManualTaxValue = request.ManualTaxValue,
+                ManualTaxIsDeduction = request.ManualTaxIsDeduction,
                 TotalAmount = tax.TotalAmount,
-                PaidAmount = amountPaid,
-                RemainingBalance = remaining,
-                DueDate = dueDate,
-                Status = ReceivableStatusHelper.Compute(tax.TotalAmount, amountPaid, remaining, dueDate),
-                Notes = request.Notes
+                GrossProfit = saleItems.Sum(i => i.ProfitAmount),
+                AmountPaid = amountPaid,
+                ChangeAmount = changeAmount,
+                PaymentMethod = headerMethod,
+                SplitPaymentsJson = splitJson,
+                CustomerName = customerName,
+                CustomerId = request.CustomerId,
+                Notes = request.Notes,
+                Items = saleItems
             };
-            await _receivableRepository.AddAsync(receivable, cancellationToken);
+
+            await _saleRepository.AddAsync(sale, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            if (amountPaid > 0)
+            if (isSplit)
             {
-                await _receivablePaymentRepository.AddAsync(new ReceivablePayment
+                await CreateSplitArtifactsAsync(sale, request, splitPlan!, tax.TotalAmount, saleNumber, effectiveUserId, cancellationToken);
+            }
+            else
+            {
+                var payment = new SalePayment
                 {
-                    CustomerReceivableId = receivable.Id,
+                    SaleId = sale.Id,
+                    Method = request.PaymentMethod,
                     Amount = amountPaid,
-                    BalanceBefore = tax.TotalAmount,
-                    BalanceAfter = remaining,
-                    PaymentDate = DateTime.UtcNow,
-                    PaymentMethod = PaymentMethod.Cash,
-                    Reference = saleNumber,
-                    Notes = "Down payment at POS",
-                    RecordedByUserId = userId
-                }, cancellationToken);
+                    QrphReference = request.QrphReference,
+                    BankName = request.OnlineBank?.BankName,
+                    BankBranch = request.OnlineBank?.Branch?.Trim(),
+                    BankReferenceNumber = request.OnlineBank?.ReferenceNumber,
+                    SenderName = request.OnlineBank?.SenderName,
+                    DatePaid = request.OnlineBank?.DatePaid ?? DateTime.UtcNow
+                };
+                await _paymentRepository.AddAsync(payment, cancellationToken);
+
+                if (request.PaymentMethod == PaymentMethod.Charged)
+                {
+                    var resolvedCustomerName = await ResolveCustomerNameAsync(request, cancellationToken);
+                    var dueDate = (request.DueDate ?? DateTime.UtcNow.AddDays(30)).Date;
+                    var remaining = tax.TotalAmount - amountPaid;
+
+                    var receivable = new CustomerReceivable
+                    {
+                        SaleId = sale.Id,
+                        CustomerId = request.CustomerId,
+                        CustomerName = resolvedCustomerName,
+                        TotalAmount = tax.TotalAmount,
+                        PaidAmount = amountPaid,
+                        RemainingBalance = remaining,
+                        DueDate = dueDate,
+                        Status = ReceivableStatusHelper.Compute(tax.TotalAmount, amountPaid, remaining, dueDate),
+                        Notes = request.Notes
+                    };
+                    await _receivableRepository.AddAsync(receivable, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    if (amountPaid > 0)
+                    {
+                        await _receivablePaymentRepository.AddAsync(new ReceivablePayment
+                        {
+                            CustomerReceivableId = receivable.Id,
+                            Amount = amountPaid,
+                            BalanceBefore = tax.TotalAmount,
+                            BalanceAfter = remaining,
+                            PaymentDate = DateTime.UtcNow,
+                            PaymentMethod = PaymentMethod.Cash,
+                            Reference = saleNumber,
+                            Notes = "Down payment at POS",
+                            RecordedByUserId = effectiveUserId
+                        }, cancellationToken);
+                    }
+                }
+                else if (request.PaymentMethod == PaymentMethod.Cheque)
+                {
+                    var chequeReq = request.Cheque!;
+                    var customerLabel = request.CustomerId.HasValue
+                        ? await ResolveCustomerNameAsync(request, cancellationToken)
+                        : (request.CustomerName?.Trim() ?? chequeReq.AccountName.Trim());
+
+                    var receivable = new CustomerReceivable
+                    {
+                        SaleId = sale.Id,
+                        CustomerId = request.CustomerId,
+                        CustomerName = customerLabel,
+                        TotalAmount = tax.TotalAmount,
+                        PaidAmount = 0,
+                        RemainingBalance = tax.TotalAmount,
+                        DueDate = chequeReq.MaturityDate.Date,
+                        Status = ReceivableStatusHelper.Compute(tax.TotalAmount, 0, tax.TotalAmount, chequeReq.MaturityDate.Date),
+                        Notes = $"Pending cheque #{chequeReq.ChequeNumber.Trim()}"
+                    };
+                    await _receivableRepository.AddAsync(receivable, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    var cheque = new SaleCheque
+                    {
+                        SaleId = sale.Id,
+                        Type = chequeReq.Type,
+                        BankName = chequeReq.BankName.Trim(),
+                        Branch = chequeReq.Branch?.Trim(),
+                        ChequeNumber = chequeReq.ChequeNumber.Trim(),
+                        AccountName = chequeReq.AccountName.Trim(),
+                        Amount = tax.TotalAmount,
+                        MaturityDate = chequeReq.MaturityDate.Date,
+                        Status = ChequeStatus.Pending,
+                        Notes = chequeReq.Notes,
+                        CustomerReceivableId = receivable.Id
+                    };
+                    await _chequeRepository.AddAsync(cheque, cancellationToken);
+                }
             }
-        }
-        else if (request.PaymentMethod == PaymentMethod.Cheque)
-        {
-            var chequeReq = request.Cheque!;
-            var customerLabel = request.CustomerId.HasValue
-                ? await ResolveCustomerNameAsync(request, cancellationToken)
-                : (request.CustomerName?.Trim() ?? chequeReq.AccountName.Trim());
 
-            var receivable = new CustomerReceivable
-            {
-                SaleId = sale.Id,
-                CustomerId = request.CustomerId,
-                CustomerName = customerLabel,
-                TotalAmount = tax.TotalAmount,
-                PaidAmount = 0,
-                RemainingBalance = tax.TotalAmount,
-                DueDate = chequeReq.MaturityDate.Date,
-                Status = ReceivableStatusHelper.Compute(tax.TotalAmount, 0, tax.TotalAmount, chequeReq.MaturityDate.Date),
-                Notes = $"Pending cheque #{chequeReq.ChequeNumber.Trim()}"
-            };
-            await _receivableRepository.AddAsync(receivable, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
 
-            var cheque = new SaleCheque
-            {
-                SaleId = sale.Id,
-                Type = chequeReq.Type,
-                BankName = chequeReq.BankName.Trim(),
-                Branch = chequeReq.Branch?.Trim(),
-                ChequeNumber = chequeReq.ChequeNumber.Trim(),
-                AccountName = chequeReq.AccountName.Trim(),
-                Amount = tax.TotalAmount,
-                MaturityDate = chequeReq.MaturityDate.Date,
-                Status = ChequeStatus.Pending,
-                Notes = chequeReq.Notes,
-                CustomerReceivableId = receivable.Id
-            };
-            await _chequeRepository.AddAsync(cheque, cancellationToken);
+            await _auditService.LogAsync(effectiveUserId, null, "CREATE", "Sale", sale.Id.ToString(),
+                $"Sale {saleNumber} completed - {headerMethod} - Total: {tax.TotalAmount:C}", null, cancellationToken);
+
+            var saved = await _saleRepository.GetByIdWithDetailsAsync(sale.Id, cancellationToken);
+            return Map(saved!);
         }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
         }
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await _auditService.LogAsync(userId, null, "CREATE", "Sale", sale.Id.ToString(),
-            $"Sale {saleNumber} completed - {headerMethod} - Total: {tax.TotalAmount:C}", null, cancellationToken);
-
-        var saved = await _saleRepository.GetByIdWithDetailsAsync(sale.Id, cancellationToken);
-        return Map(saved!);
     }
 
     private async Task<string> ResolveCustomerNameAsync(CreateSaleRequest request, CancellationToken cancellationToken)
@@ -416,13 +498,41 @@ public class SaleService : ISaleService
     public async Task<IReadOnlyList<SaleDto>> GetAllAsync(
         DateTime? from,
         DateTime? to,
+        string? branch,
         Guid userId,
         string role,
         CancellationToken cancellationToken = default)
     {
-        var filterUserId = RoleNames.IsOwner(role) ? null : (Guid?)userId;
-        var (fromUtc, toUtc) = SalesRetentionPolicy.NormalizeListRange(role, from, to);
+        Guid? filterUserId = null;
+        DateTime? fromUtc = null;
+        DateTime? toUtc = null;
+
+        if (from.HasValue || to.HasValue)
+        {
+            try
+            {
+                var (f, t) = SalesRetentionPolicy.NormalizeListRange(role, from, to);
+                fromUtc = f;
+                toUtc = t;
+            }
+            catch
+            {
+                fromUtc = from?.ToUniversalTime();
+                toUtc = to?.ToUniversalTime();
+            }
+        }
+
         var sales = await _saleRepository.GetSalesAsync(fromUtc, toUtc, filterUserId, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(branch) && !string.Equals(branch, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            var cleanBranch = branch.Trim().ToLower();
+            sales = sales.Where(s =>
+                (s.Branch != null && (s.Branch.Name.ToLower().Contains(cleanBranch) || s.Branch.Code.ToLower().Contains(cleanBranch))) ||
+                (s.User?.Branch != null && (s.User.Branch.Name.ToLower().Contains(cleanBranch) || s.User.Branch.Code.ToLower().Contains(cleanBranch)))
+            ).ToList();
+        }
+
         return sales.Select(Map).ToList();
     }
 
@@ -925,6 +1035,8 @@ public class SaleService : ISaleService
         SaleNumber = s.SaleNumber,
         UserId = s.UserId,
         CashierName = s.User?.FullName ?? "",
+        Branch = s.Branch?.Name ?? s.User?.Branch?.Name,
+        BranchId = s.BranchId ?? s.User?.BranchId,
         SubTotal = s.SubTotal,
         DiscountPercent = s.DiscountPercent,
         DiscountAmount = s.DiscountAmount,
@@ -1025,6 +1137,8 @@ public class SaleService : ISaleService
         Id = s.Id,
         SaleNumber = s.SaleNumber,
         CashierName = s.User?.FullName ?? "",
+        Branch = s.Branch?.Name ?? s.User?.Branch?.Name,
+        BranchId = s.BranchId ?? s.User?.BranchId,
         TotalAmount = s.TotalAmount,
         GrossProfit = includeProfit ? s.GrossProfit : 0,
         PaymentMethod = s.PaymentMethod,

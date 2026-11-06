@@ -35,6 +35,24 @@
     </Content>
   </ItemGroup>
 
+  <!-- Include Python LSTM forecasting service source files in publish output
+       so they are deployed alongside the .NET API. The .NET API calls the
+       Python service over HTTP (localhost:8000), but having the source available
+       makes it easier to run locally, package with Docker, or deploy as a
+       combined artifact.  -->
+  <ItemGroup>
+    <Content Include="python-lstm-service\src\**" Exclude="python-lstm-service\src\__pycache__\**;python-lstm-service\.venv\**">
+      <Link>python-lstm\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Include LSTM startup scripts so published output can launch the service -->
+  <ItemGroup>
+    <Content Include="scripts\*.bat" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="scripts\*.sh" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Build & Bundle Frontend into wwwroot during publish -->
   <Target Name="PublishFrontend" AfterTargets="ComputeFilesToPublish">
     <Message Importance="high" Text="Building frontend Vite production bundle for deployment..." />

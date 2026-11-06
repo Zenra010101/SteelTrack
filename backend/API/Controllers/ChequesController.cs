@@ -62,7 +62,8 @@ public class ChequesController : ControllerBase
     }
 
     [HttpPost("{id:guid}/status")]
-    [Authorize(Roles = RoleNames.Owner)]
+    [HttpPut("{id:guid}/status")]
+    [Authorize(Roles = $"{RoleNames.Owner},owner,{RoleNames.SuperAdmin},superadmin")]
     public async Task<ActionResult<ApiResponse<ChequeDto>>> UpdateStatus(
         Guid id,
         [FromBody] UpdateChequeStatusRequest request,

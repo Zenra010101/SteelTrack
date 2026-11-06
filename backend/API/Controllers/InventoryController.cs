@@ -102,7 +102,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpGet("stock-list")]
-    [Authorize(Roles = RoleNames.Owner)]
+    [Authorize(Roles = $"{RoleNames.Owner},{RoleNames.BranchManager},{RoleNames.SuperAdmin},BranchManager,Cashier")]
     public async Task<ActionResult<ApiResponse<InventoryStockListReportDto>>> GetStockList(
         [FromQuery] string? search = null,
         [FromQuery] Guid? categoryId = null,
@@ -115,7 +115,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpGet("export/stock-list")]
-    [Authorize(Roles = RoleNames.Owner)]
+    [Authorize(Roles = $"{RoleNames.Owner},{RoleNames.BranchManager},{RoleNames.SuperAdmin},BranchManager,Cashier")]
     public async Task<IActionResult> ExportStockList(
         [FromQuery] string format = "pdf",
         [FromQuery] string? search = null,
@@ -133,7 +133,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPost("adjust")]
-    [Authorize(Roles = RoleNames.Owner)]
+    [Authorize(Roles = $"{RoleNames.Owner},{RoleNames.BranchManager},{RoleNames.SuperAdmin},BranchManager,Cashier")]
     public async Task<ActionResult<ApiResponse<InventoryTransactionDto>>> Adjust(
         [FromBody] AdjustInventoryRequest request,
         CancellationToken cancellationToken)

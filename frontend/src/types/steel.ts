@@ -51,3 +51,41 @@ export interface InventoryStats {
   availableCount: number;
   shippedCount: number;
 }
+
+/**
+ * One row of the `branch_products` catalog table, exposed by
+ * GET /api/inventory/stock-list (owner role). Replaces the legacy
+ * in-memory inventory state when driving the UI from the database
+ * instead of a locally cached list of steel batches.
+ */
+export interface BranchProductItem {
+  id: string;
+  branchId?: string;
+  productId?: string;
+  branch?: BranchLocation | string;
+  branchName?: string;
+  sku?: string;
+  productName?: string;
+  productSku?: string;
+  heatNumber?: string;
+  sellingPrice?: number;
+  defaultCostPrice?: number;
+  reorderLevel?: number;
+  isAvailable?: boolean;
+  isActive?: boolean;
+  grade?: string;
+  unitOfMeasure?: string;
+  size?: string;
+  thickness?: string;
+  length?: string;
+  unitPrice?: number;
+  costPrice?: number;
+  stockQuantity?: number;
+  currentStock?: number;
+  weightInTons?: number;
+  location?: string;
+  status?: string;
+  categoryName?: string;
+  dimensions?: string;
+  createdAt?: string;
+}

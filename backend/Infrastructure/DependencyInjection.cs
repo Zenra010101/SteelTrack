@@ -26,7 +26,13 @@ public static class DependencyInjection
         {
             options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 
-            if (connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase))
+            var isPostgres = connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+                             connectionString.Contains("Port=5432", StringComparison.OrdinalIgnoreCase) ||
+                             connectionString.Contains("databaseasp.net", StringComparison.OrdinalIgnoreCase) ||
+                             connectionString.Contains("supabase.com", StringComparison.OrdinalIgnoreCase) ||
+                             connectionString.Contains("postgres", StringComparison.OrdinalIgnoreCase);
+
+            if (isPostgres)
                 options.UseNpgsql(connectionString);
             else if (connectionString.Contains("Initial Catalog=", StringComparison.OrdinalIgnoreCase) ||
                      connectionString.Contains("SQLEXPRESS", StringComparison.OrdinalIgnoreCase) ||

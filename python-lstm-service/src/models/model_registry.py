@@ -21,19 +21,30 @@ import shutil
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 from uuid import UUID
 
 import torch
 
-_SERIES_FILE_RE = re.compile(r"^(?P<product>[0-9a-f-]{36})__(?P<branch>[0-9a-f-]{36})\.pt$")
+_SERIES_FILE_RE = re.compile(r"^(?P<product>[0-9a-zA-Z_\-]+)__(?P<branch>[0-9a-zA-Z_\-]+)\.pt$")
+
+
+def _parse_id(val: Any) -> UUID | str:
+    """Parse string or UUID, preserving UUID type if valid."""
+    if isinstance(val, UUID):
+        return val
+    try:
+        return UUID(str(val))
+    except (ValueError, TypeError, AttributeError):
+        return str(val)
 
 
 @dataclass
 class SeriesArtifact:
     """Everything needed to reproduce a prediction for one series."""
 
-    product_id: UUID
-    branch_id: UUID
+    product_id: UUID | str
+    branch_id: UUID | str
     state_dict: dict
     scaler_center: float
     scaler_scale: float
@@ -64,8 +75,8 @@ class SeriesArtifact:
     @staticmethod
     def from_payload(payload: dict) -> SeriesArtifact:
         return SeriesArtifact(
-            product_id=UUID(payload["product_id"]),
-            branch_id=UUID(payload["branch_id"]),
+            product_id=_parse_id(payload["product_id"]),
+            branch_id=_parse_id(payload["branch_id"]),
             state_dict=payload["state_dict"],
             scaler_center=float(payload["scaler_center"]),
             scaler_scale=float(payload["scaler_scale"]),
@@ -146,7 +157,7 @@ class ModelRegistry:
         torch.save(artifact.to_payload(), path)
         return path
 
-    def load_artifact(self, version: str, product_id: UUID, branch_id: UUID) -> SeriesArtifact | None:
+    def load_artifact(self, version: str, product_id: UUID | str, branch_id: UUID | str) -> SeriesArtifact | None:
         """Load one series artifact, or None if it does not exist."""
         path = self.version_dir(version) / f"{product_id}__{branch_id}.pt"
         if not path.exists():
@@ -154,13 +165,13 @@ class ModelRegistry:
         payload = torch.load(path, map_location="cpu", weights_only=False)
         return SeriesArtifact.from_payload(payload)
 
-    def load_version_artifacts(self, version: str) -> dict[tuple[UUID, UUID], SeriesArtifact]:
+    def load_version_artifacts(self, version: str) -> dict[tuple[UUID | str, UUID | str], SeriesArtifact]:
         """Load every artifact in a version, keyed by (product_id, branch_id)."""
         target_dir = self.version_dir(version)
         if not target_dir.exists():
             return {}
 
-        artifacts: dict[tuple[UUID, UUID], SeriesArtifact] = {}
+        artifacts: dict[tuple[UUID | str, UUID | str], SeriesArtifact] = {}
         for path in target_dir.glob("*.pt"):
             match = _SERIES_FILE_RE.match(path.name)
             if not match:
@@ -170,7 +181,7 @@ class ModelRegistry:
             artifacts[(artifact.product_id, artifact.branch_id)] = artifact
         return artifacts
 
-    def series_keys(self, version: str) -> list[tuple[UUID, UUID]]:
+    def series_keys(self, version: str) -> list[tuple[UUID | str, UUID | str]]:
         """List the (product_id, branch_id) pairs available in a version."""
         return list(self.load_version_artifacts(version).keys())
 

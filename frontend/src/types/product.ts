@@ -41,4 +41,6 @@ export interface CreateProductDto {
   reorderLevel: number;
   categoryId: string;
   supplierId?: string;
+  branchId?: string;
+  branchIds?: string[];
 }

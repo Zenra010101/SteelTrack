@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  LayoutDashboard,
   Layers,
   Package,
   TrendingUp,
@@ -31,7 +32,6 @@ interface SidebarProps {
   onSelectTab: (tabId: string) => void;
   selectedBranch: string;
   onSelectBranch: (branch: string) => void;
-  isLiveBackend: boolean;
   onRefresh?: () => void;
   onLogout: () => void;
 }
@@ -42,7 +42,6 @@ export function Sidebar({
   onSelectTab,
   selectedBranch,
   onSelectBranch,
-  isLiveBackend,
   onLogout,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -114,12 +113,20 @@ export function Sidebar({
         {userSession.role === UserRole.Owner && (
           <>
             <button
+              className={`sidebar-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => onSelectTab('dashboard')}
+              title="Executive Dashboard"
+            >
+              <LayoutDashboard size={18} />
+              {!isCollapsed && <span>Dashboard</span>}
+            </button>
+            <button
               className={`sidebar-nav-item ${activeTab === 'inventory' ? 'active' : ''}`}
               onClick={() => onSelectTab('inventory')}
-              title="Inventory Dashboard"
+              title="Branch Products Dashboard"
             >
               <Layers size={18} />
-              {!isCollapsed && <span>Inventory & Batches</span>}
+              {!isCollapsed && <span>Branch Products</span>}
             </button>
 
             <button
@@ -227,12 +234,20 @@ export function Sidebar({
         {userSession.role === UserRole.BranchManager && (
           <>
             <button
+              className={`sidebar-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => onSelectTab('dashboard')}
+              title="Branch Dashboard"
+            >
+              <LayoutDashboard size={18} />
+              {!isCollapsed && <span>Dashboard</span>}
+            </button>
+            <button
               className={`sidebar-nav-item ${activeTab === 'inventory' ? 'active' : ''}`}
               onClick={() => onSelectTab('inventory')}
-              title="Branch Inventory"
+              title="Branch Products Catalog & Specs"
             >
               <Layers size={18} />
-              {!isCollapsed && <span>Branch Inventory</span>}
+              {!isCollapsed && <span>Branch Products</span>}
             </button>
 
             <button
@@ -286,6 +301,14 @@ export function Sidebar({
         {userSession.role === UserRole.Cashier && (
           <>
             <button
+              className={`sidebar-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => onSelectTab('dashboard')}
+              title="Cashier Dashboard"
+            >
+              <LayoutDashboard size={18} />
+              {!isCollapsed && <span>Dashboard</span>}
+            </button>
+            <button
               className={`sidebar-nav-item ${activeTab === 'pos' ? 'active' : ''}`}
               onClick={() => onSelectTab('pos')}
               title="Point of Sale (POS)"
@@ -330,9 +353,9 @@ export function Sidebar({
             </div>
 
             <div className="profile-actions">
-              <div className={`status-dot-pill ${isLiveBackend ? 'online' : 'offline'}`} title="Backend API status">
+              <div className="status-dot-pill" title="Backend API status">
                 <Server size={12} />
-                {isLiveBackend ? 'Live' : 'Offline'}
+                Live
               </div>
 
               <button className="btn-icon logout" onClick={onLogout} title="Sign Out">

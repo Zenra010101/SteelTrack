@@ -295,14 +295,29 @@ public class ProductsController : ControllerBase
     /// </summary>
     [HttpGet("lstm-forecast")]
     public async Task<ActionResult<ApiResponse<LstmForecastResponse>>> GetLstmForecast(
-        [FromQuery] DateTime fromMonth,
-        [FromQuery] DateTime toMonth,
+        [FromQuery] string? fromMonth,
+        [FromQuery] string? toMonth,
         [FromQuery] Guid? categoryId,
         [FromQuery] Guid? branchId,
+        [FromQuery] string? modelVersion,
         CancellationToken cancellationToken)
     {
+        var now = DateTime.UtcNow;
+        var parsedFrom = ParseMonthParam(fromMonth, now.AddMonths(-6));
+        var parsedTo = ParseMonthParam(toMonth, now.AddMonths(3));
+
         var forecast = await _lstmForecastService.GetForecastAsync(
-            fromMonth, toMonth, categoryId, branchId, cancellationToken);
+            parsedFrom, parsedTo, categoryId, branchId, modelVersion, cancellationToken);
         return Ok(ApiResponse<LstmForecastResponse>.Ok(forecast));
+    }
+
+    private static DateTime ParseMonthParam(string? value, DateTime fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return new DateTime(fallback.Year, fallback.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        if (DateTime.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt))
+            return new DateTime(dt.Year, dt.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        if (value.Length == 7 && DateTime.TryParse(value + "-01", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out dt))
+            return new DateTime(dt.Year, dt.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        return new DateTime(fallback.Year, fallback.Month, 1, 0, 0, 0, DateTimeKind.Utc);
     }
 }

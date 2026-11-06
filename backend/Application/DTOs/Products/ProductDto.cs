@@ -127,6 +127,8 @@ public class CreateProductRequest
     public int StockQuantity { get; set; }
     public int ReorderLevel { get; set; } = InventoryConstants.DefaultReorderLevel;
     public Guid CategoryId { get; set; }
+    public Guid? BranchId { get; set; }
+    public List<Guid>? BranchIds { get; set; }
 }
 
 public class UpdateProductRequest

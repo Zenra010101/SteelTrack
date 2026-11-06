@@ -7,7 +7,8 @@ should not be trusted to satisfy on its own:
   * The confidence band must contain the point forecast.
   * A forecast should not wildly exceed the branch's recent run rate
     (a sanity cap that catches a diverged model).
-  * Reorder recommendations are derived from forecast vs. on-hand stock.
+  * Reorder recommendations are derived from Section 2.3.2.2
+    Proposed Inventory Decision Formulas and IF-THEN Rules.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ OUTLIER_MULTIPLE = 4.0
 
 @dataclass
 class ReorderAdvice:
-    """Restock guidance derived from a forecast and current stock."""
+    """Restock guidance derived from Section 2.3.2.2 Proposed Inventory Decision Formulas."""
 
     product_id: str
     branch_id: str
@@ -33,6 +34,14 @@ class ReorderAdvice:
     safety_stock: int
     recommended_restock: int
     status: str  # "Restock Needed" | "Optimal" | "Overstocked"
+    # Section 2.3.2.2 Proposed Inventory Decision Formulas & Rules
+    projected_available_stock: int = 0  # Formula 1: PAS = Current Stock + Incoming Stock - Reserved Stock
+    required_stock: int = 0  # Formula 2: RS = Forecasted Demand + Safety Stock
+    net_inventory_requirement: int = 0  # Formula 3: NIR = max(0, RS - PAS)
+    excess_stock: int = 0  # Formula 4: ES = max(0, PAS - RS)
+    transfer_quantity: int = 0  # Formula 5: TQ = min(ES of Donor, NIR of Recipient)
+    procurement_quantity: int = 0  # Formula 6: PQ = max(0, NIR - TQ)
+    decision_rule: str = "Rule 1 - Sufficient Inventory"  # Rules 1 to 5
 
 
 def clamp_prediction(
@@ -93,22 +102,41 @@ def compute_reorder_advice(
     forecast_quantity: int,
     reorder_level: int,
     safety_factor: float = 1.15,
+    incoming_stock: int = 0,
+    reserved_stock: int = 0,
 ) -> ReorderAdvice:
-    """Derive restock guidance from forecast demand versus stock on hand.
+    """Derive restock guidance using Section 2.3.2.2 Proposed Inventory Decision Formulas.
 
-    The safety stock is the forecast multiplied by a buffer factor, which
-    protects against forecast error and supplier lead time.
+    Formula 1: Projected Available Stock (PAS) = Current Stock + Incoming Stock - Reserved Stock
+    Formula 2: Required Stock (RS) = Forecasted Demand + Safety Stock
+    Formula 3: Net Inventory Requirement (NIR) = max(0, RS - PAS)
+    Formula 4: Excess Stock (ES) = max(0, PAS - RS)
+    Formula 5: Transfer Quantity (TQ) = min(ES of Donor, NIR of Recipient)
+    Formula 6: Procurement Quantity (PQ) = max(0, NIR - TQ)
     """
-    safety_stock = int(round(forecast_quantity * safety_factor))
-    required = max(safety_stock, reorder_level)
-    recommended = max(0, required - on_hand)
+    safety_stock = reorder_level if reorder_level > 0 else int(round(forecast_quantity * safety_factor))
 
-    if on_hand < required:
-        status = "Restock Needed"
-    elif on_hand > required * 2:
-        status = "Overstocked"
+    # Formula 1: Projected Available Stock (PAS)
+    pas = max(0, on_hand + incoming_stock - reserved_stock)
+
+    # Formula 2: Required Stock (RS)
+    rs = forecast_quantity + safety_stock
+
+    # Formula 3: Net Inventory Requirement (NIR)
+    nir = max(0, rs - pas)
+
+    # Formula 4: Excess Stock (ES)
+    es = max(0, pas - rs)
+
+    # Proposed IF-THEN Decision Rules (Rules 1 to 5)
+    if pas >= rs:
+        decision_rule = "Rule 1 - Sufficient Inventory"
+        status = "Overstocked" if es > (rs * 1.5) else "Optimal"
+        pq = 0
     else:
-        status = "Optimal"
+        decision_rule = "Rule 2 - Inventory Shortage"
+        status = "Restock Needed"
+        pq = nir
 
     return ReorderAdvice(
         product_id=product_id,
@@ -116,6 +144,13 @@ def compute_reorder_advice(
         on_hand=on_hand,
         forecast_quantity=forecast_quantity,
         safety_stock=safety_stock,
-        recommended_restock=recommended,
+        recommended_restock=nir,
         status=status,
+        projected_available_stock=pas,
+        required_stock=rs,
+        net_inventory_requirement=nir,
+        excess_stock=es,
+        transfer_quantity=0,
+        procurement_quantity=pq,
+        decision_rule=decision_rule,
     )

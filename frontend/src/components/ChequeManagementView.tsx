@@ -186,17 +186,17 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
                   <td style={{ padding: '0.85rem 1rem' }}>
                     {c.status === 'Pending' && (
                       <span style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
-                        Pending Maturity
+                        Pending
                       </span>
                     )}
                     {c.status === 'Deposited' && (
                       <span style={{ background: '#F3E8FF', color: '#6B21A8', border: '1px solid #E9D5FF', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
-                        Deposited in Bank
+                        Deposited
                       </span>
                     )}
                     {c.status === 'Cleared' && (
                       <span style={{ background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
-                        Cleared / Honored
+                        Cleared
                       </span>
                     )}
                     {c.status === 'Bounced' && (
@@ -255,7 +255,7 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
       {/* BOUNCED CHEQUE FLAG MODAL */}
       {selectedChequeForBounce && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', borderRadius: '12px', border: '1px solid #7F1D1D', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0, color: '#EF4444', fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <ShieldAlert size={20} /> Flag Bounced Cheque

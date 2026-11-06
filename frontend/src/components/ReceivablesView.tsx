@@ -395,7 +395,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
       {/* RECORD PAYMENT MODAL */}
       {selectedReceivable && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', borderRadius: '12px', border: '1px solid #334155', width: '90%', maxWidth: '520px', padding: '1.5rem' }}>
+          <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '520px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h3 style={{ margin: 0, color: '#F8FAFC', fontSize: '1.2rem', fontWeight: 700 }}>
                 Record Ledger Payment
@@ -439,9 +439,9 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                   }}
                   style={{
                     width: '100%',
-                    background: '#0F172A',
-                    border: inputWarning ? '1px solid #EF4444' : '1px solid #334155',
-                    color: '#F8FAFC',
+                    background: '#FFFFFF',
+                    border: inputWarning ? '1px solid #EF4444' : '1px solid #CBD5E1',
+                    color: '#0F172A',
                     padding: '0.6rem',
                     borderRadius: '6px',
                     fontSize: '1rem',
@@ -449,20 +449,20 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                   }}
                 />
                 {inputWarning && (
-                  <div style={{ color: '#F87171', fontSize: '0.75rem', marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <div style={{ color: '#DC2626', fontSize: '0.75rem', marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <AlertCircle size={14} /> {inputWarning}
                   </div>
                 )}
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
                   Payment Method
                 </label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethodType)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                 >
                   <option value="Cash">Cash Payment</option>
                   <option value="Cheque">Post-Dated / Dated Cheque (PDC)</option>
@@ -472,39 +472,39 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               </div>
 
               {paymentMethod === 'Cheque' && (
-                <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '6px', border: '1px solid #334155', marginBottom: '1rem' }}>
-                  <div style={{ color: '#38BDF8', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '6px', border: '1px solid #CBD5E1', marginBottom: '1rem' }}>
+                  <div style={{ color: '#0284C7', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>
                     Cheque Details
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                     <div>
-                      <label style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Bank Name</label>
+                      <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600 }}>Bank Name</label>
                       <input
                         type="text"
                         placeholder="e.g. BDO, BPI"
                         value={bankName}
                         onChange={(e) => setBankName(e.target.value)}
-                        style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                        style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
                       />
                     </div>
                     <div>
-                      <label style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Cheque Number</label>
+                      <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600 }}>Cheque Number</label>
                       <input
                         type="text"
                         placeholder="e.g. 004819"
                         value={chequeNumber}
                         onChange={(e) => setChequeNumber(e.target.value)}
-                        style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                        style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
                       />
                     </div>
                   </div>
                   <div style={{ marginTop: '0.5rem' }}>
-                    <label style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Maturity Date (PDC)</label>
+                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600 }}>Maturity Date (PDC)</label>
                     <input
                       type="date"
                       value={chequeDate}
                       onChange={(e) => setChequeDate(e.target.value)}
-                      style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#F8FAFC', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
@@ -512,7 +512,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
 
               {paymentMethod === 'Bank Transfer' && (
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                  <label style={{ display: 'block', color: '#475569', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
                     Bank Reference / Transaction #
                   </label>
                   <input
@@ -520,13 +520,13 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                     placeholder="e.g. BDO-TRX-884902"
                     value={refNumber}
                     onChange={(e) => setRefNumber(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
               )}
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
                   Payment Remarks / Collection Notes
                 </label>
                 <textarea
@@ -534,7 +534,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
                   placeholder="Collector name, official receipt number, or special arrangement notes..."
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 

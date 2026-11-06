@@ -10,7 +10,7 @@ namespace SteelTrack.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = RoleNames.Owner)]
+[Authorize(Roles = $"{RoleNames.Owner},owner,{RoleNames.SuperAdmin},superadmin")]
 public class AuditLogsController : ControllerBase
 {
     private readonly IAuditLogService _auditLogService;

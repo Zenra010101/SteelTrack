@@ -1,44 +1,44 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ShoppingCart,
-  Receipt,
   Printer,
   CheckCircle2,
   Search,
   Plus,
   Trash2,
-  CreditCard,
   Building,
   RotateCcw,
   Boxes,
   Check,
+  CreditCard,
+  X,
+  AlertCircle,
+  Zap,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { PosTransaction, PosCartItem, SteelCategory } from '../types/pos';
-import type { SteelBatch } from '../types/steel';
-import { fetchInventory, processPosSale, fetchCustomers } from '../services/api';
+import { fetchPosBatches, processPosSale, fetchCustomers, type PosBatchItem } from '../services/api';
 
 interface CashierPosViewProps {
   branch: BranchLocation;
   cashierName: string;
 }
 
-// Recommended steel grade pricing reference per ton
-const GRADE_PRICE_MAP: Record<string, number> = {
-  A36_Structural: 850,
-  A572_HighStrength: 980,
-  SS304_Stainless: 2450,
-  SS316_Stainless: 3100,
-  AISI1045_Carbon: 920,
-  ToolSteel_D2: 3800,
-};
+const POS_CATEGORIES: { key: SteelCategory; label: string }[] = [
+  { key: 'All', label: 'All Stock' },
+  { key: 'Stainless Plates', label: 'Stainless Plates' },
+  { key: 'Bars', label: 'Bars' },
+  { key: 'Sheets', label: 'Sheets' },
+  { key: 'Tubes', label: 'Tubes' },
+];
 
 export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
-  const [batches, setBatches] = useState<SteelBatch[]>([]);
+  const [batches, setBatches] = useState<PosBatchItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Search & Category Filters
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<SteelCategory>('All');
 
   // Multi-Item Cart
@@ -48,29 +48,53 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   const [customers, setCustomers] = useState<{ name: string; tin?: string }[]>([]);
   const [selectedCustomerName, setSelectedCustomerName] = useState<string>('Walk-in Client');
   const [customCustomerInput, setCustomCustomerInput] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque'>('Cash');
+  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Card' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque' | 'Split Payment'>('Cash');
   const [amountTendered, setAmountTendered] = useState<number>(0);
   const [referenceNumber, setReferenceNumber] = useState<string>('');
   const [applyVat, setApplyVat] = useState<boolean>(true);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
 
-  // Active Receipt Modal
+  // Split Payment tenders state
+  const [splitTenders, setSplitTenders] = useState<Array<{
+    id: string;
+    method: 'Cash' | 'Card' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque';
+    amount: number;
+    referenceNumber: string;
+  }>>([
+    { id: '1', method: 'Cash', amount: 0, referenceNumber: '' },
+    { id: '2', method: 'Card', amount: 0, referenceNumber: '' },
+  ]);
+
+  // Active Receipt Modal (Issued for every transaction)
   const [activeReceipt, setActiveReceipt] = useState<PosTransaction | null>(null);
 
-  // Strict Branch Data Loading: only loads data for THIS branch!
+  // Dedicated Payment Modal State
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+  const [isProcessingSale, setIsProcessingSale] = useState<boolean>(false);
+  const [fifoNotice, setFifoNotice] = useState<string | null>(null);
+
+  // Debounce search keystrokes to ensure smooth live typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Automatically load batch data from database for THIS branch
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [invResult, custList] = await Promise.all([
-        fetchInventory(undefined, undefined, undefined, branch),
+      const [posResult, custList] = await Promise.all([
+        fetchPosBatches(branch, selectedCategory, debouncedSearch),
         fetchCustomers(branch),
       ]);
 
-      // Only batches marked 'Available' at THIS branch can be sold
-      const available = invResult.data.filter(
-        (b) => b.branch === branch && (b.status === 'Available' || b.status === 'QualityCheck') && b.weightInTons > 0
+      // Product has to be available at the branch to appear (isAvailable == true and quantity > 0)
+      const availableItems = posResult.data.filter(
+        (b) => b.isAvailable !== false && b.isActive !== false && b.quantity > 0
       );
-      setBatches(available);
+      setBatches(availableItems);
 
       if (custList && custList.length > 0) {
         const mappedCust = custList.map((c) => ({ name: c.customerName, tin: c.tin }));
@@ -78,87 +102,120 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
         setSelectedCustomerName(mappedCust[0].name);
       }
     } catch (err) {
-      console.error('Failed loading POS data:', err);
+      console.error('Failed loading POS batch data:', err);
     } finally {
       setLoading(false);
     }
-  }, [branch]);
+  }, [branch, selectedCategory, debouncedSearch]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Filter Catalog Items by Search & Category
+  // Client-side instant filter on current batches
   const filteredBatches = useMemo(() => {
     return batches.filter((b) => {
-      // Category Match
+      // Category match
       let catMatch = true;
-      if (selectedCategory === 'Structural') catMatch = b.grade.includes('A36');
-      else if (selectedCategory === 'HighStrength') catMatch = b.grade.includes('A572');
-      else if (selectedCategory === 'Stainless') catMatch = b.grade.includes('SS304') || b.grade.includes('SS316');
-      else if (selectedCategory === 'Carbon') catMatch = b.grade.includes('1045');
-      else if (selectedCategory === 'ToolSteel') catMatch = b.grade.includes('D2');
+      if (selectedCategory === 'Stainless Plates') catMatch = b.categoryName.toLowerCase().includes('plate');
+      else if (selectedCategory === 'Bars' || selectedCategory === 'Stainless Bars') catMatch = b.categoryName.toLowerCase().includes('bar');
+      else if (selectedCategory === 'Sheets' || selectedCategory === 'Stainless Sheets') catMatch = b.categoryName.toLowerCase().includes('sheet');
+      else if (selectedCategory === 'Tubes' || selectedCategory === 'Stainless Tubes') catMatch = b.categoryName.toLowerCase().includes('tube');
 
-      // Search Match
+      // Search match
       const q = searchQuery.toLowerCase().trim();
       const searchMatch =
         !q ||
-        b.heatNumber.toLowerCase().includes(q) ||
+        b.productName.toLowerCase().includes(q) ||
+        b.sku.toLowerCase().includes(q) ||
+        b.batchCode.toLowerCase().includes(q) ||
         b.grade.toLowerCase().includes(q) ||
-        b.dimensions.toLowerCase().includes(q) ||
-        b.location.toLowerCase().includes(q);
+        b.dimensions.toLowerCase().includes(q);
 
       return catMatch && searchMatch;
     });
   }, [batches, selectedCategory, searchQuery]);
 
-  // Add Item to Cart
-  const handleAddToCart = (batch: SteelBatch) => {
-    const existing = cart.find((item) => item.batchId === batch.id);
-    const unitPrice = GRADE_PRICE_MAP[batch.grade] || 850;
+  // Add Item to Cart with FIFO (First-In, First-Out) Priority
+  const handleAddToCart = (batch: PosBatchItem) => {
+    // Check if an older batch of the SAME product has remaining inventory
+    const sameProductBatches = batches.filter(
+      (b) => b.productId === batch.productId && b.quantity > 0
+    );
+
+    let targetBatch = batch;
+    // Find oldest batch (FIFO priority)
+    const oldestBatch = sameProductBatches.find((b) => b.isOldStock || b.fifoPriority) || sameProductBatches[0];
+
+    // If user clicked a newer batch while the older batch still has unallocated stock, use older batch first
+    if (oldestBatch && oldestBatch.batchId !== batch.batchId) {
+      const alreadyInCartOld = cart.find((item) => item.batchId === oldestBatch.batchId);
+      const remainingOldStock = oldestBatch.quantity - (alreadyInCartOld?.quantityTons || 0);
+
+      if (remainingOldStock > 0) {
+        setFifoNotice(
+          `FIFO Policy Active: Older stock (Batch #${oldestBatch.batchCode} @ ₱${oldestBatch.sellingPrice.toLocaleString()}) must be depleted before newer products with updated prices.`
+        );
+        targetBatch = oldestBatch;
+      }
+    }
+
+    const existing = cart.find((item) => item.batchId === targetBatch.batchId);
+    const unitPrice = Number(targetBatch.sellingPrice || targetBatch.branchSellingPrice || targetBatch.batchSellingPrice || 0);
 
     if (existing) {
-      // Increment tonnage up to available capacity
-      const maxAdd = Math.min(existing.quantityTons + 1.0, batch.weightInTons);
+      const maxAdd = Math.min(existing.quantityTons + 1, targetBatch.quantity);
       setCart((prev) =>
         prev.map((item) =>
-          item.batchId === batch.id
+          item.batchId === targetBatch.batchId
             ? {
-                ...item,
-                quantityTons: Number(maxAdd.toFixed(2)),
-                lineTotalPHP: Number((maxAdd * item.pricePerTonPHP).toFixed(2)),
-              }
+              ...item,
+              quantityTons: maxAdd,
+              lineTotalPHP: Number((maxAdd * item.pricePerTonPHP).toFixed(2)),
+            }
             : item
         )
       );
     } else {
-      // Initial default order tonnage: min 1 Ton or total batch weight
-      const initialQty = Math.min(1.0, batch.weightInTons);
+      const initialQty = Math.min(1, targetBatch.quantity);
       const newItem: PosCartItem = {
-        id: `cart-${batch.id}`,
-        batchId: batch.id,
-        heatNumber: batch.heatNumber,
-        grade: batch.grade,
-        dimensions: batch.dimensions,
-        location: batch.location,
-        availableTons: batch.weightInTons,
-        quantityTons: Number(initialQty.toFixed(2)),
+        id: `cart-${targetBatch.batchId}`,
+        batchId: targetBatch.batchId,
+        batchCode: targetBatch.batchCode,
+        productId: targetBatch.productId,
+        productName: targetBatch.productName,
+        sku: targetBatch.sku,
+        categoryName: targetBatch.categoryName,
+        heatNumber: targetBatch.batchCode,
+        grade: targetBatch.grade,
+        dimensions: targetBatch.dimensions,
+        location: `${branch} Yard`,
+        availableTons: targetBatch.quantity,
+        availableQuantity: targetBatch.quantity,
+        quantityTons: initialQty,
         pricePerTonPHP: unitPrice,
+        costPrice: targetBatch.costPrice,
         lineTotalPHP: Number((initialQty * unitPrice).toFixed(2)),
+        unitOfMeasure: targetBatch.unitOfMeasure,
+        isOldStock: targetBatch.isOldStock,
+        fifoPriority: targetBatch.fifoPriority,
+        fifoRank: targetBatch.fifoRank,
+        receivedDate: targetBatch.receivedDate,
       };
       setCart((prev) => [...prev, newItem]);
     }
   };
 
-  // Update Cart Item Tonnage
-  const handleUpdateCartTonnage = (cartItemId: string, newQty: number) => {
+  // Update Cart Item Quantity
+  const handleUpdateCartQuantity = (cartItemId: string, newQty: number) => {
     setCart((prev) =>
       prev.map((item) => {
         if (item.id === cartItemId) {
-          const clamped = Math.max(0.1, Math.min(newQty, item.availableTons));
+          const maxAvail = item.availableQuantity ?? item.availableTons;
+          const clamped = Math.max(1, Math.min(newQty, maxAvail));
           return {
             ...item,
-            quantityTons: Number(clamped.toFixed(2)),
+            quantityTons: clamped,
             lineTotalPHP: Number((clamped * item.pricePerTonPHP).toFixed(2)),
           };
         }
@@ -182,7 +239,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
     return cart.reduce((sum, item) => sum + item.lineTotalPHP, 0);
   }, [cart]);
 
-  const totalTonnage = useMemo(() => {
+  const totalQuantityUnits = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.quantityTons, 0);
   }, [cart]);
 
@@ -199,50 +256,99 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
     return Number((amountTendered - grandTotalPHP).toFixed(2));
   }, [paymentMethod, amountTendered, grandTotalPHP]);
 
+  // Split payment computations
+  const totalSplitAllocated = useMemo(() => {
+    return splitTenders.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  }, [splitTenders]);
 
+  const splitRemainingDue = useMemo(() => {
+    return Math.max(0, Number((grandTotalPHP - totalSplitAllocated).toFixed(2)));
+  }, [grandTotalPHP, totalSplitAllocated]);
 
-  // Checkout Execution
-  const handleCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (cart.length === 0) return;
+  const splitCashTender = useMemo(() => {
+    return splitTenders.filter((t) => t.method === 'Cash').reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  }, [splitTenders]);
 
-    const customer = selectedCustomerName === 'Other' ? customCustomerInput || 'Cash Customer' : selectedCustomerName;
-    const foundTin = customers.find((c) => c.name === customer)?.tin;
+  const splitNonCashSum = useMemo(() => {
+    return splitTenders.filter((t) => t.method !== 'Cash').reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+  }, [splitTenders]);
 
-    const newTx = await processPosSale({
-      branch,
-      cashierName,
-      customerName: customer,
-      customerTin: foundTin,
-      items: [...cart],
-      totalTonnage: Number(totalTonnage.toFixed(2)),
-      subtotalPHP: Number(subtotalPHP.toFixed(2)),
-      taxPHP,
-      discountPHP: discountAmount,
-      totalAmountPHP: grandTotalPHP,
-      paymentMethod,
-      amountTenderedPHP: paymentMethod === 'Cash' ? amountTendered : undefined,
-      changeDuePHP: paymentMethod === 'Cash' ? changeDuePHP : undefined,
-      referenceNumber: referenceNumber || undefined,
-    });
+  const splitChangeDue = useMemo(() => {
+    if (paymentMethod !== 'Split Payment') return 0;
+    const requiredCash = Math.max(0, grandTotalPHP - splitNonCashSum);
+    return Math.max(0, Number((splitCashTender - requiredCash).toFixed(2)));
+  }, [paymentMethod, grandTotalPHP, splitNonCashSum, splitCashTender]);
 
-    setActiveReceipt(newTx);
-    setCart([]);
-    setAmountTendered(0);
-    setReferenceNumber('');
-    await loadData();
+  // Sale Execution from Dedicated Payment Modal
+  const handleExecuteSale = async () => {
+    if (cart.length === 0 || isProcessingSale) return;
+    setIsProcessingSale(true);
+
+    try {
+      const customer = selectedCustomerName === 'Other' ? customCustomerInput || 'Cash Customer' : selectedCustomerName;
+      const foundTin = customers.find((c) => c.name === customer)?.tin;
+
+      const isSplit = paymentMethod === 'Split Payment';
+      const cleanSplitTenders = isSplit
+        ? splitTenders.filter((t) => t.amount > 0).map((t) => ({
+            method: t.method,
+            amount: Number(t.amount),
+            referenceNumber: t.referenceNumber || undefined,
+          }))
+        : undefined;
+
+      const newTx = await processPosSale({
+        branch,
+        cashierName,
+        customerName: customer,
+        customerTin: foundTin,
+        items: [...cart],
+        totalTonnage: Number(totalQuantityUnits.toFixed(2)),
+        subtotalPHP: Number(subtotalPHP.toFixed(2)),
+        taxPHP,
+        discountPHP: discountAmount,
+        totalAmountPHP: grandTotalPHP,
+        paymentMethod,
+        splitTenders: cleanSplitTenders,
+        amountTenderedPHP: isSplit
+          ? totalSplitAllocated
+          : paymentMethod === 'Cash'
+          ? amountTendered
+          : grandTotalPHP,
+        changeDuePHP: isSplit ? splitChangeDue : paymentMethod === 'Cash' ? changeDuePHP : 0,
+        referenceNumber: referenceNumber || undefined,
+      });
+
+      // Close payment modal and issue receipt immediately
+      setIsPaymentModalOpen(false);
+      setActiveReceipt(newTx);
+      setCart([]);
+      setAmountTendered(0);
+      setReferenceNumber('');
+      setSplitTenders([
+        { id: '1', method: 'Cash', amount: 0, referenceNumber: '' },
+        { id: '2', method: 'Card', amount: 0, referenceNumber: '' },
+      ]);
+      await loadData();
+    } catch (err: any) {
+      alert(`Transaction processing error: ${err.message || 'Failed to complete sale'}`);
+    } finally {
+      setIsProcessingSale(false);
+    }
   };
 
-  const getGradeBadgeClass = (grade: string) => {
-    if (grade.includes('A36')) return 'structural';
-    if (grade.includes('SS')) return 'stainless';
-    if (grade.includes('1045')) return 'carbon';
-    return 'highstrength';
+  const getCategoryBadgeColor = (categoryName: string) => {
+    const c = categoryName.toLowerCase();
+    if (c.includes('sheet')) return { bg: '#E0F2FE', fg: '#0284C7', border: '#BAE6FD' };
+    if (c.includes('tube')) return { bg: '#F5F3FF', fg: '#7C3AED', border: '#DDD6FE' };
+    if (c.includes('bar')) return { bg: '#FEF3C7', fg: '#D97706', border: '#FDE68A' };
+    if (c.includes('plate')) return { bg: '#ECFDF5', fg: '#059669', border: '#A7F3D0' };
+    return { bg: '#F1F5F9', fg: '#475569', border: '#CBD5E1' };
   };
 
   return (
     <div className="pos-container">
-      {/* PURE POS WORKSTATION: PRODUCT CATALOG (LEFT) & REGISTER CART (RIGHT) */}
+      {/* POS WORKSTATION: PRODUCT CATALOG (LEFT) & REGISTER CART (RIGHT) */}
       <div className="pos-layout-grid">
         {/* LEFT: PRODUCT CATALOG WITH SEARCH & CATEGORIES */}
         <div className="pos-catalog-panel">
@@ -251,18 +357,36 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
             <span>Available Inventory Catalog ({branch} Branch Stock)</span>
           </div>
 
+          {/* FIFO Policy Notification Banner */}
+          {fifoNotice && (
+            <div style={{ margin: '0 0 0.75rem 0', padding: '0.6rem 0.85rem', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 6, color: '#92400E', fontSize: '0.78rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <AlertCircle size={15} style={{ color: '#D97706', flexShrink: 0 }} />
+                <span>{fifoNotice}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFifoNotice(null)}
+                style={{ background: 'none', border: 'none', color: '#92400E', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {/* Search and Category Filters */}
           <div className="pos-filter-section">
             <div className="pos-search-bar">
               <Search size={16} style={{ color: '#94A3B8' }} />
+              {/* Removed placeholder text as explicitly requested */}
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by Heat #, Grade name, dimensions, or bay..."
               />
               {searchQuery && (
                 <button
+                  type="button"
                   style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
                   onClick={() => setSearchQuery('')}
                 >
@@ -271,27 +395,20 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               )}
             </div>
 
-            {/* Category Chips */}
+            {/* Category Chips: Stainless Plates, Bars, Sheets, and Tubes */}
             <div className="pos-category-chips">
-              {(
-                [
-                  { key: 'All', label: 'All Stock' },
-                  { key: 'Structural', label: 'Structural (A36)' },
-                  { key: 'HighStrength', label: 'High Strength (A572)' },
-                  { key: 'Stainless', label: 'Stainless (SS304/SS316)' },
-                  { key: 'Carbon', label: 'Carbon (1045)' },
-                  { key: 'ToolSteel', label: 'Tool Steel (D2)' },
-                ] as const
-              ).map((cat) => (
-                <button
-                  key={cat.key}
-                  type="button"
-                  className={`cat-chip ${selectedCategory === cat.key ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(cat.key)}
-                >
-                  {cat.label}
-                </button>
-              ))}
+              {
+                POS_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    className={`cat-chip ${selectedCategory === cat.key ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory(cat.key)}
+                  >
+                    {cat.label}
+                  </button>
+                ))
+              }
             </div>
           </div>
 
@@ -307,31 +424,73 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
           ) : (
             <div className="pos-items-grid">
               {filteredBatches.map((batch) => {
-                const inCart = cart.find((item) => item.batchId === batch.id);
-                const unitPrice = GRADE_PRICE_MAP[batch.grade] || 850;
+                const inCart = cart.find((item) => item.batchId === batch.batchId);
+                const badgeTheme = getCategoryBadgeColor(batch.categoryName);
 
                 return (
                   <div
-                    key={batch.id}
+                    key={batch.batchId}
                     className={`pos-item-card ${inCart ? 'in-cart' : ''}`}
                     onClick={() => handleAddToCart(batch)}
                   >
                     <div>
-                      <div className="card-top">
-                        <span className={`card-grade-badge ${getGradeBadgeClass(batch.grade)}`}>
-                          {batch.grade.replace('_', ' ')}
+                      <div className="card-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                        <span
+                          style={{
+                            background: badgeTheme.bg,
+                            color: badgeTheme.fg,
+                            border: `1px solid ${badgeTheme.border}`,
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '4px',
+                          }}
+                        >
+                          {batch.categoryName}
                         </span>
-                        <span className="card-heat-no">{batch.heatNumber}</span>
+                        <span className="card-heat-no" style={{ fontSize: '0.75rem', color: '#64748B', fontFamily: 'monospace' }}>
+                          Batch: {batch.batchCode}
+                        </span>
                       </div>
 
-                      <div className="card-title">{batch.dimensions}</div>
-                      <div className="card-specs">Yard Location: {batch.location}</div>
+                      <div className="card-title" style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.2rem' }}>
+                        {batch.productName}
+                      </div>
+                      <div className="card-specs" style={{ fontSize: '0.78rem', color: '#64748B', marginBottom: '0.35rem' }}>
+                        SKU: <strong style={{ color: '#0284C7' }}>{batch.sku}</strong> · {batch.dimensions}
+                      </div>
+
+                      {/* FIFO Classification Badges: Old Stock vs New Stock */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                        {batch.isOldStock ? (
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#DCFCE7', color: '#15803D', border: '1px solid #86EFAC', padding: '0.12rem 0.45rem', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Zap size={10} /> FIFO Old Stock (Priority)
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.68rem', fontWeight: 600, background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '0.12rem 0.45rem', borderRadius: 4 }}>
+                            📦 New Stock (Queue #{batch.fifoRank || 2})
+                          </span>
+                        )}
+                        {batch.receivedDate && (
+                          <span style={{ fontSize: '0.68rem', color: '#64748B' }}>
+                            Rec'd: {batch.receivedDate}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div>
-                      <div className="card-stock-row">
-                        <span className="stock-pill">{batch.weightInTons.toFixed(1)}T in stock</span>
-                        <span className="price-pill">₱{unitPrice.toLocaleString()}/T</span>
+                      <div className="card-stock-row" style={{ marginTop: '0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="stock-pill" style={{ background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0', fontWeight: 700, fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                          {batch.quantity} {batch.unitOfMeasure || 'pcs'} in stock
+                        </span>
+                        <span className="price-pill" style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A' }}>
+                          ₱{batch.sellingPrice.toLocaleString()}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '0.2rem', textAlign: 'right' }}>
+                        Cost: ₱{batch.costPrice.toLocaleString()}
                       </div>
 
                       <button
@@ -341,10 +500,11 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                           e.stopPropagation();
                           handleAddToCart(batch);
                         }}
+                        style={{ marginTop: '0.5rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
                       >
                         {inCart ? (
                           <>
-                            <Check size={14} style={{ color: '#059669' }} /> In Order ({inCart.quantityTons}T)
+                            <Check size={14} style={{ color: '#059669' }} /> In Order ({inCart.quantityTons} {batch.unitOfMeasure || 'pcs'})
                           </>
                         ) : (
                           <>
@@ -360,7 +520,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
           )}
         </div>
 
-        {/* RIGHT: INTERACTIVE REGISTER & MULTI-ITEM ORDER CART */}
+        {/* RIGHT: REGISTER & MULTI-ITEM ORDER CART */}
         <div className="pos-cart-panel">
           <div className="cart-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -382,7 +542,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
             </div>
           </div>
 
-          <form onSubmit={handleCheckout}>
+          <form onSubmit={(e) => { e.preventDefault(); if (cart.length > 0) setIsPaymentModalOpen(true); }}>
             {/* Customer Information */}
             <div className="customer-section">
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '0.35rem' }}>
@@ -406,7 +566,6 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               {selectedCustomerName === 'Other' && (
                 <input
                   type="text"
-                  placeholder="Enter client company name..."
                   value={customCustomerInput}
                   onChange={(e) => setCustomCustomerInput(e.target.value)}
                   style={{ marginTop: '0.5rem' }}
@@ -422,37 +581,39 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   <ShoppingCart size={32} style={{ margin: '0 auto 0.5rem', opacity: 0.3 }} />
                   <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>Order Cart is Empty</p>
                   <span style={{ fontSize: '0.75rem' }}>
-                    Select card items from the catalog on the left to build order.
+                    Select items from the catalog on the left to build an order.
                   </span>
                 </div>
               ) : (
                 cart.map((item) => (
                   <div key={item.id} className="cart-item-row">
                     <div className="cart-item-info">
-                      <div className="cart-item-name">{item.grade.replace('_', ' ')}</div>
-                      <div className="cart-item-meta">
-                        {item.heatNumber} • Max: {item.availableTons}T
+                      <div className="cart-item-name" style={{ fontWeight: 700 }}>
+                        {item.productName || item.grade}
+                      </div>
+                      <div className="cart-item-meta" style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                        Batch: {item.batchCode || item.heatNumber} • SKU: {item.sku} • Stock: {item.availableQuantity || item.availableTons}
                       </div>
                     </div>
 
                     <div className="cart-item-qty">
                       <input
                         type="number"
-                        step="0.1"
-                        min="0.1"
-                        max={item.availableTons}
+                        step="1"
+                        min="1"
+                        max={item.availableQuantity || item.availableTons}
                         value={item.quantityTons}
                         onChange={(e) =>
-                          handleUpdateCartTonnage(item.id, parseFloat(e.target.value) || 0.1)
+                          handleUpdateCartQuantity(item.id, parseInt(e.target.value) || 1)
                         }
                         className="qty-input"
-                        title="Tons ordered"
+                        title="Quantity ordered"
                       />
-                      <span style={{ fontSize: '0.75rem', color: '#64748B' }}>T</span>
+                      <span style={{ fontSize: '0.75rem', color: '#64748B' }}>{item.unitOfMeasure || 'pc'}</span>
                     </div>
 
-                    <div className="cart-item-total">
-                      ₱{(item.lineTotalPHP ?? item.lineTotalUSD ?? 0).toLocaleString()}
+                    <div className="cart-item-total" style={{ fontWeight: 700 }}>
+                      ₱{item.lineTotalPHP.toLocaleString()}
                     </div>
 
                     <button
@@ -471,12 +632,12 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
             {/* Financial Totals Summary */}
             <div className="cart-summary-box">
               <div className="summary-row">
-                <span>Total Tonnage Weight:</span>
-                <strong>{totalTonnage.toFixed(2)} Tons</strong>
+                <span>Total Items Ordered:</span>
+                <strong>{totalQuantityUnits} Units</strong>
               </div>
 
               <div className="summary-row">
-                <span>Subtotal (Steel):</span>
+                <span>Subtotal:</span>
                 <span>₱{subtotalPHP.toLocaleString()}</span>
               </div>
 
@@ -493,331 +654,550 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               </div>
 
               <div className="summary-row">
-                <span>Enterprise Volume Discount (₱):</span>
+                <span>Volume Discount (₱):</span>
                 <input
                   type="number"
                   min={0}
                   step="10"
                   value={discountAmount}
-                  onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
-                  style={{ width: '90px', padding: '0.2rem 0.4rem', textAlign: 'right', fontSize: '0.85rem' }}
+                  onChange={(e) => setDiscountAmount(Math.max(0, parseFloat(e.target.value) || 0))}
+                  style={{ width: '80px', textAlign: 'right', fontSize: '0.8rem', padding: '0.2rem' }}
                 />
               </div>
 
-              <div className="summary-row total">
+              <div className="summary-row total-highlight">
                 <span>Grand Total Due:</span>
-                <span className="summary-total-amount">₱{grandTotalPHP.toLocaleString()}</span>
+                <span className="total-due">₱{grandTotalPHP.toLocaleString()}</span>
               </div>
             </div>
 
-            {/* Payment Methods Selection */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '0.35rem' }}>
-                Payment Method:
-              </label>
-              <div className="payment-methods-grid">
-                {(
-                  [
-                    { key: 'Cash', label: 'Cash Payment', icon: CreditCard },
-                    { key: 'Bank Transfer', label: 'Bank Transfer', icon: Building },
-                    { key: 'Corporate Credit Line', label: 'Credit Line', icon: CreditCard },
-                    { key: 'Cheque', label: 'Company Cheque', icon: Receipt },
-                  ] as const
-                ).map((pm) => (
-                  <button
-                    key={pm.key}
-                    type="button"
-                    className={`pay-btn ${paymentMethod === pm.key ? 'active' : ''}`}
-                    onClick={() => {
-                      setPaymentMethod(pm.key);
-                      if (pm.key === 'Cash' && amountTendered === 0) {
-                        setAmountTendered(grandTotalPHP);
-                      }
-                    }}
-                  >
-                    <pm.icon size={14} />
-                    {pm.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Cash Payment Tender Calculator */}
-              {paymentMethod === 'Cash' && (
-                <div className="cash-tender-box">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#166534' }}>
-                      Cash Amount Tendered (₱):
-                    </label>
-                    <input
-                      type="number"
-                      step="1"
-                      min={0}
-                      value={amountTendered}
-                      onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
-                      style={{ width: '110px', padding: '0.3rem', fontSize: '0.85rem', fontWeight: 700 }}
-                      required
-                    />
-                  </div>
-
-                  <div className="quick-denominations">
-                    <span style={{ fontSize: '0.72rem', color: '#166534', alignSelf: 'center' }}>Quick:</span>
-                    {[1000, 5000, 10000, 20000].map((amt) => (
-                      <button
-                        key={amt}
-                        type="button"
-                        className="denom-btn"
-                        onClick={() => setAmountTendered(amt)}
-                      >
-                        ₱{amt.toLocaleString()}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      className="denom-btn"
-                      onClick={() => setAmountTendered(grandTotalPHP)}
-                    >
-                      Exact
-                    </button>
-                  </div>
-
-                  <div className="change-due-banner">
-                    <span>Change Due to Customer:</span>
-                    <span style={{ fontSize: '1.1rem', fontFamily: 'Outfit' }}>
-                      ₱{changeDuePHP.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Bank Transfer Reference input */}
-              {paymentMethod === 'Bank Transfer' && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '0.25rem' }}>
-                    Bank Reference / Wire Confirmation #:
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. BDO-REF-883190"
-                    value={referenceNumber}
-                    onChange={(e) => setReferenceNumber(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-
-              {/* Cheque Details input */}
-              {paymentMethod === 'Cheque' && (
-                <div style={{ marginBottom: '1rem', background: '#F8FAFC', padding: '0.75rem', borderRadius: '6px', border: '1px solid #CBD5E1' }}>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '0.25rem' }}>
-                    Cheque # & Drawee Bank:
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. MBTC-992014 (Metrobank)"
-                    value={referenceNumber}
-                    onChange={(e) => setReferenceNumber(e.target.value)}
-                    required
-                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.85rem' }}
-                  />
-                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: '0.3rem' }}>
-                    Automatically tracked in Cheques & PDC Management ledger as 'Pending'.
-                  </div>
-                </div>
-              )}
-
-              {/* Corporate Credit Line info */}
-              {paymentMethod === 'Corporate Credit Line' && (
-                <div style={{ marginBottom: '1rem', background: '#EFF6FF', padding: '0.75rem', borderRadius: '6px', border: '1px solid #BFDBFE' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <CreditCard size={14} /> Corporate Account Receivable
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: '#1E3A8A', marginTop: '0.25rem' }}>
-                    Net 30-day payment term. This charge will be posted to the customer's Accounts Receivable balance.
-                  </div>
-                </div>
-              )}
+            {/* Checkout Action: Proceed to Payment Modal */}
+            <div style={{ marginTop: '1.25rem' }}>
+              <button
+                type="button"
+                className="checkout-submit-btn"
+                disabled={cart.length === 0}
+                onClick={() => setIsPaymentModalOpen(true)}
+                style={{
+                  width: '100%',
+                  padding: '0.85rem',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
+                  background: cart.length === 0 ? '#94A3B8' : '#0284C7',
+                  color: '#FFFFFF',
+                  borderRadius: '6px',
+                  border: 'none',
+                  boxShadow: cart.length === 0 ? 'none' : '0 4px 6px -1px rgba(2, 132, 199, 0.3)',
+                }}
+              >
+                <CreditCard size={18} /> Proceed to Payment
+              </button>
             </div>
-
-            {/* Checkout & Submit */}
-            <button
-              type="submit"
-              className="btn-checkout"
-              disabled={cart.length === 0}
-            >
-              <CheckCircle2 size={18} /> Complete Sale & Generate Receipt
-            </button>
           </form>
         </div>
       </div>
 
-      {/* 4. OFFICIAL INDUSTRIAL INVOICE & THERMAL RECEIPT MODAL */}
-      {activeReceipt && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669' }}>
-                <CheckCircle2 size={20} />
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Transaction Confirmed</h3>
+      {/* DEDICATED POS PAYMENT MODAL */}
+      {isPaymentModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsPaymentModalOpen(false)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 540, borderRadius: 12, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
+          >
+            <div className="modal-header" style={{ borderBottom: '1px solid #E2E8F0', padding: '1rem 1.25rem', background: '#F8FAFC' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ width: 34, height: 34, borderRadius: '8px', background: '#E0F2FE', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CreditCard size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A' }}>
+                    Tender Payment & Finalize Sale
+                  </h3>
+                  <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
+                    Billed to: <strong>{selectedCustomerName === 'Other' ? customCustomerInput || 'Cash Client' : selectedCustomerName}</strong> · {branch} Counter
+                  </div>
+                </div>
               </div>
               <button
-                className="no-print"
-                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '1.25rem' }}
-                onClick={() => setActiveReceipt(null)}
+                className="btn-secondary"
+                onClick={() => setIsPaymentModalOpen(false)}
+                style={{ padding: '0.25rem 0.5rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                title="Close"
               >
-                ✕
+                <X size={18} style={{ color: '#64748B' }} />
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="receipt-paper">
-                <div className="receipt-header">
-                  <div className="receipt-company">STEELTRACK ENTERPRISE</div>
-                  <div className="receipt-sub">OFFICIAL POINT OF SALE TAX INVOICE</div>
-                  <div className="receipt-sub">
-                    {activeReceipt.branch.toUpperCase()} BRANCH - OPERATIONAL TERMINAL
+            <div className="modal-body" style={{ padding: '1.25rem' }}>
+              {/* Grand Total Callout */}
+              <div style={{ background: '#F0F9FF', border: '1.5px solid #BAE6FD', borderRadius: 8, padding: '1rem', textAlign: 'center', marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.75rem', color: '#0369A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Grand Total Due
+                </div>
+                <div style={{ fontSize: '2.1rem', fontWeight: 800, color: '#0284C7', marginTop: 2 }}>
+                  ₱{grandTotalPHP.toLocaleString()}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: 4 }}>
+                  {cart.length} item(s) · Subtotal: ₱{subtotalPHP.toLocaleString()} {applyVat ? `· 12% VAT: ₱${taxPHP.toLocaleString()}` : ''} {discountAmount > 0 ? `· Discount: -₱${discountAmount.toLocaleString()}` : ''}
+                </div>
+              </div>
+
+              {/* Payment Method Selector */}
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.5rem' }}>
+                Select Payment Method:
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                {(['Cash', 'Card', 'Bank Transfer', 'Cheque', 'Corporate Credit Line', 'Split Payment'] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setPaymentMethod(m)}
+                    style={{
+                      padding: '0.65rem 0.4rem',
+                      borderRadius: 6,
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      background: paymentMethod === m ? '#0284C7' : '#F8FAFC',
+                      color: paymentMethod === m ? '#FFFFFF' : '#334155',
+                      border: paymentMethod === m ? '1.5px solid #0284C7' : '1px solid #CBD5E1',
+                    }}
+                  >
+                    {m === 'Cash' && '💵 Cash'}
+                    {m === 'Card' && '💳 Card / QRPH'}
+                    {m === 'Bank Transfer' && '🏦 Bank Transfer'}
+                    {m === 'Cheque' && '📝 Cheque / PDC'}
+                    {m === 'Corporate Credit Line' && '🏢 Credit Line'}
+                    {m === 'Split Payment' && '✂️ Split Payment'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Method-Specific Inputs */}
+              {paymentMethod === 'Cash' && (
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Amount Tendered (₱):</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min={0}
+                      value={amountTendered || ''}
+                      onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      style={{ width: '150px', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem', padding: '0.4rem', borderRadius: 6, border: '1.5px solid #CBD5E1', background: '#FFFFFF', color: '#0F172A' }}
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Quick cash denomination buttons */}
+                  <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem' }}
+                      onClick={() => setAmountTendered(grandTotalPHP)}
+                    >
+                      Exact (₱{grandTotalPHP.toLocaleString()})
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem' }}
+                      onClick={() => setAmountTendered((prev) => prev + 500)}
+                    >
+                      +₱500
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem' }}
+                      onClick={() => setAmountTendered((prev) => prev + 1000)}
+                    >
+                      +₱1,000
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.6rem', borderTop: '1px solid #E2E8F0', fontSize: '0.95rem' }}>
+                    <span style={{ color: '#64748B', fontWeight: 600 }}>Change Returned:</span>
+                    <strong style={{ fontSize: '1.15rem', color: amountTendered >= grandTotalPHP ? '#059669' : '#DC2626' }}>
+                      ₱{changeDuePHP.toLocaleString()}
+                    </strong>
+                  </div>
+                  {amountTendered < grandTotalPHP && (
+                    <div style={{ color: '#DC2626', fontSize: '0.75rem', marginTop: 4, textAlign: 'right' }}>
+                      Insufficient cash tendered: Needs ₱{(grandTotalPHP - amountTendered).toLocaleString()} more
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {paymentMethod === 'Card' && (
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                    Card / QRPH Terminal Reference Number: <span style={{ color: '#DC2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={referenceNumber}
+                    onChange={(e) => setReferenceNumber(e.target.value)}
+                    placeholder="e.g. POS-AUTH-98214 / QRPH-REF-5501"
+                    required
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.9rem', background: '#FFFFFF', color: '#0F172A' }}
+                    autoFocus
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 4 }}>
+                    Enter terminal slip approval code or electronic gateway transaction ID.
                   </div>
                 </div>
+              )}
 
-                <div className="receipt-divider" />
-
-                <div className="receipt-row">
-                  <span>Invoice #:</span>
-                  <strong style={{ color: '#0284C7' }}>{activeReceipt.invoiceNumber}</strong>
-                </div>
-
-                <div className="receipt-row">
-                  <span>Date & Time:</span>
-                  <span>{new Date(activeReceipt.createdAt).toLocaleString()}</span>
-                </div>
-
-                <div className="receipt-row">
-                  <span>Terminal Cashier:</span>
-                  <span>{activeReceipt.cashierName}</span>
-                </div>
-
-                <div className="receipt-row">
-                  <span>Client / Enterprise:</span>
-                  <strong>{activeReceipt.customerName}</strong>
-                </div>
-
-                {activeReceipt.customerTin && (
-                  <div className="receipt-row">
-                    <span>Tax ID (TIN):</span>
-                    <span>{activeReceipt.customerTin}</span>
+              {paymentMethod === 'Bank Transfer' && (
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                    Bank Reference / Online Transaction ID: <span style={{ color: '#DC2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={referenceNumber}
+                    onChange={(e) => setReferenceNumber(e.target.value)}
+                    placeholder="e.g. BDO-TRX-8829410"
+                    required
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.9rem', background: '#FFFFFF', color: '#0F172A' }}
+                    autoFocus
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 4 }}>
+                    Enter client's online banking confirmation or deposit slip reference number.
                   </div>
-                )}
+                </div>
+              )}
 
-                <div className="receipt-divider" />
+              {paymentMethod === 'Cheque' && (
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '1rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                    Cheque # & Drawee Bank: <span style={{ color: '#DC2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={referenceNumber}
+                    onChange={(e) => setReferenceNumber(e.target.value)}
+                    placeholder="e.g. CHQ-991204 (Metrobank Davao)"
+                    required
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.9rem', background: '#FFFFFF', color: '#0F172A' }}
+                    autoFocus
+                  />
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 4 }}>
+                    Automatically tracked in the Cheque & PDC Management register as Pending clearing.
+                  </div>
+                </div>
+              )}
 
-                {/* Line Items Table */}
-                <table className="receipt-items-table">
-                  <thead>
-                    <tr>
-                      <th>Steel Grade / Heat</th>
-                      <th style={{ textAlign: 'center' }}>Tons</th>
-                      <th style={{ textAlign: 'right' }}>₱/Ton</th>
-                      <th style={{ textAlign: 'right' }}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeReceipt.items?.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>
-                          <div>{item.grade.replace('_', ' ')}</div>
-                          <div style={{ fontSize: '0.68rem', color: '#64748B' }}>{item.heatNumber}</div>
-                        </td>
-                        <td style={{ textAlign: 'center' }}>{item.quantityTons}T</td>
-                        <td style={{ textAlign: 'right' }}>₱{(item.pricePerTonPHP ?? item.pricePerTonUSD ?? 0).toLocaleString()}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                          ₱{(item.lineTotalPHP ?? item.lineTotalUSD ?? 0).toLocaleString()}
-                        </td>
-                      </tr>
+              {paymentMethod === 'Corporate Credit Line' && (
+                <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '1rem' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1E40AF', marginBottom: 4 }}>
+                    Charge to Corporate Accounts Receivable
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#1E3A8A', lineHeight: 1.5 }}>
+                    This transaction will post an official invoice to <strong>{selectedCustomerName === 'Other' ? customCustomerInput || 'Corporate Client' : selectedCustomerName}</strong>'s credit ledger under Standard Net 30-Day terms.
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === 'Split Payment' && (
+                <div style={{ background: '#F8FAFC', border: '1.5px solid #CBD5E1', borderRadius: 8, padding: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0F172A' }}>Split Payment Tenders</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Divide transaction across two or more payment methods</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                      onClick={() => setSplitTenders((prev) => [
+                        ...prev,
+                        { id: String(Date.now()), method: 'Bank Transfer', amount: 0, referenceNumber: '' }
+                      ])}
+                    >
+                      <Plus size={13} /> Add Tender
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1rem' }}>
+                    {splitTenders.map((tender) => (
+                      <div key={tender.id} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr auto', gap: '0.5rem', alignItems: 'center', background: '#FFFFFF', padding: '0.55rem', borderRadius: 6, border: '1px solid #E2E8F0' }}>
+                        <select
+                          value={tender.method}
+                          onChange={(e) => {
+                            const newMethod = e.target.value as any;
+                            setSplitTenders((prev) => prev.map((t) => t.id === tender.id ? { ...t, method: newMethod } : t));
+                          }}
+                          style={{ padding: '0.45rem', borderRadius: 4, border: '1px solid #CBD5E1', fontSize: '0.8rem', background: '#FFFFFF', color: '#0F172A', fontWeight: 600 }}
+                        >
+                          <option value="Cash">💵 Cash</option>
+                          <option value="Card">💳 Card/QRPH</option>
+                          <option value="Bank Transfer">🏦 Bank</option>
+                          <option value="Cheque">📝 Cheque</option>
+                          <option value="Corporate Credit Line">🏢 Credit Line</option>
+                        </select>
+
+                        <div>
+                          <input
+                            type="number"
+                            min={0}
+                            step="1"
+                            placeholder="Amount (₱)"
+                            value={tender.amount || ''}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setSplitTenders((prev) => prev.map((t) => t.id === tender.id ? { ...t, amount: val } : t));
+                            }}
+                            style={{ width: '100%', padding: '0.45rem', borderRadius: 4, border: '1px solid #CBD5E1', fontSize: '0.85rem', fontWeight: 700, background: '#FFFFFF', color: '#0F172A' }}
+                          />
+                        </div>
+
+                        <div>
+                          <input
+                            type="text"
+                            placeholder={tender.method === 'Cash' ? 'Cash Tender' : 'Ref / Cheque #'}
+                            value={tender.referenceNumber}
+                            disabled={tender.method === 'Cash'}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSplitTenders((prev) => prev.map((t) => t.id === tender.id ? { ...t, referenceNumber: val } : t));
+                            }}
+                            style={{ width: '100%', padding: '0.45rem', borderRadius: 4, border: '1px solid #CBD5E1', fontSize: '0.8rem', background: tender.method === 'Cash' ? '#F1F5F9' : '#FFFFFF', color: '#0F172A' }}
+                          />
+                        </div>
+
+                        {splitTenders.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => setSplitTenders((prev) => prev.filter((t) => t.id !== tender.id))}
+                            style={{ background: 'transparent', border: 'none', color: '#DC2626', cursor: 'pointer', padding: '0.3rem' }}
+                            title="Remove tender"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
 
-                <div className="receipt-divider" />
+                  {/* Split Summary Callout */}
+                  <div style={{ background: '#F1F5F9', padding: '0.75rem', borderRadius: 6, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', fontSize: '0.8rem' }}>
+                    <div>
+                      <span style={{ color: '#64748B', display: 'block' }}>Total Allocated:</span>
+                      <strong style={{ fontSize: '0.95rem', color: '#0284C7' }}>₱{totalSplitAllocated.toLocaleString()}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: '#64748B', display: 'block' }}>Remaining Due:</span>
+                      <strong style={{ fontSize: '0.95rem', color: splitRemainingDue > 0 ? '#DC2626' : '#059669' }}>
+                        ₱{splitRemainingDue.toLocaleString()}
+                      </strong>
+                    </div>
+                    <div>
+                      <span style={{ color: '#64748B', display: 'block' }}>Cash Change:</span>
+                      <strong style={{ fontSize: '0.95rem', color: '#059669' }}>₱{splitChangeDue.toLocaleString()}</strong>
+                    </div>
+                  </div>
 
-                <div className="receipt-row">
-                  <span>Total Net Weight:</span>
-                  <strong>{activeReceipt.totalTonnage} Tons</strong>
+                  {splitRemainingDue > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                        onClick={() => {
+                          setSplitTenders((prev) => {
+                            if (prev.length === 0) return prev;
+                            const lastIdx = prev.length - 1;
+                            return prev.map((t, i) => i === lastIdx ? { ...t, amount: Number((t.amount + splitRemainingDue).toFixed(2)) } : t);
+                          });
+                        }}
+                      >
+                        Auto-fill Remaining (₱{splitRemainingDue.toLocaleString()}) to Last Tender
+                      </button>
+                    </div>
+                  )}
                 </div>
+              )}
+            </div>
 
-                <div className="receipt-row">
-                  <span>Subtotal:</span>
-                  <span>₱{(activeReceipt.subtotalPHP ?? activeReceipt.subtotalUSD ?? 0).toLocaleString()}</span>
-                </div>
-
-                <div className="receipt-row">
-                  <span>VAT (12%):</span>
-                  <span>₱{(activeReceipt.taxPHP ?? activeReceipt.taxUSD ?? 0).toLocaleString()}</span>
-                </div>
-
-                <div className="receipt-divider" />
-
-                <div className="receipt-row total">
-                  <span>TOTAL PAID:</span>
-                  <span style={{ color: '#059669', fontSize: '1.2rem' }}>
-                    ₱{(activeReceipt.totalAmountPHP ?? activeReceipt.totalAmountUSD ?? 0).toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="receipt-row">
-                  <span>Payment Tender:</span>
-                  <span>{activeReceipt.paymentMethod}</span>
-                </div>
-
-                {(activeReceipt.amountTenderedPHP !== undefined || activeReceipt.amountTenderedUSD !== undefined) && (
+            <div className="modal-footer" style={{ borderTop: '1px solid #E2E8F0', padding: '0.85rem 1.25rem', background: '#F8FAFC', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setIsPaymentModalOpen(false)}
+                style={{ padding: '0.55rem 1rem', fontSize: '0.85rem' }}
+              >
+                Back to Cart
+              </button>
+              <button
+                type="button"
+                disabled={
+                  isProcessingSale ||
+                  (paymentMethod === 'Cash' && amountTendered < grandTotalPHP && grandTotalPHP > 0) ||
+                  ((paymentMethod === 'Bank Transfer' || paymentMethod === 'Cheque' || paymentMethod === 'Card') && !referenceNumber.trim()) ||
+                  (paymentMethod === 'Split Payment' && totalSplitAllocated < grandTotalPHP)
+                }
+                onClick={handleExecuteSale}
+                style={{
+                  background: isProcessingSale ? '#94A3B8' : '#059669',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '0.6rem 1.25rem',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  cursor: isProcessingSale ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                {isProcessingSale ? (
                   <>
-                    <div className="receipt-row">
-                      <span>Amount Tendered:</span>
-                      <span>₱{((activeReceipt.amountTenderedPHP ?? activeReceipt.amountTenderedUSD) || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="receipt-row">
-                      <span>Change Due:</span>
-                      <span>₱{((activeReceipt.changeDuePHP ?? activeReceipt.changeDueUSD) || 0).toLocaleString()}</span>
-                    </div>
+                    <RotateCcw size={15} className="spin" /> Processing Sale…
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} /> Confirm & Issue Receipt
                   </>
                 )}
-
-                {activeReceipt.referenceNumber && (
-                  <div className="receipt-row">
-                    <span>Reference #:</span>
-                    <span>{activeReceipt.referenceNumber}</span>
-                  </div>
-                )}
-
-                <div className="receipt-barcode">
-                  ||| | |||| || |||||| | ||| |||| | ||
-                </div>
-
-                <div className="receipt-footer-msg">
-                  Official BIR / Capstone Project Receipt Stamp<br />
-                  Thank you for partnering with SteelTrack Enterprise.
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer no-print">
-              <button
-                type="button"
-                className="btn-secondary no-print"
-                onClick={() => window.print()}
-              >
-                <Printer size={16} /> Print Receipt (Thermal)
-              </button>
-              <button
-                type="button"
-                className="btn-primary no-print"
-                onClick={() => setActiveReceipt(null)}
-              >
-                New Transaction
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* POS RECEIPT / OFFICIAL INVOICE MODAL */}
+      {activeReceipt && (
+        <div className="pos-modal-overlay">
+          <div className="receipt-card">
+            <div className="receipt-header">
+              <div className="brand-title">STEELTRACK ENTERPRISE</div>
+              <div className="branch-meta">
+                <Building size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                {activeReceipt.branch} Branch Facility • POS Terminal
+              </div>
+              <div className="invoice-meta">Official Invoice #{activeReceipt.invoiceNumber}</div>
+              <div className="invoice-meta">
+                Date: {new Date(activeReceipt.createdAt).toLocaleString()} • Cashier: {activeReceipt.cashierName}
+              </div>
+              <div className="invoice-meta">
+                Client: <strong>{activeReceipt.customerName}</strong>
+                {activeReceipt.customerTin && ` (TIN: ${activeReceipt.customerTin})`}
+              </div>
+            </div>
+
+            <div className="receipt-items-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item Description</th>
+                    <th>Batch #</th>
+                    <th style={{ textAlign: 'right' }}>Qty</th>
+                    <th style={{ textAlign: 'right' }}>Price</th>
+                    <th style={{ textAlign: 'right' }}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeReceipt.items.map((it) => (
+                    <tr key={it.id}>
+                      <td>
+                        <strong>{it.productName || it.grade}</strong>
+                        <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{it.sku || it.dimensions}</div>
+                      </td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{it.batchCode || it.heatNumber}</td>
+                      <td style={{ textAlign: 'right' }}>{it.quantityTons} {it.unitOfMeasure || 'pcs'}</td>
+                      <td style={{ textAlign: 'right' }}>₱{it.pricePerTonPHP.toLocaleString()}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700 }}>₱{it.lineTotalPHP.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="receipt-totals-box">
+              <div className="total-line">
+                <span>Subtotal Amount:</span>
+                <span>₱{activeReceipt.subtotalPHP.toLocaleString()}</span>
+              </div>
+              {activeReceipt.discountPHP > 0 && (
+                <div className="total-line discount">
+                  <span>Volume Discount:</span>
+                  <span>-₱{activeReceipt.discountPHP.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="total-line">
+                <span>Value Added Tax (12% VAT):</span>
+                <span>₱{activeReceipt.taxPHP.toLocaleString()}</span>
+              </div>
+              <div className="total-line grand">
+                <span>Grand Total:</span>
+                <span>₱{activeReceipt.totalAmountPHP.toLocaleString()}</span>
+              </div>
+              <div className="total-line">
+                <span>Payment Method:</span>
+                <span>{activeReceipt.paymentMethod}</span>
+              </div>
+              {activeReceipt.splitTenders && activeReceipt.splitTenders.length > 0 && (
+                <div style={{ margin: '0.4rem 0', padding: '0.4rem 0.6rem', background: '#F1F5F9', borderRadius: 4, fontSize: '0.75rem' }}>
+                  <div style={{ fontWeight: 700, color: '#475569', marginBottom: 2 }}>Split Tender Breakdown:</div>
+                  {activeReceipt.splitTenders.map((t, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', color: '#334155' }}>
+                      <span>• {t.method} {t.referenceNumber ? `(${t.referenceNumber})` : ''}:</span>
+                      <strong>₱{t.amount.toLocaleString()}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {activeReceipt.paymentMethod === 'Cash' && activeReceipt.amountTenderedPHP !== undefined && (
+                <>
+                  <div className="total-line">
+                    <span>Cash Tendered:</span>
+                    <span>₱{activeReceipt.amountTenderedPHP.toLocaleString()}</span>
+                  </div>
+                  <div className="total-line">
+                    <span>Change Returned:</span>
+                    <span>₱{(activeReceipt.changeDuePHP || 0).toLocaleString()}</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="receipt-footer">
+              <p>Certified Official Sales Invoice • BIR Compliant</p>
+              <p>Thank you for choosing SteelTrack Industrial Solutions.</p>
+            </div>
+
+            <div className="receipt-actions no-print">
+              <button
+                type="button"
+                className="btn-print"
+                onClick={() => window.print()}
+              >
+                <Printer size={16} /> Print Customer Invoice
+              </button>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setActiveReceipt(null)}
+              >
+                <CheckCircle2 size={16} /> Complete & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

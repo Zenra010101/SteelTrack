@@ -3,14 +3,26 @@ import { BranchLocation } from './auth';
 export interface PosCartItem {
   id: string; // unique item id in cart
   batchId: string;
+  batchCode?: string;
+  productId?: string;
+  productName?: string;
+  sku?: string;
+  categoryName?: string;
   heatNumber: string;
   grade: string;
   dimensions: string;
   location: string;
   availableTons: number;
+  availableQuantity?: number;
   quantityTons: number;
   pricePerTonPHP: number;
   lineTotalPHP: number;
+  costPrice?: number;
+  unitOfMeasure?: string;
+  isOldStock?: boolean;
+  fifoPriority?: boolean;
+  fifoRank?: number;
+  receivedDate?: string;
   /** Backward compatibility */
   pricePerTonUSD?: number;
   lineTotalUSD?: number;
@@ -18,11 +30,19 @@ export interface PosCartItem {
 
 export type SteelCategory =
   | 'All'
-  | 'Structural'
-  | 'HighStrength'
-  | 'Stainless'
-  | 'Carbon'
-  | 'ToolSteel';
+  | 'Stainless Plates'
+  | 'Bars'
+  | 'Sheets'
+  | 'Tubes'
+  | 'Stainless Bars'
+  | 'Stainless Sheets'
+  | 'Stainless Tubes';
+
+export interface PosSplitTender {
+  method: 'Cash' | 'Card' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque';
+  amount: number;
+  referenceNumber?: string;
+}
 
 export interface PosTransaction {
   id: string;
@@ -37,7 +57,8 @@ export interface PosTransaction {
   taxPHP: number;
   discountPHP: number;
   totalAmountPHP: number;
-  paymentMethod: 'Cash' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque';
+  paymentMethod: 'Cash' | 'Card' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque' | 'Split Payment';
+  splitTenders?: PosSplitTender[];
   amountTenderedPHP?: number;
   changeDuePHP?: number;
   referenceNumber?: string;

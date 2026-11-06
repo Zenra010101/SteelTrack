@@ -325,7 +325,7 @@ export function SupplierManagementView() {
       {/* DETAILS & ATTACHMENTS MODAL WITH MTC UPLOAD */}
       {selectedSupplierDetails && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', color: '#F8FAFC', borderRadius: '12px', border: '1px solid #334155', width: '92%', maxWidth: '640px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #334155', width: '92%', maxWidth: '640px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #334155', paddingBottom: '0.75rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#38BDF8' }}>
@@ -461,22 +461,22 @@ export function SupplierManagementView() {
       {/* ADD SUPPLIER MODAL WITH SEARCHABLE COUNTRY, AUTO-CODE & 1-5 STARS */}
       {isAddModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#1E293B', color: '#F8FAFC', borderRadius: '12px', border: '1px solid #334155', width: '92%', maxWidth: '540px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '92%', maxWidth: '540px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>Add Accredited Steel Supplier</h3>
-                <p style={{ margin: '0.2rem 0 0 0', color: '#94A3B8', fontSize: '0.8rem' }}>
+                <p style={{ margin: '0.2rem 0 0 0', color: '#64748B', fontSize: '0.8rem' }}>
                   Select country of origin to automatically generate supplier code.
                 </p>
               </div>
-              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleAddSupplier}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   Mill / Supplier Company Name <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
@@ -485,13 +485,13 @@ export function SupplierManagementView() {
                   placeholder="e.g. Baosteel Group Corporation"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 
               {/* SEARCHABLE COUNTRY SELECT DROPDOWN */}
               <div style={{ marginBottom: '1rem', position: 'relative' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   Country of Origin (ISO-3) <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <button
@@ -499,9 +499,9 @@ export function SupplierManagementView() {
                   onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
                   style={{
                     width: '100%',
-                    background: '#0F172A',
-                    border: '1px solid #334155',
-                    color: '#F8FAFC',
+                    background: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
+                    color: '#0F172A',
                     padding: '0.6rem',
                     borderRadius: '6px',
                     display: 'flex',
@@ -513,9 +513,9 @@ export function SupplierManagementView() {
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span>{selectedCountry.flag}</span>
-                    <strong style={{ color: '#38BDF8' }}>{selectedCountry.code}</strong> — {selectedCountry.name}
+                    <strong style={{ color: '#0284C7' }}>{selectedCountry.code}</strong> — {selectedCountry.name}
                   </span>
-                  <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Change ▼</span>
+                  <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Change ▼</span>
                 </button>
 
                 {isCountryDropdownOpen && (
@@ -526,16 +526,16 @@ export function SupplierManagementView() {
                       left: 0,
                       right: 0,
                       marginTop: '0.35rem',
-                      background: '#0F172A',
-                      border: '1px solid #38BDF8',
+                      background: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
                       borderRadius: '6px',
                       zIndex: 2000,
                       maxHeight: '220px',
                       overflowY: 'auto',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                     }}
                   >
-                    <div style={{ padding: '0.5rem', borderBottom: '1px solid #334155' }}>
+                    <div style={{ padding: '0.5rem', borderBottom: '1px solid #E2E8F0' }}>
                       <input
                         type="text"
                         placeholder="Type to filter country or ISO code..."
@@ -544,9 +544,9 @@ export function SupplierManagementView() {
                         autoFocus
                         style={{
                           width: '100%',
-                          background: '#1E293B',
-                          border: '1px solid #475569',
-                          color: '#F8FAFC',
+                          background: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          color: '#0F172A',
                           padding: '0.4rem 0.6rem',
                           borderRadius: '4px',
                           fontSize: '0.85rem',
@@ -563,16 +563,17 @@ export function SupplierManagementView() {
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           cursor: 'pointer',
-                          background: c.code === selectedCountry.code ? '#1E293B' : 'transparent',
-                          borderBottom: '1px solid #1E293B',
+                          background: c.code === selectedCountry.code ? '#ECFDF5' : 'transparent',
+                          color: c.code === selectedCountry.code ? '#059669' : '#0F172A',
+                          borderBottom: '1px solid #E2E8F0',
                           fontSize: '0.85rem',
                         }}
                       >
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span>{c.flag}</span>
-                          <strong style={{ color: '#38BDF8' }}>{c.code}</strong> — {c.name}
+                          <strong style={{ color: '#0284C7' }}>{c.code}</strong> — {c.name}
                         </span>
-                        {c.code === selectedCountry.code && <Check size={14} style={{ color: '#34D399' }} />}
+                        {c.code === selectedCountry.code && <Check size={14} style={{ color: '#059669' }} />}
                       </div>
                     ))}
                   </div>
@@ -583,10 +584,10 @@ export function SupplierManagementView() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <label style={{ color: '#94A3B8', fontSize: '0.8rem' }}>
+                    <label style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600 }}>
                       Automated Supplier Code <span style={{ color: '#EF4444' }}>*</span>
                     </label>
-                    <span style={{ color: '#34D399', fontSize: '0.7rem', fontWeight: 600 }}>Auto-Generated</span>
+                    <span style={{ color: '#059669', fontSize: '0.7rem', fontWeight: 600 }}>Auto-Generated</span>
                   </div>
                   <input
                     type="text"
@@ -594,18 +595,18 @@ export function SupplierManagementView() {
                     value={supplierCode}
                     onChange={(e) => setSupplierCode(e.target.value.toUpperCase())}
                     placeholder="e.g. SUP-PHL-001"
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #38BDF8', color: '#38BDF8', padding: '0.6rem', borderRadius: '6px', fontFamily: 'monospace', fontWeight: 700 }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px', fontFamily: 'monospace', fontWeight: 700 }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Tax TIN #</label>
+                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Tax TIN #</label>
                   <input
                     type="text"
                     placeholder="e.g. 009-881-224-000"
                     value={tin}
                     onChange={(e) => setTin(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
@@ -613,21 +614,21 @@ export function SupplierManagementView() {
               {/* PAYMENT TERMS & 1-5 STAR QUALITY RATING */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Payment Terms (Days)</label>
+                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Payment Terms (Days)</label>
                   <input
                     type="number"
                     value={termsDays}
                     onChange={(e) => setTermsDays(Number(e.target.value))}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
 
                 {/* INTERACTIVE 1-5 STAR QUALITY RATING */}
                 <div>
-                  <label style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>
+                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
                     Quality Rating (1–5 Stars)
                   </label>
-                  <div style={{ background: '#0F172A', border: '1px solid #334155', padding: '0.45rem 0.6rem', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '0.45rem 0.6rem', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -639,7 +640,7 @@ export function SupplierManagementView() {
                           <Star
                             size={18}
                             fill={star <= ratingScore ? '#F59E0B' : 'none'}
-                            color={star <= ratingScore ? '#F59E0B' : '#475569'}
+                            color={star <= ratingScore ? '#F59E0B' : '#CBD5E1'}
                           />
                         </button>
                       ))}

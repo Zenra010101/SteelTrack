@@ -80,56 +80,33 @@ public static class ProductBatchStockHelper
 
 
 
-    public static ProductBatch CreateLegacyBatch(Product product) =>
-
+    public static ProductBatch CreateLegacyBatch(Product product, Guid? branchId = null) =>
         new()
-
         {
-
             ProductId = product.Id,
-
+            BranchId = branchId,
             BatchCode = "LEGACY",
-
             CostPrice = product.CostPrice,
-
             SellingPrice = product.UnitPrice,
-
             ReceivedQuantity = product.StockQuantity,
-
             Quantity = product.StockQuantity,
-
             ReceivedDate = new DateOnly(2000, 1, 1),
-
             IsActive = true
-
         };
 
-
-
-    public static ProductBatch CreateOpeningBatch(Product product) =>
-
+    public static ProductBatch CreateOpeningBatch(Product product, Guid? branchId = null) =>
         new()
-
         {
-
             ProductId = product.Id,
-
+            BranchId = branchId,
             BatchCode = "OPENING",
-
             CostPrice = product.CostPrice,
-
             SellingPrice = product.UnitPrice,
-
             ReceivedQuantity = product.StockQuantity,
-
             Quantity = product.StockQuantity,
-
             ReceivedDate = DateOnly.FromDateTime(DateTime.UtcNow),
-
             IsActive = true
-
         };
-
 }
 
 
