@@ -294,6 +294,15 @@ export function Sidebar({
               <ClipboardCheck size={18} />
               {!isCollapsed && <span>Quality & Approvals</span>}
             </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'system' ? 'active' : ''}`}
+              onClick={() => onSelectTab('system')}
+              title="Branch Staff & User Accounts"
+            >
+              <Users size={18} />
+              {!isCollapsed && <span>Branch Staff</span>}
+            </button>
           </>
         )}
 

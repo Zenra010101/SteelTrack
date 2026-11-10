@@ -190,12 +190,9 @@ export function InventoryTable({
                 const displaySku = b.heatNumber || bAny.sku || bAny.productSku || '—';
                 const displayStatus = b.status || (bAny.isAvailable !== false ? 'Available' : 'Reserved');
                 const stockQty = Number(bAny.stockQuantity ?? bAny.currentStock ?? b.weightInTons ?? 0);
-                const isOutOfStock = stockQty <= 0;
-                const isVeryLow = !isOutOfStock && stockQty < 10;
-                const isLow = !isOutOfStock && !isVeryLow && stockQty <= 20;
 
                 return (
-                  <tr key={b.id} style={{ background: isVeryLow ? '#FFF5F5' : isLow ? '#FFFDF5' : undefined }}>
+                  <tr key={b.id} style={{ background: '#FFFFFF' }}>
                     <td>
                       <span className="branch-tag highlight">{displayBranch}</span>
                     </td>
@@ -217,19 +214,9 @@ export function InventoryTable({
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ fontWeight: 700, color: isVeryLow ? '#DC2626' : isLow ? '#D97706' : '#0F172A', fontSize: '0.9rem' }}>
+                        <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9rem' }}>
                           {stockQty} {bAny.unitOfMeasure || (b.weightInTons ? 't' : 'pc')}
                         </span>
-                        {isVeryLow && (
-                          <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#FEE2E2', color: '#DC2626', border: '1px solid #FECACA', padding: '0.1rem 0.35rem', borderRadius: 4 }}>
-                            Very Low (&lt;10)
-                          </span>
-                        )}
-                        {isLow && (
-                          <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#FEF3C7', color: '#D97706', border: '1px solid #FDE68A', padding: '0.1rem 0.35rem', borderRadius: 4 }}>
-                            Low (10–20)
-                          </span>
-                        )}
                       </div>
                       {b.weightInTons !== undefined && bAny.stockQuantity !== undefined && (
                         <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{b.weightInTons} tons</div>
@@ -256,84 +243,100 @@ export function InventoryTable({
                       <div
                         className="branch-products-actions-grid"
                         style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(3, 30px) auto',
-                          gap: '0.35rem',
-                          justifyContent: 'end',
+                          display: 'flex',
                           alignItems: 'center',
+                          justifyContent: 'flex-end',
+                          gap: '0.35rem',
                         }}
                       >
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          style={{
-                            width: '30px',
-                            height: '30px',
-                            padding: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '6px',
-                            background: '#F0F9FF',
-                            color: '#0284C7',
-                            borderColor: '#BAE6FD',
-                          }}
-                          title="View cross-branch stock breakdown"
-                          aria-label="Stock Info"
-                          onClick={() => handleOpenCrossBranch(b)}
-                        >
-                          <Info size={14} />
-                        </button>
+                        <div className="branch-products-actions-icons" style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            style={{
+                              width: '30px',
+                              height: '30px',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: '6px',
+                              background: '#F0F9FF',
+                              color: '#0284C7',
+                              borderColor: '#BAE6FD',
+                            }}
+                            title="View cross-branch stock breakdown"
+                            aria-label="Stock Info"
+                            onClick={() => handleOpenCrossBranch(b)}
+                          >
+                            <Info size={14} />
+                          </button>
 
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          style={{
-                            width: '30px',
-                            height: '30px',
-                            padding: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '6px',
-                          }}
-                          title="Print Industrial Barcode Tag"
-                          aria-label="Print Barcode Tag"
-                          onClick={() => setSelectedBarcodeBatch(b)}
-                        >
-                          <Tag size={14} />
-                        </button>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            style={{
+                              width: '30px',
+                              height: '30px',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: '6px',
+                            }}
+                            title="Print Industrial Barcode Tag"
+                            aria-label="Print Barcode Tag"
+                            onClick={() => setSelectedBarcodeBatch(b)}
+                          >
+                            <Tag size={14} />
+                          </button>
 
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          style={{
-                            width: '30px',
-                            height: '30px',
-                            padding: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '6px',
-                          }}
-                          title="Adjust Physical Tonnage"
-                          aria-label="Adjust Stock"
-                          onClick={() => setSelectedAdjustmentBatch(b)}
-                        >
-                          <Sliders size={14} />
-                        </button>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            style={{
+                              width: '30px',
+                              height: '30px',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: '6px',
+                            }}
+                            title="Adjust Physical Tonnage"
+                            aria-label="Adjust Stock"
+                            onClick={() => setSelectedAdjustmentBatch(b)}
+                          >
+                            <Sliders size={14} />
+                          </button>
+                        </div>
 
                         <select
-                          value={b.status}
+                          className="branch-product-status-select"
+                          value={displayStatus}
                           onChange={(e) =>
                             onUpdateStatus(b.id, e.target.value as BatchStatus)
                           }
-                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.4rem', borderRadius: '4px' }}
+                          style={{
+                            width: '88px',
+                            maxWidth: '88px',
+                            height: '30px',
+                            fontSize: '0.74rem',
+                            fontWeight: 600,
+                            padding: '0 0.3rem',
+                            borderRadius: '6px',
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            color: '#1E293B',
+                            cursor: 'pointer',
+                          }}
+                          title="Change Batch Status"
+                          aria-label="Status Action"
                         >
-                          <option value="InProduction">InProduction</option>
-                          <option value="QualityCheck">QualityCheck</option>
                           <option value="Available">Available</option>
                           <option value="Reserved">Reserved</option>
+                          <option value="QualityCheck">QualityCheck</option>
+                          <option value="InProduction">InProduction</option>
                           <option value="Shipped">Shipped</option>
                         </select>
                       </div>

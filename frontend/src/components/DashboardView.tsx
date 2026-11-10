@@ -230,157 +230,148 @@ export function DashboardView({
   return (
     <div className="dashboard-container" style={{ background: '#F4F6F9', padding: '1.5rem', borderRadius: 12, border: '1px solid #E2E8F0', minHeight: '100%' }}>
       {/* TOP WELCOME BANNER */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
-          boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.08)',
-          borderRadius: 12,
-          padding: '1.5rem 1.75rem',
-          color: '#FFFFFF',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-            <span
-              style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                padding: '0.15rem 0.5rem',
-                borderRadius: 4,
-                background:
-                  userSession.role === UserRole.Owner
-                    ? '#0284C7'
-                    : userSession.role === UserRole.BranchManager
-                      ? '#D97706'
-                      : '#059669',
-              }}
-            >
-              {userSession.role} Workspace
-            </span>
-            <span style={{ color: '#94A3B8', fontSize: '0.8rem' }}>• SteelTrack Enterprise Hub</span>
+      {userSession.role === UserRole.BranchManager ? (
+        <div
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+            borderRadius: 12,
+            padding: '1.75rem 2rem',
+            color: '#0F172A',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            gap: '1.25rem',
+          }}
+        >
+          <div>
+            <h1 style={{ margin: 0, fontSize: '1.55rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#0F172A' }}>
+              Welcome, {userSession.name}
+            </h1>
+
+            <p style={{ margin: '0.4rem 0 0 0', color: '#64748B', fontSize: '0.9rem' }}>
+              Full operational supervision for {userSession.branch} Branch facility, quality approvals & local inventory.
+            </p>
           </div>
 
-          <h1 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#FFFFFF' }}>
-            Welcome, {userSession.name}
-          </h1>
-
-          <p style={{ margin: '0.35rem 0 0 0', color: '#94A3B8', fontSize: '0.85rem' }}>
-            {userSession.role === UserRole.Owner &&
-              'Executive enterprise scope active across all 4 operational branch facilities.'}
-            {userSession.role === UserRole.BranchManager &&
-              `Full operational supervision for ${userSession.branch} Branch facility, quality approvals & local inventory.`}
-            {userSession.role === UserRole.Cashier &&
-              `${userSession.branch} Branch POS Counter Terminal active. Fast cashier transactions & BIR receipt issuing.`}
-          </p>
-        </div>
-
-        {/* Quick Launch CTA based on Role */}
-        <div>
-          {userSession.role === UserRole.Cashier && (
+          {/* Centered Action Buttons */}
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
               className="btn-primary"
-              onClick={() => onSelectTab('pos')}
+              onClick={() => onSelectTab('approvals')}
               style={{
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.95rem',
+                padding: '0.65rem 1.35rem',
+                fontSize: '0.88rem',
                 fontWeight: 700,
-                background: '#10B981',
-                borderColor: '#059669',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.4)',
+                gap: '0.45rem',
               }}
             >
-              <ShoppingCart size={18} /> Launch POS Terminal
+              <ClipboardCheck size={16} /> Quality Approvals ({approvalsCount})
             </button>
-          )}
+            <button
+              className="btn-secondary"
+              onClick={() => onSelectTab('inventory')}
+              style={{
+                padding: '0.65rem 1.35rem',
+                fontSize: '0.88rem',
+                fontWeight: 600,
+                background: '#F8FAFC',
+                color: '#0F172A',
+                borderColor: '#CBD5E1',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+              }}
+            >
+              <Layers size={16} /> Branch Products
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+            borderRadius: 12,
+            padding: '1.5rem 1.75rem',
+            color: '#0F172A',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem',
+          }}
+        >
+          <div>
+            <h1 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#0F172A' }}>
+              Welcome, {userSession.name}
+            </h1>
 
-          {userSession.role === UserRole.BranchManager && (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <p style={{ margin: '0.35rem 0 0 0', color: '#64748B', fontSize: '0.85rem' }}>
+              {userSession.role === UserRole.Owner &&
+                'Executive enterprise scope active across all 4 operational branch facilities.'}
+              {userSession.role === UserRole.Cashier &&
+                `${userSession.branch} Branch POS Counter Terminal active. Fast cashier transactions & BIR receipt issuing.`}
+            </p>
+          </div>
+
+          {/* Quick Launch CTA based on Role */}
+          <div>
+            {userSession.role === UserRole.Cashier && (
               <button
                 className="btn-primary"
-                onClick={() => onSelectTab('approvals')}
+                onClick={() => onSelectTab('pos')}
                 style={{
-                  padding: '0.65rem 1.25rem',
-                  fontSize: '0.85rem',
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '0.95rem',
                   fontWeight: 700,
+                  background: '#10B981',
+                  borderColor: '#059669',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.4rem',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.4)',
                 }}
               >
-                <ClipboardCheck size={16} /> Quality Approvals ({approvalsCount})
+                <ShoppingCart size={18} /> Launch POS Terminal
               </button>
-              <button
-                className="btn-secondary"
-                onClick={() => onSelectTab('inventory')}
-                style={{
-                  padding: '0.65rem 1.25rem',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  background: '#334155',
-                  color: '#FFFFFF',
-                  borderColor: '#475569',
-                }}
-              >
-                <Layers size={16} /> Branch Products
-              </button>
-            </div>
-          )}
+            )}
 
-          {userSession.role === UserRole.Owner ? (
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <div style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Scope:</div>
-              <select
-                value={selectedBranch}
-                onChange={(e) => onSelectBranch(e.target.value)}
-                style={{
-                  padding: '0.5rem 0.85rem',
-                  borderRadius: 6,
-                  background: '#334155',
-                  color: '#FFFFFF',
-                  border: '1px solid #475569',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                }}
-              >
-                <option value="All">All 4 Branches Combined</option>
-                <option value={BranchLocation.Davao}>Davao Branch</option>
-                <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
-                <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
-                <option value={BranchLocation.Cebu}>Cebu Branch</option>
-              </select>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <span
-                style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: '6px',
-                  fontSize: '0.82rem',
-                  color: '#E2E8F0',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                }}
-              >
-                <Building2 size={14} color="#38BDF8" /> {userSession.branch} Branch Workspace
-              </span>
-            </div>
-          )}
+            {userSession.role === UserRole.Owner && (
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600 }}>Scope:</div>
+                <select
+                  value={selectedBranch}
+                  onChange={(e) => onSelectBranch(e.target.value)}
+                  style={{
+                    padding: '0.5rem 0.85rem',
+                    borderRadius: 6,
+                    background: '#F8FAFC',
+                    color: '#0F172A',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  <option value="All">All 4 Branches Combined</option>
+                  <option value={BranchLocation.Davao}>Davao Branch</option>
+                  <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
+                  <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
+                  <option value={BranchLocation.Cebu}>Cebu Branch</option>
+                </select>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* TIMEFRAME SORTING / FILTER CONTROLS */}
       <div

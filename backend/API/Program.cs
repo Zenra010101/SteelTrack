@@ -43,7 +43,7 @@ static string ResolveChallengeReason(JwtBearerChallengeContext context)
 static string MessageForReason(string reason) => reason switch
 {
     SessionEndReasons.ServerRestarted =>
-        "The server was restarted, so your session ended. Please sign in again.",
+        string.Empty,
     SessionEndReasons.TokenExpired =>
         "Your session expired. Please sign in again.",
     SessionEndReasons.MissingToken =>

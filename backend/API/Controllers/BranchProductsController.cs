@@ -140,6 +140,7 @@ public class BranchProductsController : ControllerBase
                 currentStock = (int)bp.Product.StockQuantity,
                 isAvailable = bp.IsAvailable,
                 isActive = bp.IsActive,
+                status = !bp.IsActive ? "Shipped" : (!bp.IsAvailable ? "Reserved" : (bp.Product.StockQuantity <= 0 ? "Shipped" : (bp.Product.StockQuantity <= bp.ReorderLevel ? "QualityCheck" : "Available"))),
                 halfPrice = bp.HalfPrice,
                 quarterPrice = bp.QuarterPrice,
                 threeQuarterPrice = bp.ThreeQuarterPrice,
@@ -436,9 +437,102 @@ public class BranchProductsController : ControllerBase
             currentStock = (int)bp.Product.StockQuantity,
             isAvailable = bp.IsAvailable,
             isActive = bp.IsActive,
+            status = !bp.IsActive ? "Shipped" : (!bp.IsAvailable ? "Reserved" : (bp.Product.StockQuantity <= 0 ? "Shipped" : (bp.Product.StockQuantity <= bp.ReorderLevel ? "QualityCheck" : "Available"))),
             categoryName = bp.Product.Category != null ? bp.Product.Category.Name : "General Steel",
             createdAt = bp.CreatedAt
         });
+    }
+
+    public class UpdateStatusRequest
+    {
+        public string? Status { get; set; }
+        public string? NewLocation { get; set; }
+    }
+
+    [HttpPut("{id:guid}/status")]
+    [Authorize(Roles = $"{RoleNames.Owner},{RoleNames.BranchManager},{RoleNames.SuperAdmin},BranchManager,Cashier")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateStatusRequest request, CancellationToken cancellationToken)
+    {
+        var targetStatus = request?.Status?.Trim() ?? "Available";
+
+        // 1. Try finding BranchProduct by Id or ProductId
+        var bp = await _context.BranchProducts
+            .Include(x => x.Product)
+            .Include(x => x.Branch)
+            .FirstOrDefaultAsync(x => x.Id == id || x.ProductId == id, cancellationToken);
+
+        if (bp != null)
+        {
+            switch (targetStatus.ToLowerInvariant())
+            {
+                case "available":
+                    bp.IsAvailable = true;
+                    bp.IsActive = true;
+                    break;
+                case "reserved":
+                    bp.IsAvailable = false;
+                    bp.IsActive = true;
+                    break;
+                case "qualitycheck":
+                case "quality_check":
+                    bp.IsAvailable = false;
+                    bp.IsActive = true;
+                    break;
+                case "inproduction":
+                case "in_production":
+                    bp.IsAvailable = false;
+                    bp.IsActive = true;
+                    break;
+                case "shipped":
+                    bp.IsAvailable = false;
+                    bp.IsActive = false;
+                    break;
+                default:
+                    bp.IsAvailable = true;
+                    break;
+            }
+
+            bp.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return Ok(new
+            {
+                success = true,
+                id = bp.Id.ToString(),
+                status = targetStatus,
+                isAvailable = bp.IsAvailable,
+                isActive = bp.IsActive,
+                message = $"Status updated to '{targetStatus}' successfully."
+            });
+        }
+
+        // 2. Try finding SteelBatch by Id
+        var sb = await _context.SteelBatches.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (sb != null)
+        {
+            if (Enum.TryParse<Domain.Enums.BatchStatus>(targetStatus, true, out var parsedStatus))
+            {
+                sb.Status = parsedStatus;
+            }
+            if (!string.IsNullOrWhiteSpace(request?.NewLocation))
+            {
+                sb.Location = request.NewLocation;
+            }
+            sb.LastUpdated = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return Ok(new
+            {
+                success = true,
+                id = sb.Id.ToString(),
+                status = sb.Status.ToString(),
+                message = $"Batch status updated to '{sb.Status}' successfully."
+            });
+        }
+
+        return NotFound(new { message = $"Inventory item or branch product '{id}' not found." });
     }
 }
 

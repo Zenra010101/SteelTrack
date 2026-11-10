@@ -228,8 +228,10 @@ export function App() {
           if (res.ok) {
             const serverInstanceId = (await res.json()).instanceId;
             if (serverInstanceId && claim.stt_instance !== serverInstanceId) {
-              // Server restarted — do not show intrusive startup alert
+              // Server restarted — silently invalidate and clear session
               clearAuthState();
+              setUserSession(null);
+              setSessionNotice(null);
               if (!cancelled) setBootState('ready');
               return;
             }
@@ -262,7 +264,11 @@ export function App() {
     const unsubscribe = onSessionEnd((reason) => {
       setUserSession(null);
       setBootState('ended');
-      setSessionNotice(messageForReason(reason));
+      if (reason === 'server_restarted') {
+        setSessionNotice(null);
+      } else {
+        setSessionNotice(messageForReason(reason));
+      }
     });
 
     return () => {
@@ -299,8 +305,25 @@ export function App() {
   };
 
   const handleUpdateStatus = async (id: string, newStatus: BatchStatus) => {
-    await updateBatchStatus(id, { status: newStatus });
-    await loadData();
+    try {
+      await updateBatchStatus(id, { status: newStatus });
+      setBranchProducts((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                status: newStatus,
+                isAvailable: newStatus === 'Available',
+                isActive: newStatus !== 'Shipped',
+              }
+            : item
+        )
+      );
+      await loadData(true);
+    } catch (err: any) {
+      console.error('Failed to update status:', err);
+      alert(`Could not update status: ${err?.message || 'Server error'}`);
+    }
   };
 
   // Render Login Screen if user is not authenticated.
@@ -563,9 +586,9 @@ export function App() {
             />
           )}
 
-          {/* TAB 7: SYSTEM MANAGEMENT (OWNER ONLY) */}
-          {activeTab === 'system' && userSession.role === UserRole.Owner && (
-            <SystemManagementView />
+          {/* TAB 7: SYSTEM & STAFF MANAGEMENT (OWNER & BRANCH MANAGER) */}
+          {activeTab === 'system' && (userSession.role === UserRole.Owner || userSession.role === UserRole.BranchManager) && (
+            <SystemManagementView userSession={userSession} />
           )}
         </div>
 

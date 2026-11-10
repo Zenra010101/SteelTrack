@@ -178,7 +178,7 @@ public class ProductRepository : Repository<Product>, IProductRepository
             query = query.Where(p => p.SupplierId == supplierId.Value);
 
         if (lowStockOnly == true)
-            query = query.Where(p => p.StockQuantity > 0 && p.StockQuantity <= InventoryConstants.LowStockThreshold);
+            query = query.Where(p => p.StockQuantity <= InventoryConstants.LowStockThreshold || p.StockQuantity <= p.ReorderLevel);
 
         if (stockStatus.HasValue)
         {

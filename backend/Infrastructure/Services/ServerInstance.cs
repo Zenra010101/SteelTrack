@@ -115,24 +115,26 @@ public sealed class ServerInstance
         // accepting tokens minted by the process that is gone.
         var rotateOnStartup = jwt.GetValue("RotateOnStartup", true);
 
+        // If rotateOnStartup is true, a fresh GUID is minted for each process lifetime
+        // ensuring all sessions from prior runs are invalidated upon restart.
+        if (rotateOnStartup)
+        {
+            return new ServerInstance(
+                Guid.NewGuid().ToString("N"), secret, issuer, audience, expirationHours,
+                true, null);
+        }
+
         var pinned = jwt["InstanceId"]?.Trim();
         if (!string.IsNullOrWhiteSpace(pinned))
         {
             return new ServerInstance(
                 pinned, secret, issuer, audience, expirationHours,
-                rotateOnStartup, pinned);
+                false, pinned);
         }
 
-        if (!rotateOnStartup)
-        {
-            const string staticId = "static";
-            return new ServerInstance(
-                staticId, secret, issuer, audience, expirationHours,
-                false, null);
-        }
-
+        const string staticId = "static";
         return new ServerInstance(
-            Guid.NewGuid().ToString("N"), secret, issuer, audience, expirationHours,
-            true, null);
+            staticId, secret, issuer, audience, expirationHours,
+            false, null);
     }
 }

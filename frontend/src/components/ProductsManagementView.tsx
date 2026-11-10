@@ -516,7 +516,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
                       borderBottom: '1px solid #E2E8F0',
                       fontSize: '0.88rem',
                       color: '#0F172A',
-                      background: isVeryLowStock ? '#FEF2F2' : isLowStock ? '#FFFBEB' : '#FFFFFF',
+                      background: isOutOfStock ? '#FEF2F2' : isVeryLowStock ? '#FFF1F2' : isLowStock ? '#FFFBEB' : '#FFFFFF',
                     }}
                   >
                     <td style={{ padding: '0.85rem 1rem' }}>

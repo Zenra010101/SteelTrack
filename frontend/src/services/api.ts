@@ -280,7 +280,7 @@ export async function fetchBranchProducts(
 
           createdAt: p.createdAt || new Date().toISOString(),
 
-          status: p.stockQuantity <= 0 ? 'Shipped' : p.stockQuantity <= (p.reorderLevel ?? 10) ? 'QualityCheck' : 'Available',
+          status: p.status || (!p.isActive ? 'Shipped' : (!p.isAvailable ? 'Reserved' : (p.stockQuantity <= 0 ? 'Shipped' : p.stockQuantity <= (p.reorderLevel ?? 10) ? 'QualityCheck' : 'Available'))),
 
         }));
 
@@ -475,35 +475,29 @@ export async function createBatch(dto: CreateSteelBatchDto): Promise<SteelBatch>
 
 
 export async function updateBatchStatus(
-
   id: string,
-
   dto: UpdateBatchStatusDto
-
 ): Promise<SteelBatch | null> {
-
-  const res = await fetch(`${API_BASE_URL}/${id}/status`, {
-
+  let res = await fetch(`/api/branchproducts/${id}/status`, {
     method: 'PUT',
-
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-
     body: JSON.stringify(dto),
-
   });
 
-
-
   if (!res.ok) {
-
-    throw new Error(`Failed to update batch status in database: ${res.statusText}`);
-
+    res = await fetch(`${API_BASE_URL}/${id}/status`, {
+      method: 'PUT',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(dto),
+    });
   }
 
-
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    throw new Error(`Failed to update batch status in database: ${res.statusText} ${errorText}`);
+  }
 
   return await res.json();
-
 }
 
 
@@ -2532,21 +2526,14 @@ export interface StaffUser {
 
 
 export interface CreateStaffUserDto {
-
   email: string;
-
   fullName: string;
-
   password?: string;
-
   roleId?: string;
-
   roleName?: string;
-
   branchName?: string;
-
+  branchId?: string;
   isActive?: boolean;
-
 }
 
 
@@ -2616,27 +2603,19 @@ export async function fetchStaffUsers(search?: string, branchId?: string): Promi
 
 
 export async function createStaffUser(dto: CreateStaffUserDto): Promise<StaffUser> {
-
   const res = await fetch('/api/users', {
-
     method: 'POST',
-
     headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-
     body: JSON.stringify({
-
       email: dto.email,
-
       fullName: dto.fullName,
-
       password: dto.password || 'SteelTrack@2026',
-
-      roleId: dto.roleId || 'role-cashier',
-
+      role: dto.roleName || dto.roleId || 'Cashier',
+      roleName: dto.roleName || dto.roleId || 'Cashier',
+      branchName: dto.branchName,
+      branchId: dto.branchId,
       isActive: dto.isActive !== false,
-
     }),
-
   });
 
 
