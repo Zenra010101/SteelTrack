@@ -109,7 +109,7 @@ public class BranchProductsController : ControllerBase
 
         if (lowStockOnly == true)
         {
-            query = query.Where(bp => bp.Product.StockQuantity <= bp.ReorderLevel);
+            query = query.Where(bp => bp.Product.StockQuantity <= 20 || bp.Product.StockQuantity <= bp.ReorderLevel);
         }
 
         var results = await query

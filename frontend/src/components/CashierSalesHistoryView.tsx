@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Receipt, Printer, Search, Calculator } from 'lucide-react';
+import { Receipt, Printer, Search, Calculator, Download } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { PosTransaction } from '../types/pos';
 import { fetchPosTransactions } from '../services/api';
 import { SalesReportVerificationModal } from './SalesReportVerificationModal';
+import { TableExportButtons } from './TableExportButtons';
+import { printReceiptPdf } from '../utils/tableExport';
 
 interface CashierSalesHistoryViewProps {
   branch: BranchLocation;
@@ -54,9 +56,6 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
     return transactions.reduce((acc, tx) => acc + tx.totalTonnage, 0);
   }, [transactions]);
 
-  const handlePrintReceipt = () => {
-    window.print();
-  };
 
   return (
     <div className="pos-container" style={{ padding: '0 0.5rem' }}>
@@ -138,8 +137,24 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
           </select>
         </div>
 
-        <div style={{ fontSize: '0.85rem', color: '#64748B', display: 'flex', alignItems: 'center' }}>
-          Showing <strong>{filteredTransactions.length}</strong> of {transactions.length} receipts
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '0.85rem', color: '#64748B', display: 'flex', alignItems: 'center' }}>
+            Showing <strong>{filteredTransactions.length}</strong> of {transactions.length} receipts
+          </div>
+          <TableExportButtons
+            filename={`${branch}_Sales_History`}
+            title={`${branch} Branch Sales History & Receipt Journal`}
+            headers={['Invoice #', 'Date & Time', 'Customer Name', 'Items Count', 'Total Tonnage', 'Payment Method', 'Total Amount (PHP)']}
+            rows={filteredTransactions.map((tx) => [
+              tx.invoiceNumber,
+              new Date(tx.createdAt).toLocaleString(),
+              tx.customerName,
+              tx.items?.length || 1,
+              `${tx.totalTonnage.toFixed(2)} Tons`,
+              tx.paymentMethod,
+              `₱${(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0).toLocaleString()}`,
+            ])}
+          />
         </div>
       </div>
 
@@ -207,63 +222,183 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
 
       {/* OFFICIAL REPRINT RECEIPT MODAL */}
       {activeReceipt && (
-        <div className="receipt-modal-overlay">
-          <div className="receipt-paper">
-            <div className="receipt-header">
-              <div className="brand">SteelTrack Philippines</div>
-              <div className="store-sub">{branch} Commercial Retail Hub</div>
-              <div className="tin">TIN: 004-982-120-000 • VAT Registered</div>
-              <div className="contact">Industrial Highway, {branch} City</div>
-              <div className="receipt-title">OFFICIAL CASH INVOICE (REPRINT)</div>
-            </div>
-
-            <div className="receipt-meta">
-              <div>Invoice #: {activeReceipt.invoiceNumber}</div>
-              <div>Date: {new Date(activeReceipt.createdAt).toLocaleString()}</div>
-              <div>Cashier: {cashierName}</div>
-              <div>Customer: {activeReceipt.customerName}</div>
-            </div>
-
-            <div className="receipt-divider" />
-
-            <div className="receipt-items-table">
-              {activeReceipt.items?.map((item, idx) => (
-                <div key={idx} className="receipt-line-item">
-                  <div className="item-name">
-                    {item.grade.replace('_', ' ')} ({item.dimensions})
-                  </div>
-                  <div className="item-calc">
-                    <span>{item.quantityTons}T @ ₱{item.pricePerTonPHP.toLocaleString()}</span>
-                    <span>₱{(item.quantityTons * item.pricePerTonPHP).toLocaleString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="receipt-divider" />
-
-            <div className="receipt-totals">
-              <div className="row">
-                <span>Payment Method:</span>
-                <span>{activeReceipt.paymentMethod}</span>
+        <div
+          className="pos-modal-overlay"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem',
+            overflowY: 'auto',
+          }}
+        >
+          <div
+            className="receipt-card"
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '12px',
+              maxWidth: '460px',
+              width: '100%',
+              padding: '1.75rem',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #E2E8F0',
+              fontFamily: 'JetBrains Mono, monospace',
+            }}
+          >
+            <div className="receipt-header" style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.01em' }}>
+                STEELTRACK PHILIPPINES
               </div>
-              <div className="row grand">
+              <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: 2 }}>
+                {branch} Commercial Retail Hub
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                TIN: 004-982-120-000 • VAT Registered
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                Industrial Highway, {branch} City
+              </div>
+              <div
+                style={{
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  marginTop: '0.65rem',
+                  padding: '0.25rem 0',
+                  borderTop: '1px dashed #CBD5E1',
+                  borderBottom: '1px dashed #CBD5E1',
+                  color: '#0284C7',
+                }}
+              >
+                OFFICIAL CASH INVOICE (REPRINT)
+              </div>
+            </div>
+
+            <div className="receipt-meta" style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.45, marginBottom: '0.75rem' }}>
+              <div><strong>Invoice #:</strong> {activeReceipt.invoiceNumber}</div>
+              <div><strong>Date:</strong> {new Date(activeReceipt.createdAt).toLocaleString()}</div>
+              <div><strong>Cashier:</strong> {cashierName}</div>
+              <div><strong>Customer:</strong> {activeReceipt.customerName || 'Walk-in Client'}</div>
+              {activeReceipt.customerTin && <div><strong>TIN:</strong> {activeReceipt.customerTin}</div>}
+            </div>
+
+            <div className="receipt-divider" style={{ borderTop: '1px dashed #CBD5E1', margin: '0.75rem 0' }} />
+
+            <div className="receipt-items-table" style={{ margin: '0.75rem 0', maxHeight: '200px', overflowY: 'auto' }}>
+              {activeReceipt.items && activeReceipt.items.length > 0 ? (
+                activeReceipt.items.map((item, idx) => {
+                  const displayName = (item.grade || (item as any).productName || 'Steel Product').replace(/_/g, ' ');
+                  const displayDims = item.dimensions || (item as any).sku || 'Standard';
+                  const qty = Number(item.quantityTons ?? (item as any).quantity ?? 1);
+                  const price = Number(item.pricePerTonPHP ?? (item as any).unitPrice ?? 0);
+                  const lineTotal = Number(item.lineTotalPHP ?? (item as any).lineTotal ?? (qty * price));
+
+                  return (
+                    <div
+                      key={idx}
+                      className="receipt-line-item"
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '0.35rem 0',
+                        borderBottom: '1px dashed #F1F5F9',
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      <div className="item-name" style={{ maxWidth: '65%' }}>
+                        <div style={{ fontWeight: 700, color: '#0F172A' }}>{displayName}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{displayDims}</div>
+                      </div>
+                      <div className="item-calc" style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                          {qty}T @ ₱{price.toLocaleString()}
+                        </div>
+                        <div style={{ fontWeight: 700, color: '#0F172A' }}>
+                          ₱{lineTotal.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ padding: '0.75rem', textAlign: 'center', color: '#64748B', fontSize: '0.8rem', background: '#F8FAFC', borderRadius: 4 }}>
+                  Standard Sales Invoice Allocation
+                </div>
+              )}
+            </div>
+
+            <div className="receipt-divider" style={{ borderTop: '1px dashed #CBD5E1', margin: '0.75rem 0' }} />
+
+            <div className="receipt-totals" style={{ fontSize: '0.82rem', lineHeight: 1.5 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+                <span>Payment Method:</span>
+                <span style={{ fontWeight: 600, color: '#0F172A' }}>{activeReceipt.paymentMethod}</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '1rem',
+                  fontWeight: 800,
+                  color: '#0F172A',
+                  borderTop: '1px solid #0F172A',
+                  borderBottom: '1px solid #0F172A',
+                  padding: '0.4rem 0',
+                  marginTop: '0.4rem',
+                }}
+              >
                 <span>TOTAL AMOUNT:</span>
                 <span>₱{(activeReceipt.totalAmountPHP ?? activeReceipt.totalAmountUSD ?? 0).toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="receipt-footer">
+            <div className="receipt-footer" style={{ textAlign: 'center', fontSize: '0.75rem', color: '#64748B', marginTop: '1rem' }}>
               <div>*** DUPLICATE / REPRINT RECORD ***</div>
               <div>Thank you for your valued enterprise partnership!</div>
             </div>
 
-            <div className="receipt-actions no-print">
-              <button className="btn-secondary" onClick={() => setActiveReceipt(null)}>
-                Close
+            <div className="receipt-actions no-print" style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => printReceiptPdf(activeReceipt)}
+                style={{
+                  flex: 1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  background: '#0284C7',
+                  borderColor: '#0284C7',
+                  fontSize: '0.82rem',
+                }}
+              >
+                <Download size={15} /> Download PDF
               </button>
-              <button className="btn-primary" onClick={handlePrintReceipt}>
-                <Printer size={16} /> Print Copy
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => printReceiptPdf(activeReceipt)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.82rem',
+                }}
+              >
+                <Printer size={15} /> Print Copy
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setActiveReceipt(null)}
+                style={{ fontSize: '0.82rem' }}
+              >
+                Close
               </button>
             </div>
           </div>

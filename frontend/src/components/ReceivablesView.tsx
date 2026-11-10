@@ -26,6 +26,7 @@ import {
   fetchReceivableStats,
   recordReceivablePayment,
 } from '../services/api';
+import { TableExportButtons } from './TableExportButtons';
 
 interface ReceivablesViewProps {
   currentBranch?: BranchLocation;
@@ -238,7 +239,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
           />
         </div>
 
-        <div className="filter-group" style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="filter-group" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94A3B8', fontSize: '0.85rem' }}>
             <Filter size={16} /> Aging:
           </div>
@@ -251,6 +252,24 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
             <option value="Days_90_Plus">90+ Days (Credit Blocked)</option>
             <option value="Settled">Fully Settled (₱0 Debt)</option>
           </select>
+
+          <TableExportButtons
+            filename={`Receivables_Aging_${currentBranch || 'All'}`}
+            title="Accounts Receivable & Credit Aging Ledger"
+            headers={['Customer', 'Company', 'TIN', 'Total Outstanding (PHP)', 'Credit Limit (PHP)', 'Current (PHP)', '30d Overdue', '60d Overdue', '90d+ Overdue', 'Standing']}
+            rows={filteredList.map((item) => [
+              item.customerName,
+              item.companyName,
+              item.tin,
+              `₱${item.totalOutstandingPHP.toLocaleString()}`,
+              `₱${item.creditLimitPHP.toLocaleString()}`,
+              `₱${item.currentBalancePHP.toLocaleString()}`,
+              `₱${item.days30BalancePHP.toLocaleString()}`,
+              `₱${item.days60BalancePHP.toLocaleString()}`,
+              `₱${item.days90PlusBalancePHP.toLocaleString()}`,
+              item.status,
+            ])}
+          />
         </div>
       </div>
 

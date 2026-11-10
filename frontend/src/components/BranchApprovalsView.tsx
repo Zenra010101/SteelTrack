@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ClipboardCheck, CheckCircle2, AlertCircle, XCircle, RefreshCw, ShieldCheck } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import { fetchApprovals, reviewApproval, type ApprovalRequestItem } from '../services/api';
+import { TableExportButtons } from './TableExportButtons';
 
 interface BranchApprovalsViewProps {
   branch: BranchLocation;
@@ -134,6 +135,21 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
               </button>
             ))}
           </div>
+
+          <TableExportButtons
+            filename={`Approvals_${branch}_${filterStatus}`}
+            title={`Quality Approvals Ledger (${branch} Branch)`}
+            headers={['Approval #', 'Type', 'Target Reference', 'Details / Notes', 'Requested By', 'Status', 'Date']}
+            rows={approvals.map((a) => [
+              a.id.slice(0, 8),
+              a.type,
+              a.referenceNumber || a.id,
+              a.details || '—',
+              a.requestedBy,
+              a.status,
+              new Date(a.requestedAt).toLocaleDateString(),
+            ])}
+          />
 
           <button
             className="btn-primary"

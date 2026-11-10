@@ -44,6 +44,19 @@ public static class SalesReportPresetResolver
                 fromLocal = firstThisMonth.AddMonths(-1);
                 toLocalInclusive = firstThisMonth.AddDays(-1);
                 break;
+            case "trimester":
+                fromLocal = today.AddMonths(-3);
+                toLocalInclusive = today;
+                break;
+            case "semester":
+                fromLocal = today.AddMonths(-6);
+                toLocalInclusive = today;
+                break;
+            case "yearly":
+            case "year":
+                fromLocal = today.AddMonths(-12);
+                toLocalInclusive = today;
+                break;
             case "custom":
                 if (!customFrom.HasValue || !customTo.HasValue)
                     throw new AppException("Custom range requires from and to dates.");
@@ -82,6 +95,9 @@ public static class SalesReportPresetResolver
                 ? $"This month — {from:MMMM d, yyyy}"
                 : $"This month — {from:MMM d} – {to:MMM d, yyyy}",
             "lastmonth" => $"Last month — {from:MMMM yyyy}",
+            "trimester" => $"Trimester (Past 3 Months) — {from:MMM d, yyyy} – {to:MMM d, yyyy}",
+            "semester" => $"Semester (Past 6 Months) — {from:MMM d, yyyy} – {to:MMM d, yyyy}",
+            "yearly" => $"Yearly (Past 12 Months) — {from:MMM d, yyyy} – {to:MMM d, yyyy}",
             "custom" => from == to
                 ? $"Custom — {from:MMMM d, yyyy}"
                 : $"Custom — {from:MMM d, yyyy} – {to:MMM d, yyyy}",

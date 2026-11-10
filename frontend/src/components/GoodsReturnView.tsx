@@ -25,6 +25,7 @@ import {
   rejectGoodsReturn,
   lookupHeatNumberForReturn,
 } from '../services/api';
+import { TableExportButtons } from './TableExportButtons';
 
 interface GoodsReturnViewProps {
   currentBranch?: BranchLocation;
@@ -275,7 +276,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
           />
         </div>
 
-        <div className="filter-group">
+        <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94A3B8', fontSize: '0.85rem' }}>
             <Filter size={16} /> Status:
           </div>
@@ -285,6 +286,22 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
             <option value="Approved">Approved / Issued CN</option>
             <option value="Rejected">Rejected Returns</option>
           </select>
+
+          <TableExportButtons
+            filename={`Goods_Return_Slips_${currentBranch || 'All'}`}
+            title="Goods Return Slips (GRS) & Exchanges"
+            headers={['GRS Number', 'Invoice Ref', 'Customer', 'Branch', 'Return Amount (PHP)', 'Items Count', 'Status', 'Date']}
+            rows={filteredReturns.map((r) => [
+              r.grsNumber,
+              r.invoiceNumber,
+              r.customerName,
+              r.branch,
+              `₱${Number(r.totalReturnAmount ?? (r as any).totalReturnValuePHP ?? 0).toLocaleString()}`,
+              r.items.length,
+              r.status,
+              new Date(r.createdAt).toLocaleDateString(),
+            ])}
+          />
         </div>
       </div>
 

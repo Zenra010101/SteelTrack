@@ -17,7 +17,7 @@ public class ReportQueryFilter
     public PaymentMethod? PaymentMethod { get; set; }
     public bool IncludeArchived { get; set; }
     public bool IncludeVoided { get; set; }
-    /// <summary>yearly | monthly | custom (default)</summary>
+    /// <summary>daily | monthly | trimester (3 months) | semester (6 months) | yearly (12 months) | custom (default)</summary>
     public string? Period { get; set; }
 }
 

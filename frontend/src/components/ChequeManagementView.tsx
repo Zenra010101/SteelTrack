@@ -12,6 +12,7 @@ import {
 import { BranchLocation } from '../types/auth';
 import type { SaleChequeItem, ChequeStatusType } from '../types/receivables';
 import { fetchCheques, updateChequeStatus } from '../services/api';
+import { TableExportButtons } from './TableExportButtons';
 
 interface ChequeManagementViewProps {
   currentBranch?: BranchLocation;
@@ -116,13 +117,30 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
           ))}
         </div>
 
-        <div className="search-box" style={{ maxWidth: '350px' }}>
-          <Search size={18} style={{ color: '#94A3B8' }} />
-          <input
-            type="text"
-            placeholder="Search cheque #, customer, bank, or invoice..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="search-box" style={{ maxWidth: '320px' }}>
+            <Search size={18} style={{ color: '#94A3B8' }} />
+            <input
+              type="text"
+              placeholder="Search cheque #, customer, bank, or invoice..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <TableExportButtons
+            filename={`Cheque_Register_${currentBranch || 'All'}`}
+            title="Post-Dated Cheque Register & Status Journal"
+            headers={['Cheque #', 'Bank Name', 'Customer Account', 'Invoice Ref', 'Amount (PHP)', 'Maturity Date', 'Status']}
+            rows={filteredCheques.map((c) => [
+              c.chequeNumber,
+              c.bankName,
+              c.customerName,
+              c.invoiceNumber,
+              `₱${c.amountPHP.toLocaleString()}`,
+              new Date(c.maturityDate).toLocaleDateString(),
+              c.status,
+            ])}
           />
         </div>
       </div>

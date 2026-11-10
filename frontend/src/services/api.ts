@@ -552,13 +552,13 @@ export async function fetchTransfers(branch?: BranchLocation | 'All' | string): 
 
           status: (t.status === 'Pending_Approval' || t.status === 'Pending' ? 'Pending' :
 
-                   t.status === 'In_Transit' || t.status === 'InTransit' ? 'InTransit' :
+            t.status === 'In_Transit' || t.status === 'InTransit' ? 'InTransit' :
 
-                   t.status === 'Approved' ? 'Approved' :
+              t.status === 'Approved' ? 'Approved' :
 
-                   t.status === 'Completed' ? 'Completed' :
+                t.status === 'Completed' ? 'Completed' :
 
-                   t.status === 'Rejected' ? 'Rejected' : t.status) as TransferStatus,
+                  t.status === 'Rejected' ? 'Rejected' : t.status) as TransferStatus,
 
           requestedBy: t.requestedBy,
 
@@ -786,23 +786,23 @@ export async function fetchPosTransactions(branch?: BranchLocation | 'All' | str
         return {
           id: s.id,
           invoiceNumber: s.saleNumber || `INV-${s.id?.slice(0, 8)}`,
-          branch: (s.branch as BranchLocation) || branch || BranchLocation.Davao,
+          branch: ((s.branch || (branch && branch !== 'All' ? branch : undefined) || BranchLocation.Davao) as BranchLocation),
           cashierName: s.cashierName || s.userName || 'Cashier Terminal',
           customerName: s.customerName || 'Walk-in Client',
           customerTin: s.customerTin,
           items: Array.isArray(s.items)
             ? s.items.map((it: any) => ({
-                id: it.id,
-                batchId: it.productBatchId || it.batchId || it.productId,
-                heatNumber: it.batchCode || it.heatNumber || 'HT-N/A',
-                grade: it.productName || 'A36_Structural',
-                dimensions: it.dimensions || 'Standard',
-                location: 'Main Yard',
-                availableTons: Number(it.quantity || 1),
-                quantityTons: Number(it.weightInTons || it.quantity || 1),
-                pricePerTonPHP: Number(it.sellingPriceAtSale || it.unitPrice || 0),
-                lineTotalPHP: Number(it.lineTotal || 0),
-              }))
+              id: it.id,
+              batchId: it.productBatchId || it.batchId || it.productId,
+              heatNumber: it.batchCode || it.heatNumber || 'HT-N/A',
+              grade: it.productName || 'A36_Structural',
+              dimensions: it.dimensions || 'Standard',
+              location: 'Main Yard',
+              availableTons: Number(it.quantity || 1),
+              quantityTons: Number(it.weightInTons || it.quantity || 1),
+              pricePerTonPHP: Number(it.sellingPriceAtSale || it.unitPrice || 0),
+              lineTotalPHP: Number(it.lineTotal || 0),
+            }))
             : [],
           totalTonnage: Number(totalTons.toFixed(2)),
           subtotalPHP: Number(s.subTotal || s.totalAmount || 0),
@@ -884,8 +884,8 @@ export async function processPosSale(
     amountPaid: isSplit
       ? (dto.amountTenderedPHP ?? dto.totalAmountPHP)
       : dto.paymentMethod === 'Cash'
-      ? (dto.amountTenderedPHP ?? dto.totalAmountPHP)
-      : dto.totalAmountPHP,
+        ? (dto.amountTenderedPHP ?? dto.totalAmountPHP)
+        : dto.totalAmountPHP,
     changeAmount: dto.changeDuePHP ?? 0,
     paymentMethod: isSplit ? 5 : paymentMethodInt,
     notes: dto.referenceNumber ? `Ref: ${dto.referenceNumber}` : undefined,
@@ -935,11 +935,12 @@ export async function processPosSale(
     let parsedMessage = errorText;
     try {
       const errJson = JSON.parse(errorText);
-      parsedMessage = errJson.message || errJson.errors || errorText;
+      const errList = Array.isArray(errJson.errors) ? errJson.errors.filter(Boolean).join('; ') : errJson.errors;
+      parsedMessage = errJson.message || errList || errJson.title || errorText;
     } catch {
       // keep errorText
     }
-    throw new Error(`Failed to process sale in database: ${parsedMessage}`);
+    throw new Error(parsedMessage);
   }
 
   const createdSale = await res.json();
@@ -1257,17 +1258,17 @@ export type LstmForecastResult =
 
   | {
 
-      ok: false;
+    ok: false;
 
-      kind: LstmForecastFailureKind;
+    kind: LstmForecastFailureKind;
 
-      status?: number;
+    status?: number;
 
-      message: string;
+    message: string;
 
-      reason?: string;
+    reason?: string;
 
-    };
+  };
 
 
 
@@ -1625,27 +1626,27 @@ export async function fetchReceivables(branch?: BranchLocation | 'All' | string)
 
             ? r.payments.map((p: any) => ({
 
-                id: p.id,
+              id: p.id,
 
-                customerReceivableId: p.customerReceivableId || r.id,
+              customerReceivableId: p.customerReceivableId || r.id,
 
-                amount: Number(p.amount || 0),
+              amount: Number(p.amount || 0),
 
-                balanceBefore: Number(p.balanceBefore || 0),
+              balanceBefore: Number(p.balanceBefore || 0),
 
-                balanceAfter: Number(p.balanceAfter || 0),
+              balanceAfter: Number(p.balanceAfter || 0),
 
-                paymentDate: p.paymentDate || p.createdAt,
+              paymentDate: p.paymentDate || p.createdAt,
 
-                reference: p.reference,
+              reference: p.reference,
 
-                paymentMethod: p.paymentMethod || 'Cash',
+              paymentMethod: p.paymentMethod || 'Cash',
 
-                notes: p.notes,
+              notes: p.notes,
 
-                recordedByName: p.recordedByName || 'Accounting',
+              recordedByName: p.recordedByName || 'Accounting',
 
-              }))
+            }))
 
             : [],
 
@@ -1986,29 +1987,29 @@ export async function fetchGoodsReturns(branch?: BranchLocation | 'All' | string
 
             ? g.items.map((it: any, idx: number) => ({
 
-                id: it.id || `grs-item-${idx}`,
+              id: it.id || `grs-item-${idx}`,
 
-                returnSlipId: g.id,
+              returnSlipId: g.id,
 
-                batchId: it.batchId,
+              batchId: it.batchId,
 
-                heatNumber: it.heatNumber,
+              heatNumber: it.heatNumber,
 
-                grade: it.grade,
+              grade: it.grade,
 
-                dimensions: it.dimensions,
+              dimensions: it.dimensions,
 
-                quantityReturnedTons: Number(it.quantityReturnedTons || 0),
+              quantityReturnedTons: Number(it.quantityReturnedTons || 0),
 
-                unitPricePerTonPHP: Number(it.unitPricePerTonPHP || 0),
+              unitPricePerTonPHP: Number(it.unitPricePerTonPHP || 0),
 
-                subtotalPHP: Number(it.subtotalPHP || 0),
+              subtotalPHP: Number(it.subtotalPHP || 0),
 
-                reason: it.reason || 'Specification Discrepancy',
+              reason: it.reason || 'Specification Discrepancy',
 
-                restockEligible: Boolean(it.restockEligible),
+              restockEligible: Boolean(it.restockEligible),
 
-              }))
+            }))
 
             : [],
 
@@ -2958,25 +2959,25 @@ export async function fetchSuppliers(
 
             ? s.contacts.map((c: any) => ({
 
-                id: c.id,
+              id: c.id,
 
-                supplierId: s.id,
+              supplierId: s.id,
 
-                contactPerson: c.name || c.contactPerson || s.contactPerson || 'Sales Contact',
+              contactPerson: c.name || c.contactPerson || s.contactPerson || 'Sales Contact',
 
-                designation: c.designation || 'Export Sales',
+              designation: c.designation || 'Export Sales',
 
-                phone: c.phone || s.phone || '',
+              phone: c.phone || s.phone || '',
 
-                email: c.email || s.email || '',
+              email: c.email || s.email || '',
 
-                isPrimary: Boolean(c.isPrimary ?? true),
+              isPrimary: Boolean(c.isPrimary ?? true),
 
-              }))
+            }))
 
             : s.contactPerson
 
-            ? [
+              ? [
 
                 {
 
@@ -2998,25 +2999,25 @@ export async function fetchSuppliers(
 
               ]
 
-            : [],
+              : [],
 
           attachments: Array.isArray(s.attachments)
 
             ? s.attachments.map((a: any) => ({
 
-                id: a.id,
+              id: a.id,
 
-                supplierId: s.id,
+              supplierId: s.id,
 
-                fileName: a.fileName || 'Mill_Test_Certificate.pdf',
+              fileName: a.fileName || 'Mill_Test_Certificate.pdf',
 
-                fileType: a.fileType || 'Mill_Test_Certificate',
+              fileType: a.fileType || 'Mill_Test_Certificate',
 
-                uploadDate: a.uploadDate || a.createdAt || new Date().toISOString().split('T')[0],
+              uploadDate: a.uploadDate || a.createdAt || new Date().toISOString().split('T')[0],
 
-                fileUrl: a.fileUrl || '#',
+              fileUrl: a.fileUrl || '#',
 
-              }))
+            }))
 
             : [],
 

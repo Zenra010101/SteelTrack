@@ -17,7 +17,7 @@ public static class StockStatusHelper
     {
         StockStatus.InStock => "In Stock",
         StockStatus.LowStock => "Low Stock",
-        StockStatus.Critical => "Critical",
+        StockStatus.Critical => "Very Low Stock",
         StockStatus.OutOfStock => "Out of Stock",
         _ => "Unknown"
     };

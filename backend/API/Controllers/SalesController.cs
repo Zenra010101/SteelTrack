@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using SteelTrack.Application.Common;
 using SteelTrack.Application.DTOs.Sales;
+using SteelTrack.Application.Exceptions;
 using SteelTrack.Application.Interfaces;
 using SteelTrack.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace SteelTrack.Api.Controllers;
 
@@ -78,8 +80,25 @@ public class SalesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ApiResponse<SaleDto>>> Create([FromBody] CreateSaleRequest request, CancellationToken cancellationToken)
     {
-        var sale = await _saleService.CreateAsync(request, UserId, cancellationToken);
-        return Ok(ApiResponse<SaleDto>.Ok(sale, "Sale completed"));
+        try
+        {
+            var sale = await _saleService.CreateAsync(request, UserId, cancellationToken);
+            return Ok(ApiResponse<SaleDto>.Ok(sale, "Sale completed"));
+        }
+        catch (AppException ex)
+        {
+            return BadRequest(ApiResponse<SaleDto>.Fail(ex.Message));
+        }
+        catch (DbUpdateException dbEx)
+        {
+            var detail = dbEx.InnerException?.Message ?? dbEx.Message;
+            return BadRequest(ApiResponse<SaleDto>.Fail($"Database constraint error during checkout: {detail}"));
+        }
+        catch (Exception ex)
+        {
+            var detail = ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, ApiResponse<SaleDto>.Fail($"Transaction processing error: {detail}"));
+        }
     }
 
     [HttpPost("{id:guid}/void")]

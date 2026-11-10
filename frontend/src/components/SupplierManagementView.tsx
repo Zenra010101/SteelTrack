@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { SupplierMaster, SupplierAttachment } from '../types/suppliers';
 import { fetchSuppliers, createSupplier } from '../services/api';
+import { TableExportButtons } from './TableExportButtons';
 
 interface CountryOption {
   name: string;
@@ -224,9 +225,9 @@ export function SupplierManagementView() {
         </button>
       </div>
 
-      {/* SEARCH BAR */}
-      <div className="controls-bar" style={{ marginBottom: '1rem' }}>
-        <div className="search-box" style={{ maxWidth: '450px' }}>
+      {/* SEARCH BAR & EXPORT */}
+      <div className="controls-bar" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div className="search-box" style={{ maxWidth: '400px', flex: 1 }}>
           <Search size={18} style={{ color: '#94A3B8' }} />
           <input
             type="text"
@@ -235,6 +236,23 @@ export function SupplierManagementView() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+
+        <TableExportButtons
+          filename="SteelTrack_Suppliers_Directory"
+          title="Supplier Master Directory & Mill Certifications"
+          headers={['Supplier Code', 'Company Name', 'Country of Origin', 'TIN', 'Contact Person', 'Email', 'Phone', 'Rating', 'Payment Terms']}
+          rows={filteredSuppliers.map((s) => [
+            s.supplierCode,
+            s.companyName,
+            s.countryOfOrigin,
+            s.tin,
+            s.contacts?.[0]?.contactPerson || '—',
+            s.contacts?.[0]?.email || '—',
+            s.contacts?.[0]?.phone || '—',
+            `${s.ratingScore}/5`,
+            `${s.paymentTermsDays} Days`,
+          ])}
+        />
       </div>
 
       {/* SUPPLIER TABLE WITH WHITE BACKGROUND */}

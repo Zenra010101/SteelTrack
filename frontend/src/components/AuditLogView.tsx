@@ -14,6 +14,7 @@ import {
   Printer,
 } from 'lucide-react';
 import { getAuthHeaders } from '../services/api';
+import { TableExportButtons } from './TableExportButtons';
 
 export interface AuditRecord {
   id: string;
@@ -303,27 +304,42 @@ export function AuditLogView() {
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <span style={{ color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600 }}>Status:</span>
-          {(['All', 'SUCCESS', 'WARNING', 'FAILED'] as const).map((st) => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              style={{
-                background: statusFilter === st ? '#334155' : 'transparent',
-                color: statusFilter === st ? '#F8FAFC' : '#94A3B8',
-                border: '1px solid #475569',
-                padding: '0.3rem 0.65rem',
-                borderRadius: '4px',
-                fontSize: '0.78rem',
-                cursor: 'pointer',
-                fontWeight: statusFilter === st ? 700 : 500,
-              }}
-            >
-              {st}
-            </button>
-          ))}
-        </div>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600 }}>Status:</span>
+            {(['All', 'SUCCESS', 'WARNING', 'FAILED'] as const).map((st) => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                style={{
+                  background: statusFilter === st ? '#334155' : 'transparent',
+                  color: statusFilter === st ? '#F8FAFC' : '#94A3B8',
+                  border: '1px solid #475569',
+                  padding: '0.3rem 0.65rem',
+                  borderRadius: '4px',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  fontWeight: statusFilter === st ? 700 : 500,
+                }}
+              >
+                {st}
+              </button>
+            ))}
+
+            <TableExportButtons
+              filename={`Audit_Logs_${activeTab}`}
+              title={`Compliance Audit Trail (${activeTab})`}
+              headers={['Timestamp', 'Operator', 'Role / Email', 'Branch & IP', 'Action', 'Target Entity', 'Status']}
+              rows={filteredLogs.map((l) => [
+                new Date(l.timestamp).toLocaleString(),
+                l.userName,
+                l.userEmail || l.userRole,
+                `${l.branch} • ${l.ipAddress}`,
+                l.action,
+                l.entityName ? `${l.entityName} (#${l.entityId})` : (l.details || '—'),
+                l.status,
+              ])}
+            />
+          </div>
       </div>
 
       {/* AUDIT LOG TABLE */}

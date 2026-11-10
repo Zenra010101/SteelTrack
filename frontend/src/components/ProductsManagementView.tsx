@@ -23,6 +23,7 @@ import {
   fetchBranches,
   type CategoryItem,
 } from '../services/api';
+import { TableExportButtons } from './TableExportButtons';
 
 interface ProductsManagementViewProps {
   userSession?: UserSession;
@@ -313,7 +314,8 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
 
   // Metrics
   const totalProducts = products.length;
-  const lowStockCount = products.filter((p) => p.stockQuantity <= p.reorderLevel).length;
+  const veryLowStockCount = products.filter((p) => p.stockQuantity > 0 && p.stockQuantity < 10).length;
+  const lowStockCount = products.filter((p) => p.stockQuantity >= 10 && (p.stockQuantity <= 20 || p.stockQuantity <= p.reorderLevel)).length;
   const totalStockUnits = products.reduce((acc, p) => acc + p.stockQuantity, 0);
   const totalAssetValuePHP = products.reduce((acc, p) => acc + p.stockQuantity * p.costPrice, 0);
 
@@ -330,13 +332,34 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
           </p>
         </div>
 
-        <button
-          className="btn-primary"
-          onClick={handleOpenAddModal}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.1rem' }}
-        >
-          <Plus size={16} /> Add Catalog Product
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <TableExportButtons
+            filename="SteelTrack_Products_Catalog"
+            title="Products Master Catalog & Inventory"
+            headers={['SKU', 'Barcode', 'Product Name', 'Category', 'Grade', 'Dimensions', 'Selling Price (PHP)', 'Cost Price (PHP)', 'Stock Quantity', 'Reorder Level', 'Status']}
+            rows={products.map((p) => [
+              p.sku,
+              p.barcode || '—',
+              p.name,
+              p.categoryName || 'General',
+              p.grade || 'Standard',
+              p.size || p.thickness || p.length || 'Standard',
+              `₱${p.unitPrice.toLocaleString()}`,
+              `₱${p.costPrice.toLocaleString()}`,
+              p.stockQuantity,
+              p.reorderLevel,
+              p.isActive ? 'Active' : 'Inactive',
+            ])}
+          />
+
+          <button
+            className="btn-primary"
+            onClick={handleOpenAddModal}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.1rem' }}
+          >
+            <Plus size={16} /> Add Catalog Product
+          </button>
+        </div>
       </div>
 
       {/* METRIC OVERVIEW CARDS */}
@@ -353,15 +376,16 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
           </div>
         </div>
 
-        <div style={{ background: '#FFFFFF', padding: '1.1rem', borderRadius: '10px', border: lowStockCount > 0 ? '1px solid #FEF3C7' : '1px solid #E2E8F0' }}>
-          <div style={{ color: lowStockCount > 0 ? '#D97706' : '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <AlertTriangle size={15} color={lowStockCount > 0 ? '#D97706' : '#475569'} /> Low Stock Triggered
+        <div style={{ background: '#FFFFFF', padding: '1.1rem', borderRadius: '10px', border: veryLowStockCount > 0 ? '1px solid #FECACA' : lowStockCount > 0 ? '1px solid #FEF3C7' : '1px solid #E2E8F0' }}>
+          <div style={{ color: veryLowStockCount > 0 ? '#DC2626' : lowStockCount > 0 ? '#D97706' : '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <AlertTriangle size={15} color={veryLowStockCount > 0 ? '#DC2626' : lowStockCount > 0 ? '#D97706' : '#475569'} /> Stock Threshold Alerts
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: lowStockCount > 0 ? '#D97706' : '#0F172A', marginTop: '0.35rem' }}>
-            {lowStockCount}
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: veryLowStockCount > 0 ? '#DC2626' : lowStockCount > 0 ? '#D97706' : '#0F172A', marginTop: '0.35rem' }}>
+            {veryLowStockCount + lowStockCount}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.2rem' }}>
-            Inventory at or below safety reorder level
+            {veryLowStockCount > 0 && <span style={{ color: '#DC2626', fontWeight: 700 }}>{veryLowStockCount} Very Low (&lt;10) • </span>}
+            {lowStockCount} Low (10–20)
           </div>
         </div>
 
@@ -481,11 +505,20 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
               </tr>
             ) : (
               products.map((p) => {
-                const isLowStock = p.stockQuantity <= p.reorderLevel;
-                const isOutOfStock = p.stockQuantity === 0;
+                const isOutOfStock = p.stockQuantity <= 0;
+                const isVeryLowStock = !isOutOfStock && p.stockQuantity < 10;
+                const isLowStock = !isOutOfStock && !isVeryLowStock && (p.stockQuantity <= 20 || p.stockQuantity <= p.reorderLevel);
 
                 return (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #E2E8F0', fontSize: '0.88rem', color: '#0F172A', background: isLowStock ? '#FFFBEB' : '#FFFFFF' }}>
+                  <tr
+                    key={p.id}
+                    style={{
+                      borderBottom: '1px solid #E2E8F0',
+                      fontSize: '0.88rem',
+                      color: '#0F172A',
+                      background: isVeryLowStock ? '#FEF2F2' : isLowStock ? '#FFFBEB' : '#FFFFFF',
+                    }}
+                  >
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <div style={{ fontWeight: 700, color: '#0284C7', fontFamily: 'JetBrains Mono, monospace' }}>
                         {p.sku}
@@ -523,15 +556,17 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
 
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ fontWeight: 800, fontSize: '0.95rem', color: isOutOfStock ? '#DC2626' : isLowStock ? '#D97706' : '#059669' }}>
+                        <span style={{ fontWeight: 800, fontSize: '0.95rem', color: isOutOfStock ? '#DC2626' : isVeryLowStock ? '#DC2626' : isLowStock ? '#D97706' : '#059669' }}>
                           {p.stockQuantity}
                         </span>
                         <span style={{ color: '#64748B', fontSize: '0.75rem' }}>/ Min: {p.reorderLevel}</span>
                       </div>
                       {isOutOfStock ? (
-                        <span style={{ fontSize: '0.7rem', color: '#DC2626', fontWeight: 700 }}>Out of Stock</span>
+                        <span style={{ fontSize: '0.7rem', color: '#DC2626', fontWeight: 700, background: '#FEE2E2', padding: '0.1rem 0.35rem', borderRadius: 3 }}>Out of Stock</span>
+                      ) : isVeryLowStock ? (
+                        <span style={{ fontSize: '0.7rem', color: '#DC2626', fontWeight: 700, background: '#FEE2E2', padding: '0.1rem 0.35rem', borderRadius: 3 }}>Very Low (&lt;10)</span>
                       ) : isLowStock ? (
-                        <span style={{ fontSize: '0.7rem', color: '#D97706', fontWeight: 700 }}>Reorder Alert</span>
+                        <span style={{ fontSize: '0.7rem', color: '#D97706', fontWeight: 700, background: '#FEF3C7', padding: '0.1rem 0.35rem', borderRadius: 3 }}>Low (10–20)</span>
                       ) : (
                         <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>Adequate Stock</span>
                       )}

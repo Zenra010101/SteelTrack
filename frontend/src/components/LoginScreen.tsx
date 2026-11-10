@@ -8,7 +8,7 @@ interface LoginScreenProps {
   notice?: string | null;
 }
 
-export function LoginScreen({ onLogin, notice }: LoginScreenProps) {
+export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [redirectNotice, setRedirectNotice] = useState<string | null>(null);
@@ -159,12 +159,7 @@ export function LoginScreen({ onLogin, notice }: LoginScreenProps) {
             </div>
           )}
 
-          {notice && (
-            <div className="login-auto-notice" style={{ background: '#FFFBEB', borderColor: '#FDE68A', color: '#92400E', marginBottom: '1rem' }}>
-              <AlertCircle size={16} />
-              <span>{notice}</span>
-            </div>
-          )}
+
 
           {errorMessage && (
             <div className="login-auto-notice" style={{ background: '#FEF2F2', borderColor: '#FECACA', color: '#B91C1C', marginBottom: '1rem' }}>

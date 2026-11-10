@@ -14,19 +14,43 @@ internal static class ReportFilterNormalizer
         DateTime toExclusive;
         var todayLocal = SalesReportTimeZone.ToLocal(DateTime.UtcNow).Date;
 
-        if (string.Equals(filter.Period, "yearly", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(filter.Period, "yearly", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(filter.Period, "year", StringComparison.OrdinalIgnoreCase))
         {
-            var year = filter.From?.Year ?? todayLocal.Year;
-            var fromLocal = new DateTime(year, 1, 1);
+            var anchor = filter.To?.Date ?? todayLocal;
+            var fromLocal = filter.From?.Date ?? anchor.AddMonths(-12);
             fromDate = SalesReportTimeZone.LocalDateStartToUtc(fromLocal);
-            toExclusive = SalesReportTimeZone.LocalDateStartToUtc(fromLocal.AddYears(1));
+            toExclusive = SalesReportTimeZone.LocalDateStartToUtc(anchor.AddDays(1));
         }
-        else if (string.Equals(filter.Period, "monthly", StringComparison.OrdinalIgnoreCase))
+        else if (string.Equals(filter.Period, "semester", StringComparison.OrdinalIgnoreCase))
+        {
+            var anchor = filter.To?.Date ?? todayLocal;
+            var fromLocal = filter.From?.Date ?? anchor.AddMonths(-6);
+            fromDate = SalesReportTimeZone.LocalDateStartToUtc(fromLocal);
+            toExclusive = SalesReportTimeZone.LocalDateStartToUtc(anchor.AddDays(1));
+        }
+        else if (string.Equals(filter.Period, "trimester", StringComparison.OrdinalIgnoreCase))
+        {
+            var anchor = filter.To?.Date ?? todayLocal;
+            var fromLocal = filter.From?.Date ?? anchor.AddMonths(-3);
+            fromDate = SalesReportTimeZone.LocalDateStartToUtc(fromLocal);
+            toExclusive = SalesReportTimeZone.LocalDateStartToUtc(anchor.AddDays(1));
+        }
+        else if (string.Equals(filter.Period, "monthly", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(filter.Period, "month", StringComparison.OrdinalIgnoreCase))
         {
             var anchor = filter.From?.Date ?? todayLocal;
             var fromLocal = new DateTime(anchor.Year, anchor.Month, 1);
             fromDate = SalesReportTimeZone.LocalDateStartToUtc(fromLocal);
             toExclusive = SalesReportTimeZone.LocalDateStartToUtc(fromLocal.AddMonths(1));
+        }
+        else if (string.Equals(filter.Period, "daily", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(filter.Period, "day", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(filter.Period, "today", StringComparison.OrdinalIgnoreCase))
+        {
+            var anchor = filter.From?.Date ?? todayLocal;
+            fromDate = SalesReportTimeZone.LocalDateStartToUtc(anchor);
+            toExclusive = SalesReportTimeZone.LocalDateStartToUtc(anchor.AddDays(1));
         }
         else
         {

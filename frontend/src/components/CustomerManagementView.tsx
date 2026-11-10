@@ -17,6 +17,7 @@ import {
   updateCustomerCreditLimit,
   updateCustomerStatus,
 } from '../services/api';
+import { TableExportButtons } from './TableExportButtons';
 
 export function CustomerManagementView() {
   const [customers, setCustomers] = useState<CustomerMaster[]>([]);
@@ -154,7 +155,7 @@ export function CustomerManagementView() {
           />
         </div>
 
-        <div className="filter-group">
+        <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94A3B8', fontSize: '0.85rem' }}>
             <Filter size={16} /> Status:
           </div>
@@ -164,6 +165,23 @@ export function CustomerManagementView() {
             <option value="On Hold">On Hold / Disabled</option>
             <option value="Blocked">Credit Blocked</option>
           </select>
+
+          <TableExportButtons
+            filename="SteelTrack_Customers_Directory"
+            title="Customer Master Accounts & Credit Directory"
+            headers={['Customer Code', 'Customer Name', 'Company', 'TIN', 'Contact Person', 'Phone', 'Branch', 'Credit Limit (PHP)', 'Status']}
+            rows={filteredCustomers.map((c) => [
+              c.customerCode,
+              c.customerName,
+              c.companyName,
+              c.tin,
+              c.contactPerson,
+              c.contactPhone,
+              c.assignedBranch,
+              `₱${c.creditLimitPHP.toLocaleString()}`,
+              c.status,
+            ])}
+          />
         </div>
       </div>
 

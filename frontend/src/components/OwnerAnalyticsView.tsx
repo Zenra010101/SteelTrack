@@ -1,14 +1,17 @@
 import { useEffect, useState, useMemo } from 'react';
-import { BarChart3, TrendingUp, Building2, Layers, RefreshCw } from 'lucide-react';
+import { BarChart3, TrendingUp, Building2, Layers, RefreshCw, Calendar } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import { fetchInventory, fetchPosTransactions, fetchBranches, fetchDashboardMetrics } from '../services/api';
+import { isDateInTimeframe, type RevenueTimeframe } from './DashboardView';
+import { TableExportButtons } from './TableExportButtons';
 
 export function OwnerAnalyticsView() {
   const [loading, setLoading] = useState(true);
   const [liveBatches, setLiveBatches] = useState<any[]>([]);
   const [liveSales, setLiveSales] = useState<any[]>([]);
   const [, setLiveBranches] = useState<any[]>([]);
-  const [dashboardMetrics, setDashboardMetrics] = useState<any>(null);
+  const [, setDashboardMetrics] = useState<any>(null);
+  const [timeframe, setTimeframe] = useState<RevenueTimeframe>('Monthly');
 
   const loadData = async () => {
     setLoading(true);
@@ -43,9 +46,16 @@ export function OwnerAnalyticsView() {
       BranchLocation.Cagayan,
     ];
 
+    // Filter sales according to selected timeframe
+    const filteredSales = liveSales.filter((s) => isDateInTimeframe(s.createdAt, timeframe));
+
     const results = locations.map((loc) => {
       const batches = liveBatches.filter((b) => b.branch === loc);
-      const sales = liveSales.filter((s) => s.branch === loc);
+      const sales = filteredSales.filter((s) => {
+        const bName = (s.branch || '').toLowerCase();
+        const lName = loc.toLowerCase();
+        return bName.includes(lName) || lName.includes(bName);
+      });
 
       const tonnage = batches.reduce((sum, b) => sum + (Number(b.weightInTons) || 0), 0);
       const revenue = sales.reduce((sum, s) => sum + (Number(s.totalAmountPHP) || 0), 0);
@@ -55,7 +65,8 @@ export function OwnerAnalyticsView() {
         name: loc,
         tonnage: tonnage > 0 ? Number(tonnage.toFixed(1)) : (loc === BranchLocation.Cagayan ? 168.5 : loc === BranchLocation.Davao ? 124.0 : loc === BranchLocation.Cebu ? 89.2 : 62.1),
         activeBatches: activeBatches > 0 ? activeBatches : (loc === BranchLocation.Cagayan ? 24 : loc === BranchLocation.Davao ? 18 : loc === BranchLocation.Cebu ? 12 : 9),
-        revenuePHP: revenue > 0 ? revenue : (loc === BranchLocation.Cagayan ? 143225 : loc === BranchLocation.Davao ? 105400 : loc === BranchLocation.Cebu ? 75820 : 52785),
+        revenuePHP: revenue,
+        salesCount: sales.length,
       };
     });
 
@@ -64,10 +75,10 @@ export function OwnerAnalyticsView() {
       ...r,
       percentage: Math.round((r.tonnage / totalT) * 100),
     }));
-  }, [liveBatches, liveSales]);
+  }, [liveBatches, liveSales, timeframe]);
 
   const totalTonnage = branchData.reduce((sum, b) => sum + b.tonnage, 0);
-  const totalRevenue = dashboardMetrics?.totalRevenue || branchData.reduce((sum, b) => sum + b.revenuePHP, 0);
+  const totalRevenue = branchData.reduce((sum, b) => sum + b.revenuePHP, 0);
 
   return (
     <div className="analytics-container">
@@ -78,18 +89,65 @@ export function OwnerAnalyticsView() {
           </div>
           <h2 className="section-title">Cross-Branch Analytics & Revenue Breakdown</h2>
           <p className="section-sub">
-            Real-time multi-branch inventory distribution, total tonnage, and sales metrics synchronized with Supabase PostgreSQL database.
+            Real-time multi-branch inventory distribution, total tonnage, and sales metrics synchronized across all facilities.
           </p>
         </div>
-        <button
-          onClick={loadData}
-          className="btn btn-secondary"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
-          disabled={loading}
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          <span>{loading ? 'Syncing...' : 'Sync Data'}</span>
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button
+            onClick={loadData}
+            className="btn btn-secondary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+            disabled={loading}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <span>{loading ? 'Syncing...' : 'Sync Data'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* TIMEFRAME SELECTOR */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          background: '#FFFFFF',
+          padding: '0.75rem 1.25rem',
+          borderRadius: 8,
+          border: '1px solid #E2E8F0',
+          marginBottom: '1.25rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.88rem', fontWeight: 600, color: '#334155' }}>
+          <Calendar size={16} color="#0284C7" /> Timeframe Scope:
+          <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 400 }}>
+            ({timeframe === 'Daily' ? 'Today 00:00 to now' : timeframe === 'Monthly' ? 'Current Month' : timeframe === 'Trimester' ? 'Past 3 Months' : timeframe === 'Semester' ? 'Past 6 Months' : 'Past 12 Months'})
+          </span>
+        </div>
+
+        <div style={{ display: 'inline-flex', background: '#F1F5F9', padding: '0.2rem', borderRadius: '6px', gap: '0.2rem' }}>
+          {(['Daily', 'Monthly', 'Trimester', 'Semester', 'Yearly'] as const).map((tf) => (
+            <button
+              key={tf}
+              type="button"
+              onClick={() => setTimeframe(tf)}
+              style={{
+                border: 'none',
+                background: timeframe === tf ? '#0284C7' : 'transparent',
+                color: timeframe === tf ? '#FFFFFF' : '#475569',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '5px',
+                fontSize: '0.8rem',
+                fontWeight: timeframe === tf ? 700 : 500,
+                cursor: 'pointer',
+              }}
+            >
+              {tf}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Top Summary Cards */}
@@ -109,9 +167,9 @@ export function OwnerAnalyticsView() {
 
         <div className="metric-card">
           <div>
-            <div className="metric-label">Network Inventory Valuation</div>
+            <div className="metric-label">Period Network Revenue ({timeframe})</div>
             <div className="metric-value">₱{totalRevenue.toLocaleString()}</div>
-            <div className="metric-sub">Based on live transaction records & catalog pricing</div>
+            <div className="metric-sub">Live POS and commercial transaction settlement</div>
           </div>
           <div className="metric-icon-box green">
             <TrendingUp size={22} />
@@ -134,8 +192,25 @@ export function OwnerAnalyticsView() {
 
       {/* Branch Breakdown Table */}
       <div className="breakdown-card" style={{ marginTop: '1.5rem' }}>
-        <h3 className="card-title">Regional Branch Performance & Stock Distribution</h3>
-        <p className="card-sub">Real-time tonnage capacity, inventory count, and revenue contribution per operational hub.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <h3 className="card-title" style={{ margin: 0 }}>Regional Branch Performance & Stock Distribution</h3>
+            <p className="card-sub" style={{ margin: '0.2rem 0 0 0' }}>Real-time tonnage capacity, inventory count, and revenue contribution per operational hub.</p>
+          </div>
+          <TableExportButtons
+            filename={`Owner_Analytics_${timeframe}`}
+            title={`Regional Branch Analytics (${timeframe})`}
+            headers={['Branch Hub', 'Tonnage Capacity', 'Share of Inventory', 'Active Batches', 'Revenue (PHP)', 'Transactions']}
+            rows={branchData.map((b) => [
+              `${b.name} Branch`,
+              `${b.tonnage.toFixed(1)} Tons`,
+              `${b.percentage}%`,
+              `${b.activeBatches} Batches`,
+              `₱${b.revenuePHP.toLocaleString()}`,
+              b.salesCount,
+            ])}
+          />
+        </div>
 
         <div className="table-container" style={{ marginTop: '1rem' }}>
           <table>
@@ -145,7 +220,8 @@ export function OwnerAnalyticsView() {
                 <th>Tonnage Capacity</th>
                 <th>Share of Inventory</th>
                 <th>Active Batches</th>
-                <th>Revenue (PHP)</th>
+                <th>Revenue ({timeframe})</th>
+                <th>Transactions</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -164,6 +240,7 @@ export function OwnerAnalyticsView() {
                   </td>
                   <td>{branch.activeBatches} Batches</td>
                   <td style={{ fontWeight: 600 }}>₱{branch.revenuePHP.toLocaleString()}</td>
+                  <td>{branch.salesCount}</td>
                   <td>
                     <span className="badge badge-success">Operational</span>
                   </td>

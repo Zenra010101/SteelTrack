@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, CheckCircle, Clock, Truck, ArrowRightLeft, X, AlertCircle, Ban, Check } from 'lucide-react';
 import { fetchTransfers, createTransferRequest, updateTransferStatus, fetchBranchProducts } from '../services/api';
+import { TableExportButtons } from './TableExportButtons';
 import type { StockTransferRequest, TransferStatus } from '../types/transfer';
 import { BranchLocation } from '../types/auth';
 import type { BranchProductItem } from '../types/steel';
@@ -301,9 +302,26 @@ export function InterBranchTransferView({
           </p>
         </div>
 
-        <button className="btn-primary" onClick={handleOpenModal}>
-          <Plus size={18} /> Request Stock Transfer
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <TableExportButtons
+            filename={`Stock_Transfers_${currentBranch || 'All'}`}
+            title="Inter-Branch Logistics Stock Transfer Manifest"
+            headers={['Transfer #', 'Sending Branch', 'Destination Branch', 'Batch / Heat #', 'Grade', 'Tonnage', 'Requested By', 'Status']}
+            rows={transfers.map((tr) => [
+              tr.transferNumber || tr.id,
+              branchLabelFor(tr.sourceBranch),
+              branchLabelFor(tr.destinationBranch),
+              tr.heatNumber,
+              tr.grade,
+              `${tr.weightInTons} Tons`,
+              tr.requestedBy,
+              tr.status,
+            ])}
+          />
+          <button className="btn-primary" onClick={handleOpenModal}>
+            <Plus size={18} /> Request Stock Transfer
+          </button>
+        </div>
       </div>
 
       {statusError && (

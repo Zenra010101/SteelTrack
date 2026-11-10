@@ -13,11 +13,14 @@ import {
   CreditCard,
   X,
   AlertCircle,
+  AlertTriangle,
+  Download,
   Zap,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { PosTransaction, PosCartItem, SteelCategory } from '../types/pos';
 import { fetchPosBatches, processPosSale, fetchCustomers, type PosBatchItem } from '../services/api';
+import { printReceiptPdf } from '../utils/tableExport';
 
 interface CashierPosViewProps {
   branch: BranchLocation;
@@ -67,6 +70,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
   // Active Receipt Modal (Issued for every transaction)
   const [activeReceipt, setActiveReceipt] = useState<PosTransaction | null>(null);
+  const [transactionError, setTransactionError] = useState<{ message: string; details?: string } | null>(null);
 
   // Dedicated Payment Modal State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
@@ -331,7 +335,11 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
       ]);
       await loadData();
     } catch (err: any) {
-      alert(`Transaction processing error: ${err.message || 'Failed to complete sale'}`);
+      console.error('POS Checkout Error:', err);
+      setTransactionError({
+        message: err.message || 'Failed to complete sale transaction.',
+        details: 'The database transaction was safely rolled back. No stock or financial balances were modified.',
+      });
     } finally {
       setIsProcessingSale(false);
     }
@@ -1179,13 +1187,22 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               <p>Thank you for choosing SteelTrack Industrial Solutions.</p>
             </div>
 
-            <div className="receipt-actions no-print">
+            <div className="receipt-actions no-print" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn-print"
+                onClick={() => printReceiptPdf(activeReceipt)}
+                style={{ background: '#0284C7', color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                title="Download or print thermal official invoice PDF"
+              >
+                <Download size={16} /> Download PDF Receipt
+              </button>
               <button
                 type="button"
                 className="btn-print"
                 onClick={() => window.print()}
               >
-                <Printer size={16} /> Print Customer Invoice
+                <Printer size={16} /> Print Direct
               </button>
               <button
                 type="button"
@@ -1193,6 +1210,65 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 onClick={() => setActiveReceipt(null)}
               >
                 <CheckCircle2 size={16} /> Complete & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* POS TRANSACTION ERROR MODAL */}
+      {transactionError && (
+        <div className="pos-modal-overlay">
+          <div
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '12px',
+              maxWidth: '460px',
+              width: '90%',
+              padding: '1.75rem',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
+              border: '1px solid #FECACA',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1rem', color: '#DC2626' }}>
+              <div style={{ background: '#FEE2E2', padding: '0.5rem', borderRadius: '50%' }}>
+                <AlertTriangle size={24} color="#DC2626" />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0F172A' }}>
+                Transaction Not Completed
+              </h3>
+            </div>
+
+            <div
+              style={{
+                background: '#FEF2F2',
+                border: '1px solid #FECACA',
+                color: '#991B1B',
+                padding: '0.85rem 1rem',
+                borderRadius: '8px',
+                fontSize: '0.88rem',
+                lineHeight: 1.45,
+                marginBottom: '1rem',
+              }}
+            >
+              {transactionError.message}
+            </div>
+
+            {transactionError.details && (
+              <p style={{ fontSize: '0.8rem', color: '#64748B', lineHeight: 1.4, margin: '0 0 1.25rem 0' }}>
+                <CheckCircle2 size={13} style={{ display: 'inline', color: '#059669', marginRight: 4 }} />
+                {transactionError.details}
+              </p>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setTransactionError(null)}
+                style={{ background: '#0F172A', borderColor: '#0F172A', padding: '0.55rem 1.25rem', fontSize: '0.88rem' }}
+              >
+                Review Cart & Try Again
               </button>
             </div>
           </div>

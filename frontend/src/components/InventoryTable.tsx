@@ -4,6 +4,7 @@ import type { SteelBatch, BatchStatus } from '../types/steel';
 import { fetchCrossBranchStock, type CrossBranchStockResponse } from '../services/api';
 import { BarcodePrintModal } from './BarcodePrintModal';
 import { StockAdjustmentModal } from './StockAdjustmentModal';
+import { TableExportButtons } from './TableExportButtons';
 
 interface InventoryTableProps {
   batches: SteelBatch[];
@@ -135,6 +136,39 @@ export function InventoryTable({
         </div>
       ) : (
         <>
+          <div
+            style={{
+              padding: '0.6rem 1rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#F8FAFC',
+              borderBottom: '1px solid #E2E8F0',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+            }}
+          >
+            <div style={{ fontSize: '0.8rem', color: '#64748B' }}>
+              Showing {pagedBatches.length} of <strong>{batches.length}</strong> inventory records
+            </div>
+            <TableExportButtons
+              filename="SteelTrack_Inventory_Report"
+              title="Branch Steel Inventory Report"
+              headers={['Branch', 'SKU / Heat #', 'Product', 'Grade', 'On-Hand Stock', 'UOM', 'Dimensions', 'Selling Price', 'Status']}
+              rows={batches.map((b: any) => [
+                b.branch || b.branchName || 'Davao',
+                b.heatNumber || b.sku || '—',
+                b.productName || 'Steel Product',
+                b.grade || 'Standard',
+                b.stockQuantity ?? b.currentStock ?? b.weightInTons ?? 0,
+                b.unitOfMeasure || (b.weightInTons ? 't' : 'pc'),
+                b.dimensions || b.size || 'Standard',
+                b.sellingPrice ? `₱${Number(b.sellingPrice).toLocaleString()}` : '—',
+                b.status || 'Available',
+              ])}
+            />
+          </div>
+
           <table>
             <thead>
               <tr>
@@ -155,9 +189,13 @@ export function InventoryTable({
                 const displayBranch = b.branch || bAny.branchName || 'Davao';
                 const displaySku = b.heatNumber || bAny.sku || bAny.productSku || '—';
                 const displayStatus = b.status || (bAny.isAvailable !== false ? 'Available' : 'Reserved');
+                const stockQty = Number(bAny.stockQuantity ?? bAny.currentStock ?? b.weightInTons ?? 0);
+                const isOutOfStock = stockQty <= 0;
+                const isVeryLow = !isOutOfStock && stockQty < 10;
+                const isLow = !isOutOfStock && !isVeryLow && stockQty <= 20;
 
                 return (
-                  <tr key={b.id}>
+                  <tr key={b.id} style={{ background: isVeryLow ? '#FFF5F5' : isLow ? '#FFFDF5' : undefined }}>
                     <td>
                       <span className="branch-tag highlight">{displayBranch}</span>
                     </td>
@@ -178,8 +216,20 @@ export function InventoryTable({
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9rem' }}>
-                        {bAny.stockQuantity ?? bAny.currentStock ?? b.weightInTons ?? 0} {bAny.unitOfMeasure || (b.weightInTons ? 't' : 'pc')}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <span style={{ fontWeight: 700, color: isVeryLow ? '#DC2626' : isLow ? '#D97706' : '#0F172A', fontSize: '0.9rem' }}>
+                          {stockQty} {bAny.unitOfMeasure || (b.weightInTons ? 't' : 'pc')}
+                        </span>
+                        {isVeryLow && (
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#FEE2E2', color: '#DC2626', border: '1px solid #FECACA', padding: '0.1rem 0.35rem', borderRadius: 4 }}>
+                            Very Low (&lt;10)
+                          </span>
+                        )}
+                        {isLow && (
+                          <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#FEF3C7', color: '#D97706', border: '1px solid #FDE68A', padding: '0.1rem 0.35rem', borderRadius: 4 }}>
+                            Low (10–20)
+                          </span>
+                        )}
                       </div>
                       {b.weightInTons !== undefined && bAny.stockQuantity !== undefined && (
                         <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{b.weightInTons} tons</div>
