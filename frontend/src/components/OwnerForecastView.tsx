@@ -18,6 +18,7 @@ import {
   FileText,
   Truck,
   ShoppingCart,
+  TrendingDown,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { SteelBatch } from '../types/steel';
@@ -28,7 +29,9 @@ import {
   fetchInventory,
   fetchBranches,
   createTransferRequest,
+  fetchRecommendations,
   type LstmForecastRow,
+  type RbdssResponse,
 } from '../services/api';
 
 // ---------------------------------------------------------------------------
@@ -99,6 +102,10 @@ export function OwnerForecastView() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [branchIds, setBranchIds] = useState<Record<string, string>>({});
   const [inventoryBatches, setInventoryBatches] = useState<SteelBatch[]>([]);
+
+  // RBDSS Backend Engine Integration State
+  const [backendRbdss, setBackendRbdss] = useState<RbdssResponse | null>(null);
+  const [isRbdssLoading, setIsRbdssLoading] = useState<boolean>(false);
 
   // RBDSS Rule Execution States
   const [executedTransfers, setExecutedTransfers] = useState<Record<string, string>>({});
@@ -222,6 +229,32 @@ export function OwnerForecastView() {
         .sort(),
     [monthlyTotals, currentMonthKey]
   );
+
+  // Fetch Section 2.3.2.2 Rule-Based Decision Support System recommendations from backend
+  const loadRecommendations = useCallback(async () => {
+    setIsRbdssLoading(true);
+    try {
+      const branchId = selectedBranch === 'All' ? undefined : branchIds[selectedBranch];
+      const prodId = selectedProductId || undefined;
+      const firstFcMonth = forecastMonthKeys[0] || undefined;
+      const resp = await fetchRecommendations({
+        period: firstFcMonth,
+        branchId,
+        productId: prodId,
+      });
+      if (resp && resp.success) {
+        setBackendRbdss(resp);
+      }
+    } catch (err) {
+      console.warn('Could not load backend recommendations:', err);
+    } finally {
+      setIsRbdssLoading(false);
+    }
+  }, [selectedBranch, branchIds, selectedProductId, forecastMonthKeys]);
+
+  useEffect(() => {
+    loadRecommendations();
+  }, [loadRecommendations]);
 
   const peakMonthlyDemand = useMemo(
     () =>
@@ -475,6 +508,28 @@ export function OwnerForecastView() {
         badgeBorder = '#FECACA';
       }
 
+      // Check for backend decision engine recommendation override
+      const backendRec = backendRbdss?.recommendations?.find(
+        (rec) => rec.product_id.toLowerCase() === r.productId.toLowerCase() ||
+                 (r.productSku && rec.product_sku?.toLowerCase() === r.productSku.toLowerCase())
+      );
+      if (backendRec) {
+        ruleName = backendRec.rule_triggered;
+        ruleId = backendRec.rule_triggered.split(' ')[0] || 'Rule 1';
+        action = backendRec.action;
+        tq = backendRec.transfer_quantity;
+        pq = backendRec.procurement_quantity;
+        if (action === 'KEEP') {
+          badgeColor = '#059669'; badgeBg = '#ECFDF5'; badgeBorder = '#A7F3D0';
+        } else if (action === 'TRANSFER') {
+          badgeColor = '#0284C7'; badgeBg = '#F0F9FF'; badgeBorder = '#BAE6FD';
+        } else if (action === 'TRANSFER + PROCURE') {
+          badgeColor = '#7C3AED'; badgeBg = '#F5F3FF'; badgeBorder = '#DDD6FE';
+        } else {
+          badgeColor = '#DC2626'; badgeBg = '#FEF2F2'; badgeBorder = '#FECACA';
+        }
+      }
+
       return {
         row: r,
         currentStock: cs,
@@ -496,7 +551,7 @@ export function OwnerForecastView() {
         pq,
       };
     });
-  }, [rows, forecastMonthKeys]);
+  }, [rows, forecastMonthKeys, backendRbdss]);
 
   const activeModelVersion = useMemo(() => {
     if (forecast?.modelVersion && forecast.modelVersion !== 'unknown' && forecast.modelVersion !== 'legacy-estimate') {
@@ -523,31 +578,51 @@ export function OwnerForecastView() {
     const donorPool = donors.map(d => ({ ...d, availableES: d.es }));
     const recipientPool = recipients.map(r => ({ ...r, neededNIR: r.nir, fulfilledTQ: 0 }));
 
-    for (const rec of recipientPool) {
-      for (const don of donorPool) {
-        if (rec.neededNIR <= 0 || don.availableES <= 0) continue;
-        const transferQty = Math.min(don.availableES, rec.neededNIR);
-        if (transferQty > 0) {
-          don.availableES -= transferQty;
-          rec.neededNIR -= transferQty;
-          rec.fulfilledTQ += transferQty;
-          transfers.push({
-            donor: don.branch,
-            recipient: rec.branch,
-            tq: transferQty,
-            donorRemainingES: don.availableES,
-            recipientRemainingNIR: rec.neededNIR,
-          });
+    if (backendRbdss && backendRbdss.transfers.length > 0) {
+      for (const bt of backendRbdss.transfers) {
+        const donorName = bt.donor_branch_name || bt.donor_branch_id;
+        const recipientName = bt.recipient_branch_name || bt.recipient_branch_id;
+        const donor = (Object.values(BranchLocation).find(b => donorName.toLowerCase().includes(b.toLowerCase())) || donorName) as BranchLocation;
+        const recipient = (Object.values(BranchLocation).find(b => recipientName.toLowerCase().includes(b.toLowerCase())) || recipientName) as BranchLocation;
+        transfers.push({
+          donor,
+          recipient,
+          tq: Number(bt.transfer_quantity),
+          donorRemainingES: 0,
+          recipientRemainingNIR: 0,
+        });
+      }
+    } else {
+      for (const rec of recipientPool) {
+        for (const don of donorPool) {
+          if (rec.neededNIR <= 0 || don.availableES <= 0) continue;
+          const transferQty = Math.min(don.availableES, rec.neededNIR);
+          if (transferQty > 0) {
+            don.availableES -= transferQty;
+            rec.neededNIR -= transferQty;
+            rec.fulfilledTQ += transferQty;
+            transfers.push({
+              donor: don.branch,
+              recipient: rec.branch,
+              tq: transferQty,
+              donorRemainingES: don.availableES,
+              recipientRemainingNIR: rec.neededNIR,
+            });
+          }
         }
       }
     }
 
     // Assign IF-THEN rules per branch
     const evaluatedBranches = branchDecisions.map(b => {
+      const bRec = backendRbdss?.recommendations?.find(r =>
+        (r.branch_name && r.branch_name.toLowerCase().includes(b.branch.toLowerCase())) ||
+        r.branch_id.toLowerCase().includes(b.branch.toLowerCase())
+      );
+
       const rec = recipientPool.find(r => r.branch === b.branch);
-      const tq = rec ? rec.fulfilledTQ : 0;
-      // Formula 6: Procurement Quantity (PQ) = max(0, NIR - TQ)
-      const pq = Math.max(0, b.nir - tq);
+      const tq = bRec ? Number(bRec.transfer_quantity) : (rec ? rec.fulfilledTQ : 0);
+      const pq = bRec ? Number(bRec.procurement_quantity) : Math.max(0, b.nir - tq);
 
       let triggeredRule: {
         id: string;
@@ -558,7 +633,19 @@ export function OwnerForecastView() {
         description: string;
       };
 
-      if (b.pas >= b.rs) {
+      if (bRec) {
+        const isSufficient = bRec.action === 'KEEP';
+        const isTransfer = bRec.action === 'TRANSFER';
+        const isTransferProcure = bRec.action === 'TRANSFER + PROCURE';
+        triggeredRule = {
+          id: bRec.rule_triggered.split(' ')[0] || (isSufficient ? 'Rule 1' : isTransfer ? 'Rule 3' : 'Rule 5'),
+          name: bRec.rule_triggered,
+          badgeColor: isSufficient ? '#059669' : isTransfer ? '#0284C7' : isTransferProcure ? '#7C3AED' : '#DC2626',
+          badgeBg: isSufficient ? '#ECFDF5' : isTransfer ? '#F0F9FF' : isTransferProcure ? '#F5F3FF' : '#FEF2F2',
+          badgeBorder: isSufficient ? '#A7F3D0' : isTransfer ? '#BAE6FD' : isTransferProcure ? '#DDD6FE' : '#FECACA',
+          description: bRec.explanation,
+        };
+      } else if (b.pas >= b.rs) {
         // Rule 1 - Sufficient Inventory
         triggeredRule = {
           id: 'Rule 1',
@@ -627,10 +714,32 @@ export function OwnerForecastView() {
       recipients,
       totalExcess,
     };
-  }, [branchDecisions]);
+  }, [branchDecisions, backendRbdss]);
 
 
   const rbdssKpis = useMemo(() => {
+    if (backendRbdss && backendRbdss.recommendations.length > 0) {
+      const totalSkus = backendRbdss.recommendations.length;
+      const sufficientCount = backendRbdss.recommendations.filter(r => r.pas >= r.rs).length;
+      const shortageCount = backendRbdss.recommendations.filter(r => r.pas < r.rs).length;
+      const totalNir = backendRbdss.recommendations.reduce((sum, r) => sum + r.nir, 0);
+      const totalEs = backendRbdss.recommendations.reduce((sum, r) => sum + r.es, 0);
+      const lateralTransfersCount = backendRbdss.transfers.length;
+      const totalTransferUnits = backendRbdss.transfers.reduce((sum, t) => sum + t.transfer_quantity, 0);
+      const totalProcureUnits = backendRbdss.procurement_summary.reduce((sum, p) => sum + p.total_procurement_quantity, 0);
+
+      return {
+        totalSkus,
+        sufficientCount,
+        shortageCount,
+        totalNir,
+        totalEs,
+        lateralTransfersCount,
+        totalTransferUnits,
+        totalProcureUnits,
+      };
+    }
+
     const totalSkus = catalogRbdssRows.length;
     const sufficientCount = catalogRbdssRows.filter(r => r.pas >= r.rs).length;
     const shortageCount = catalogRbdssRows.filter(r => r.pas < r.rs).length;
@@ -650,7 +759,7 @@ export function OwnerForecastView() {
       totalTransferUnits,
       totalProcureUnits,
     };
-  }, [catalogRbdssRows, multiBranchEvaluation]);
+  }, [backendRbdss, catalogRbdssRows, multiBranchEvaluation]);
 
   // Execute Rule 3 & 4: Stock Transfer Request
   const handleExecuteTransfer = async (donor: BranchLocation, recipient: BranchLocation, qty: number) => {
@@ -837,6 +946,201 @@ export function OwnerForecastView() {
         </div>
       )}
 
+      {/* Dedicated Model Coverage Health Tiles */}
+      {forecast && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '1rem',
+            marginBottom: '1.5rem',
+          }}
+        >
+          {/* Tile 1: Service Reachable */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: `1px solid ${forecast.serviceReachable ? '#A7F3D0' : '#FECACA'}`,
+              borderRadius: '10px',
+              padding: '1rem 1.25rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>
+                Service Reachable
+              </span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '9999px',
+                  background: forecast.serviceReachable ? '#ECFDF5' : '#FEF2F2',
+                  color: forecast.serviceReachable ? '#059669' : '#DC2626',
+                  border: `1px solid ${forecast.serviceReachable ? '#A7F3D0' : '#FECACA'}`,
+                }}
+              >
+                {forecast.serviceReachable ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
+                {forecast.serviceReachable ? 'ONLINE' : 'OFFLINE'}
+              </span>
+            </div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: forecast.serviceReachable ? '#065F46' : '#991B1B' }}>
+              {forecast.serviceReachable ? 'Reachable' : 'Unreachable'}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.35rem' }}>
+              {forecast.serviceReachable ? 'FastAPI LSTM service reachable' : 'Using seasonal estimate fallback'}
+            </div>
+          </div>
+
+          {/* Tile 2: Model Served Count */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #BAE6FD',
+              borderRadius: '10px',
+              padding: '1rem 1.25rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>
+                Model Served Count
+              </span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '9999px',
+                  background: '#F0F9FF',
+                  color: '#0284C7',
+                  border: '1px solid #BAE6FD',
+                }}
+              >
+                <Cpu size={12} />
+                LSTM MODEL
+              </span>
+            </div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A' }}>
+              {forecast.modelServedCount}{' '}
+              <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#64748B' }}>
+                / {forecast.count || forecast.forecasts.length} series
+              </span>
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.35rem' }}>
+              Active series served by trained LSTM model
+            </div>
+          </div>
+
+          {/* Tile 3: Fallback Count */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: `1px solid ${forecast.fallbackCount > 0 ? '#FDE68A' : '#E2E8F0'}`,
+              borderRadius: '10px',
+              padding: '1rem 1.25rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>
+                Fallback Count
+              </span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '9999px',
+                  background: forecast.fallbackCount > 0 ? '#FFFBEB' : '#F8FAFC',
+                  color: forecast.fallbackCount > 0 ? '#D97706' : '#64748B',
+                  border: `1px solid ${forecast.fallbackCount > 0 ? '#FDE68A' : '#E2E8F0'}`,
+                }}
+              >
+                <TrendingDown size={12} />
+                SEASONAL NAIVE
+              </span>
+            </div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: forecast.fallbackCount > 0 ? '#B45309' : '#0F172A' }}>
+              {forecast.fallbackCount}{' '}
+              <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#64748B' }}>series</span>
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.35rem' }}>
+              Series resolved via seasonal-naive estimate
+            </div>
+          </div>
+
+          {/* Tile 4: Service Status Code */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: `1px solid ${forecast.serviceStatusCode === 200 || (forecast.serviceReachable && !forecast.serviceStatusCode) ? '#A7F3D0' : '#E2E8F0'}`,
+              borderRadius: '10px',
+              padding: '1rem 1.25rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B' }}>
+                Service Status Code
+              </span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '9999px',
+                  background: forecast.serviceStatusCode === 200 || (forecast.serviceReachable && !forecast.serviceStatusCode) ? '#ECFDF5' : '#FFFBEB',
+                  color: forecast.serviceStatusCode === 200 || (forecast.serviceReachable && !forecast.serviceStatusCode) ? '#059669' : '#B45309',
+                  border: `1px solid ${forecast.serviceStatusCode === 200 || (forecast.serviceReachable && !forecast.serviceStatusCode) ? '#A7F3D0' : '#FDE68A'}`,
+                }}
+              >
+                HTTP {forecast.serviceStatusCode ?? (forecast.serviceReachable ? 200 : 'N/A')}
+              </span>
+            </div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A' }}>
+              {forecast.serviceStatusCode === 200 || (forecast.serviceReachable && !forecast.serviceStatusCode)
+                ? '200 OK'
+                : forecast.serviceStatusCode === 401
+                ? '401 Unauthorized'
+                : forecast.serviceStatusCode === 503
+                ? '503 Unavailable'
+                : forecast.serviceStatusCode
+                ? `${forecast.serviceStatusCode} Error`
+                : 'Offline'}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.35rem' }}>
+              {forecast.modelVersion ? `Model: ${forecast.modelVersion}` : 'FastAPI service response'}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sub-Tab Navigation Bar & Active Model Version */}
       <div style={{
         display: 'flex',
@@ -920,7 +1224,44 @@ export function OwnerForecastView() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          {isRbdssLoading ? (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              color: '#64748B',
+            }}>
+              <Loader2 size={13} className="spin" />
+              <span>RBDSS:</span>
+              <span>Evaluating Rules…</span>
+            </div>
+          ) : backendRbdss ? (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: backendRbdss.engine === 'python_rbdss' ? '#ECFDF5' : '#F8FAFC',
+              border: `1px solid ${backendRbdss.engine === 'python_rbdss' ? '#A7F3D0' : '#E2E8F0'}`,
+              padding: '0.35rem 0.75rem',
+              borderRadius: '6px',
+              fontSize: '0.8rem',
+              color: backendRbdss.engine === 'python_rbdss' ? '#065F46' : '#334155',
+            }}>
+              <ShieldCheck size={14} color={backendRbdss.engine === 'python_rbdss' ? '#059669' : '#0284C7'} />
+              <span>RBDSS:</span>
+              <strong style={{ color: '#0F172A' }}>
+                {backendRbdss.engine === 'python_rbdss' ? 'Python CLI Engine' : 'C# Decision Support'}
+              </strong>
+              <span style={{ fontSize: '0.72rem', background: '#059669', color: '#FFFFFF', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>55 RULES</span>
+            </div>
+          ) : null}
+
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',

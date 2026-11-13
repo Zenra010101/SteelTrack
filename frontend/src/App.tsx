@@ -35,6 +35,13 @@ import {
   messageForReason,
   onSessionEnd,
 } from './services/session';
+import {
+  startSignalR,
+  joinBranchGroup,
+  onInventoryChanged,
+  onPriceChanged,
+  onSaleCompleted,
+} from './services/signalrService';
 import type { BranchProductItem, InventoryStats, BatchStatus, CreateSteelBatchDto } from './types/steel';
 // SteelBatch removed — inventory is now read live via fetchBranchProducts.
 import { UserRole, BranchLocation, type UserSession } from './types/auth';
@@ -276,6 +283,38 @@ export function App() {
       unsubscribe();
     };
   }, []);
+
+  // Real-Time SignalR Collaboration (Deliverable 7)
+  useEffect(() => {
+    if (!userSession) return;
+
+    let mounted = true;
+    startSignalR().then((hub) => {
+      if (!hub || !mounted) return;
+      if (userSession.branch) {
+        void joinBranchGroup(userSession.branch);
+      }
+    });
+
+    const unsubInventory = onInventoryChanged(() => {
+      void loadData(true);
+    });
+
+    const unsubPrice = onPriceChanged(() => {
+      void loadData(true);
+    });
+
+    const unsubSale = onSaleCompleted(() => {
+      void loadData(true);
+    });
+
+    return () => {
+      mounted = false;
+      unsubInventory();
+      unsubPrice();
+      unsubSale();
+    };
+  }, [userSession, loadData]);
 
   // Auto-refresh stock lookup at 30-second interval when on inventory tab (silent in background)
   useEffect(() => {

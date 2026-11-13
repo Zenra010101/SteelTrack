@@ -1558,6 +1558,138 @@ export async function fetchLstmForecast(
 
 }
 
+export interface RbdssForecastInput {
+  branch_id: string;
+  product_id: string;
+  period: string;
+  forecasted_demand: number;
+}
+
+export interface RbdssInventoryInput {
+  branch_id: string;
+  product_id: string;
+  period: string;
+  current_stock: number;
+  incoming_stock: number;
+  reserved_stock: number;
+  safety_stock: number;
+}
+
+export interface RbdssRequest {
+  period?: string;
+  branchId?: string;
+  productId?: string;
+  donorStrategy?: 'LARGEST_ES_FIRST' | 'NEAREST_BRANCH' | 'PRIORITY_LIST';
+  forecasts?: RbdssForecastInput[];
+  inventory?: RbdssInventoryInput[];
+}
+
+export interface RbdssTransferItem {
+  donor_branch_id: string;
+  donor_branch_name?: string;
+  recipient_branch_id: string;
+  recipient_branch_name?: string;
+  product_id: string;
+  product_sku?: string;
+  product_name?: string;
+  period: string;
+  transfer_quantity: number;
+}
+
+export interface RbdssRecommendationItem {
+  branch_id: string;
+  branch_name?: string;
+  product_id: string;
+  product_sku?: string;
+  product_name?: string;
+  period: string;
+  current_stock: number;
+  incoming_stock: number;
+  reserved_stock: number;
+  safety_stock: number;
+  forecasted_demand: number;
+  pas: number;
+  rs: number;
+  nir: number;
+  es: number;
+  rule_triggered: string;
+  action: string;
+  transfer_quantity: number;
+  procurement_quantity: number;
+  explanation: string;
+  status: string;
+  transfers: RbdssTransferItem[];
+}
+
+export interface RbdssProcurementBranchBreakdown {
+  branch_id: string;
+  branch_name?: string;
+  procurement_quantity: number;
+}
+
+export interface RbdssProcurementItem {
+  product_id: string;
+  product_sku?: string;
+  product_name?: string;
+  period: string;
+  total_procurement_quantity: number;
+  branch_breakdown: RbdssProcurementBranchBreakdown[];
+}
+
+export interface RbdssAllocationItem {
+  branch_id: string;
+  branch_name?: string;
+  product_id: string;
+  product_sku?: string;
+  product_name?: string;
+  period: string;
+  pas: number;
+  rs: number;
+  net_transfers: number;
+  procurement: number;
+  projected_closing_stock: number;
+  inventory_posture: string;
+}
+
+export interface RbdssResponse {
+  success: boolean;
+  engine: string;
+  recommendations: RbdssRecommendationItem[];
+  transfers: RbdssTransferItem[];
+  procurement_summary: RbdssProcurementItem[];
+  allocation_summary: RbdssAllocationItem[];
+  audit_logs: Record<string, any>[];
+}
+
+/**
+ * Fetches Rule-Based Decision Support System (RBDSS) recommendations from POST /api/recommendations.
+ */
+export async function fetchRecommendations(
+  request?: RbdssRequest
+): Promise<RbdssResponse | null> {
+  try {
+    const res = await fetch('/api/recommendations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(request ?? {}),
+    });
+
+    if (!res.ok) {
+      console.warn('Failed to fetch recommendations:', res.status, res.statusText);
+      return null;
+    }
+
+    const payload = await res.json();
+    return payload?.data || null;
+  } catch (err) {
+    console.warn('Error fetching recommendations from /api/recommendations:', err);
+    return null;
+  }
+}
+
 
 
 // ============================================================================

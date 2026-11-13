@@ -12,8 +12,9 @@ import {
   AlertTriangle,
   RefreshCw,
   Printer,
+  Cpu,
 } from 'lucide-react';
-import { getAuthHeaders } from '../services/api';
+import { getAuthHeaders, fetchRecommendations, type RbdssRecommendationItem } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
 
 export interface AuditRecord {
@@ -92,7 +93,9 @@ function computeObjectDiff(beforeJson: string, afterJson: string): FieldDiff[] {
 
 export function AuditLogView() {
   const [logs, setLogs] = useState<AuditRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<'EntityMutation' | 'SecurityAccess'>('EntityMutation');
+  const [activeTab, setActiveTab] = useState<'EntityMutation' | 'SecurityAccess' | 'RbdssDecisions'>('EntityMutation');
+  const [rbdssDecisions, setRbdssDecisions] = useState<RbdssRecommendationItem[]>([]);
+  const [rbdssModelVersion, setRbdssModelVersion] = useState<string>('v1.0.0-rbdss');
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'SUCCESS' | 'FAILED' | 'WARNING'>('All');
   const [selectedLog, setSelectedLog] = useState<AuditRecord | null>(null);
@@ -106,7 +109,18 @@ export function AuditLogView() {
   const syncWithBackend = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch('/api/auditlogs?pageSize=200', { headers: getAuthHeaders() });
+      const [res, rbdssRes] = await Promise.all([
+        fetch('/api/auditlogs?pageSize=200', { headers: getAuthHeaders() }),
+        fetchRecommendations().catch(() => null),
+      ]);
+
+      if (rbdssRes) {
+        setRbdssDecisions(rbdssRes.recommendations || []);
+        if (rbdssRes.engine) {
+          setRbdssModelVersion(rbdssRes.engine);
+        }
+      }
+
       if (res.ok) {
         const json = await res.json();
         const rawItems: any[] = Array.isArray(json)
@@ -192,6 +206,22 @@ export function AuditLogView() {
       );
     });
   }, [logs, activeTab, statusFilter, search]);
+
+  // Filtered RBDSS decisions for the Decision Audit Trail
+  const filteredRbdssDecisions = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return rbdssDecisions;
+    return rbdssDecisions.filter((d) => {
+      return (
+        (d.product_sku && d.product_sku.toLowerCase().includes(q)) ||
+        (d.product_name && d.product_name.toLowerCase().includes(q)) ||
+        (d.branch_name && d.branch_name.toLowerCase().includes(q)) ||
+        (d.rule_triggered && d.rule_triggered.toLowerCase().includes(q)) ||
+        (d.action && d.action.toLowerCase().includes(q)) ||
+        (d.explanation && d.explanation.toLowerCase().includes(q))
+      );
+    });
+  }, [rbdssDecisions, search]);
 
   // Computed field diffs for selected log
   const computedDiffs = useMemo(() => {
@@ -286,6 +316,30 @@ export function AuditLogView() {
             {logs.filter((l) => l.category === 'SecurityAccess').length}
           </span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('RbdssDecisions')}
+          style={{
+            background: activeTab === 'RbdssDecisions' ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
+            color: activeTab === 'RbdssDecisions' ? '#A78BFA' : '#94A3B8',
+            border: activeTab === 'RbdssDecisions' ? '1px solid #8B5CF6' : '1px solid transparent',
+            padding: '0.55rem 1rem',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Cpu size={16} />
+          RBDSS AI Decision Audits
+          <span style={{ background: '#334155', color: '#F8FAFC', padding: '0.1rem 0.45rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+            {rbdssDecisions.length}
+          </span>
+        </button>
       </div>
 
       {/* FILTER & SEARCH BAR */}
@@ -297,34 +351,58 @@ export function AuditLogView() {
             placeholder={
               activeTab === 'EntityMutation'
                 ? 'Search entity, action, user, or ID...'
-                : 'Search user email, IP address, device, or security action...'
+                : activeTab === 'SecurityAccess'
+                ? 'Search user email, IP address, device, or security action...'
+                : 'Search SKU, rule ID, branch, or recommendation action...'
             }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600 }}>Status:</span>
-            {(['All', 'SUCCESS', 'WARNING', 'FAILED'] as const).map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                style={{
-                  background: statusFilter === st ? '#334155' : 'transparent',
-                  color: statusFilter === st ? '#F8FAFC' : '#94A3B8',
-                  border: '1px solid #475569',
-                  padding: '0.3rem 0.65rem',
-                  borderRadius: '4px',
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  fontWeight: statusFilter === st ? 700 : 500,
-                }}
-              >
-                {st}
-              </button>
-            ))}
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {activeTab !== 'RbdssDecisions' && (
+            <>
+              <span style={{ color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600 }}>Status:</span>
+              {(['All', 'SUCCESS', 'WARNING', 'FAILED'] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setStatusFilter(st)}
+                  style={{
+                    background: statusFilter === st ? '#334155' : 'transparent',
+                    color: statusFilter === st ? '#F8FAFC' : '#94A3B8',
+                    border: '1px solid #475569',
+                    padding: '0.3rem 0.65rem',
+                    borderRadius: '4px',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    fontWeight: statusFilter === st ? 700 : 500,
+                  }}
+                >
+                  {st}
+                </button>
+              ))}
+            </>
+          )}
 
+          {activeTab === 'RbdssDecisions' ? (
+            <TableExportButtons
+              filename={`RBDSS_Decisions_Audit_${rbdssModelVersion}`}
+              title={`RBDSS Strategic AI Decision Audit Log (Engine: ${rbdssModelVersion})`}
+              headers={['Product SKU / Name', 'Target Branch', 'Period', 'Model Version', 'Rule Triggered', 'Action', 'Transfer (T)', 'Procure (T)', 'Explanation']}
+              rows={filteredRbdssDecisions.map((d) => [
+                d.product_sku ? `${d.product_sku} (${d.product_name || ''})` : d.product_id,
+                d.branch_name || d.branch_id,
+                d.period,
+                rbdssModelVersion,
+                d.rule_triggered,
+                d.action,
+                (d.transfer_quantity ?? 0).toString(),
+                (d.procurement_quantity ?? 0).toString(),
+                d.explanation || '—',
+              ])}
+            />
+          ) : (
             <TableExportButtons
               filename={`Audit_Logs_${activeTab}`}
               title={`Compliance Audit Trail (${activeTab})`}
@@ -339,11 +417,86 @@ export function AuditLogView() {
                 l.status,
               ])}
             />
-          </div>
+          )}
+        </div>
       </div>
 
       {/* AUDIT LOG TABLE */}
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+      {activeTab === 'RbdssDecisions' ? (
+        <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+                <th style={{ padding: '0.75rem 1rem' }}>Product / SKU</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Target Branch</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Period</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Model Engine</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Triggered Rule ID</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Recommended Action</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Quantities (T)</th>
+                <th style={{ padding: '0.75rem 1rem' }}>Reasoning & Constraints</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRbdssDecisions.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>
+                    No RBDSS AI recommendation decisions found matching the search criteria.
+                  </td>
+                </tr>
+              ) : (
+                filteredRbdssDecisions.map((d, idx) => (
+                  <tr key={`${d.product_id}-${d.branch_id}-${idx}`} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.88rem', background: '#FFFFFF' }}>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>
+                      <div style={{ color: '#0F172A' }}>{d.product_sku || d.product_id}</div>
+                      <div style={{ color: '#64748B', fontSize: '0.75rem' }}>{d.product_name || 'Standard Steel Spec'}</div>
+                    </td>
+                    <td style={{ padding: '0.85rem 1rem' }}>
+                      <span className="branch-tag highlight">{d.branch_name || d.branch_id}</span>
+                    </td>
+                    <td style={{ padding: '0.85rem 1rem', color: '#475569', fontSize: '0.8rem' }}>
+                      {d.period}
+                    </td>
+                    <td style={{ padding: '0.85rem 1rem' }}>
+                      <span style={{ background: '#EDE9FE', color: '#6D28D9', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+                        {rbdssModelVersion}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.85rem 1rem' }}>
+                      <span style={{ background: '#FEF3C7', color: '#92400E', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+                        {d.rule_triggered}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.85rem 1rem' }}>
+                      <span
+                        style={{
+                          background: d.action.includes('Transfer') ? '#DBEAFE' : d.action.includes('Procure') || d.action.includes('Reorder') ? '#DCFCE7' : '#F1F5F9',
+                          color: d.action.includes('Transfer') ? '#1E40AF' : d.action.includes('Procure') || d.action.includes('Reorder') ? '#166534' : '#475569',
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {d.action}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem' }}>
+                      {d.transfer_quantity > 0 && <div>Transfer: <strong>{d.transfer_quantity} t</strong></div>}
+                      {d.procurement_quantity > 0 && <div>Procure: <strong>{d.procurement_quantity} t</strong></div>}
+                      {d.transfer_quantity === 0 && d.procurement_quantity === 0 && <span style={{ color: '#94A3B8' }}>—</span>}
+                    </td>
+                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', color: '#475569', maxWidth: '300px' }}>
+                      {d.explanation || 'Calculated optimal inventory posture based on live demand and safety threshold.'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
@@ -484,6 +637,7 @@ export function AuditLogView() {
           </tbody>
         </table>
       </div>
+      )}
 
       {/* HUMAN-READABLE VISUAL DIFF INSPECTION MODAL */}
       {selectedLog && (

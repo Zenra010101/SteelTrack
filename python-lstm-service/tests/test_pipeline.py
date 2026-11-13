@@ -64,7 +64,8 @@ class TestSeriesEligibility:
         assert result.status == "skipped_insufficient_history"
         # The skip reason must say how much history was needed, so an
         # operator can tell "no data yet" from "not enough months".
-        assert result.metrics["required_months"] == 12
+        from src.config import get_settings
+        assert result.metrics["required_months"] == get_settings().min_history_months
         assert result.metrics["nonzero_months"] == 1
 
     async def test_empty_series_is_skipped(self, registry):
@@ -90,7 +91,7 @@ class TestSeriesEligibility:
 
         series = {
             good: make_series([10] * 24),
-            bad: make_series([1] * 4),
+            bad: make_series([1, 0, 0, 0]),
         }
 
         summary = await train_series(

@@ -12,9 +12,9 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.security import APIKeyHeader
-from prometheus_client import start_http_server
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest, start_http_server
 
 from src.api.routes_health import router as health_router
 from src.api.routes_predict import router as predict_router
@@ -81,10 +81,46 @@ async def root() -> JSONResponse:
             "status": "ready",
             "docs": "/docs",
             "health": "/health",
+            "models": "/models",
             "predict": "/predict",
             "train": "/train",
+            "metrics": "/metrics",
         }
     )
+
+
+@app.get("/models", tags=["models"])
+async def list_models() -> JSONResponse:
+    """Return available trained model versions and the active version."""
+    from src.models.model_registry import ModelRegistry
+
+    registry = ModelRegistry(_settings.model_dir)
+    versions = registry.list_versions()
+    latest = registry.latest_version()
+    recent = {}
+    for v in versions[:5]:
+        m = registry.read_manifest(v)
+        if m:
+            recent[v] = {
+                "created_at": m.get("created_at"),
+                "trained": m.get("trained", 0),
+                "skipped": m.get("skipped", 0),
+                "failed": m.get("failed", 0),
+            }
+    return JSONResponse(
+        content={
+            "latest_version": latest,
+            "total_versions": len(versions),
+            "versions": versions,
+            "recent_manifests": recent,
+        }
+    )
+
+
+@app.get("/metrics", operation_id="prometheus_metrics", tags=["monitoring"])
+async def metrics() -> Response:
+    """Prometheus metrics endpoint for scraping and CI health checks."""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 def main() -> None:

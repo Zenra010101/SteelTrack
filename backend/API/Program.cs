@@ -169,6 +169,7 @@ builder.Services.AddRateLimiter(options =>
 // OpenAPI & Swagger Documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 
 // Configure CORS for Frontend Development
 builder.Services.AddCors(options =>
@@ -177,7 +178,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -255,6 +257,7 @@ app.MapGet("/api/health/db", async (IServiceProvider sp) =>
     }
 });
 
+app.MapHub<SteelTrack.Api.Hubs.SteelTrackHub>("/hubs/steeltrack");
 app.MapControllers();
 app.MapFallbackToFile("index.html");
 

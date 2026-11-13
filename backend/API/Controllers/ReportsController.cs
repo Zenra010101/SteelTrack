@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using SteelTrack.Application.Common;
+using SteelTrack.Application.DTOs.Analytics;
 using SteelTrack.Application.DTOs.Reports;
 using SteelTrack.Application.Interfaces;
 using SteelTrack.Domain.Constants;
@@ -14,8 +15,15 @@ namespace SteelTrack.Api.Controllers;
 public class ReportsController : ControllerBase
 {
     private readonly IReportService _reportService;
+    private readonly IProfitAnalyticsService _profitAnalyticsService;
 
-    public ReportsController(IReportService reportService) => _reportService = reportService;
+    public ReportsController(
+        IReportService reportService,
+        IProfitAnalyticsService profitAnalyticsService)
+    {
+        _reportService = reportService;
+        _profitAnalyticsService = profitAnalyticsService;
+    }
 
     private Guid UserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     private string Role => User.FindFirstValue(ClaimTypes.Role)!;
@@ -54,6 +62,21 @@ public class ReportsController : ControllerBase
         var report = await _reportService.GetSalesSummaryReportAsync(
             preset, from, to, UserId, Role, preparedFor, verify, verifyBaseUrl, cancellationToken);
         return Ok(ApiResponse<SalesSummaryReportDto>.Ok(report));
+    }
+
+    [HttpGet("profit-margin-analytics")]
+    public async Task<ActionResult<ApiResponse<ProfitMarginAnalyticsDto>>> GetProfitMarginAnalytics(
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] Guid? branchId = null,
+        [FromQuery] Guid? productId = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!RoleNames.IsOwner(Role))
+            return Forbid();
+
+        var result = await _profitAnalyticsService.GetProfitMarginAnalyticsAsync(from, to, branchId, productId, cancellationToken);
+        return Ok(ApiResponse<ProfitMarginAnalyticsDto>.Ok(result));
     }
 
     [AllowAnonymous]

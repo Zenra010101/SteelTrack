@@ -66,7 +66,7 @@ class SaleItemRow:
     quantity: int
 
 
-def month_floor(value: datetime) -> date:
+def month_floor(value: datetime | date) -> date:
     """Return the first day of the month containing `value` (UTC)."""
     return date(value.year, value.month, 1)
 
@@ -236,7 +236,7 @@ class ForecastRepository:
         zero-stuffed series is materially different from one fed only
         non-zero points.
         """
-        last = month_floor(end_month or datetime.utcnow().date())
+        last = month_floor(end_month or datetime.now(UTC).date())
         window_start = add_months(last, -(lookback_months - 1))
 
         # Bucket the rows into their month.
@@ -278,7 +278,7 @@ class ForecastRepository:
         end_month: date | None = None,
     ) -> dict[SeriesKey, list[MonthlySeriesPoint]]:
         """Convenience wrapper: pull raw rows, then aggregate into dense series."""
-        last = month_floor(end_month or datetime.utcnow().date())
+        last = month_floor(end_month or datetime.now(UTC).date())
         since = add_months(last, -(lookback_months - 1))
 
         rows = await self.get_sale_items(

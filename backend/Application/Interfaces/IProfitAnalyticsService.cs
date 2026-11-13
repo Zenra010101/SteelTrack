@@ -20,4 +20,11 @@ public interface IProfitAnalyticsService
         Guid userId,
         string role,
         CancellationToken cancellationToken = default);
+
+    Task<ProfitMarginAnalyticsDto> GetProfitMarginAnalyticsAsync(
+        DateTime? from,
+        DateTime? to,
+        Guid? branchId,
+        Guid? productId,
+        CancellationToken cancellationToken = default);
 }

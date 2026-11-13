@@ -234,7 +234,7 @@ def train_single_series(
         with torch.no_grad():
             xv = torch.tensor(x_val, dtype=torch.float32).unsqueeze(-1).to(device)
             mu_v, _ = model(xv)
-        pred = mu_v.numpy()
+        pred = mu_v.cpu().numpy()
         actual = y_val
 
         if unscale is not None:
@@ -329,10 +329,31 @@ async def train_series(
     registry: ModelRegistry,
     product_ids: list[UUID] | None = None,
     branch_ids: list[UUID] | None = None,
+    min_history_months: int | None = None,
 ) -> TrainingSummary:
     """Train and persist models for every eligible series."""
     settings = get_settings()
     summary = TrainingSummary(version=version)
+
+    configured_min = (
+        min_history_months if min_history_months is not None else settings.min_history_months
+    )
+    # Adaptive threshold check: if available history in the dataset has at least 2 non-zero months
+    # but is lower than configured_min, adaptively clamp so models can train on available data.
+    max_nonzero_in_dataset = max(
+        (sum(1 for p in pts if p.quantity > 0) for pts in series.values()),
+        default=0,
+    )
+    if 2 <= max_nonzero_in_dataset < configured_min:
+        logger.warning(
+            "Adaptive min history applied: configured %d months exceeds dataset max %d; clamping to %d",
+            configured_min,
+            max_nonzero_in_dataset,
+            max_nonzero_in_dataset,
+        )
+        effective_min = max_nonzero_in_dataset
+    else:
+        effective_min = configured_min
 
     for key, points in series.items():
         if product_ids is not None and key.product_id not in set(product_ids):
@@ -344,7 +365,7 @@ async def train_series(
             scaled, scaler, ok = series_to_array(
                 points,
                 lookback=lookback,
-                min_nonzero_months=settings.min_history_months,
+                min_nonzero_months=effective_min,
             )
             if not ok:
                 nonzero = int(sum(1 for p in points if p.quantity > 0))
@@ -355,7 +376,7 @@ async def train_series(
                         status="skipped_insufficient_history",
                         metrics={
                             "nonzero_months": nonzero,
-                            "required_months": settings.min_history_months,
+                            "required_months": effective_min,
                         },
                     )
                 )
@@ -413,6 +434,7 @@ async def retrain_all(
     branch_ids: list[UUID] | None = None,
     lookback: int | None = None,
     horizon: int | None = None,
+    min_history_months: int | None = None,
 ) -> dict:
     """Full retraining run across the requested scope.
 
@@ -441,6 +463,7 @@ async def retrain_all(
         registry=registry,
         product_ids=product_ids,
         branch_ids=branch_ids,
+        min_history_months=min_history_months,
     )
 
     registry.write_manifest(

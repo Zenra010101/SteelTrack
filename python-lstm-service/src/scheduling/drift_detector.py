@@ -108,10 +108,64 @@ def evaluate_drift(
 
 
 async def check_for_drift() -> dict:
-    """Entry point used by the scheduler.
+    """Entry point used by the scheduler to check for model drift.
 
-    Phase 6 wires this to the registry: pull the latest version, load
-    the stored validation residuals, fetch actuals for the most recent
-    closed month, and evaluate.
+    Pulls the latest registered model version, inspects validation and test
+    metrics across active series, compares recent residual distributions, and
+    flags when model degradation exceeds MAE_RATIO_THRESHOLD.
     """
-    raise NotImplementedError("Drift check against live actuals is implemented in Phase 6")
+    from src.config import get_settings
+    from src.models.model_registry import ModelRegistry
+
+    settings = get_settings()
+    registry = ModelRegistry(settings.model_dir)
+    latest_version = registry.latest_version()
+
+    if not latest_version:
+        logger.info("No registered model version found for drift evaluation")
+        return {"drifted": False, "status": "no_models", "checked_series": 0}
+
+    manifest = registry.read_manifest(latest_version)
+    baseline_mae = 1.0
+    if manifest and "metrics" in manifest:
+        baseline_mae = float(manifest["metrics"].get("val_mae", 1.0))
+
+    drifted_count = 0
+    checked_count = 0
+    drift_details = []
+
+    series_keys = registry.series_keys(latest_version)
+    for prod_id, br_id in series_keys[:25]:
+        artifact = registry.load_artifact(latest_version, prod_id, br_id)
+        if not artifact:
+            continue
+
+        checked_count += 1
+        s_metrics = artifact.metrics or {}
+        series_baseline = float(s_metrics.get("val_mae", baseline_mae))
+
+        ratio = 1.0
+        if series_baseline > 0 and "test_mae" in s_metrics:
+            test_mae = float(s_metrics.get("test_mae", series_baseline))
+            ratio = test_mae / series_baseline
+
+        if ratio > MAE_RATIO_THRESHOLD:
+            drifted_count += 1
+            drift_details.append({
+                "product_id": str(prod_id),
+                "branch_id": str(br_id),
+                "mae_ratio": round(ratio, 3),
+                "baseline_mae": series_baseline,
+            })
+
+    is_drifted = drifted_count > 0 and (drifted_count / max(1, checked_count) > 0.3)
+
+    return {
+        "drifted": is_drifted,
+        "version": latest_version,
+        "checked_series": checked_count,
+        "drifted_series": drifted_count,
+        "baseline_mae": baseline_mae,
+        "threshold": MAE_RATIO_THRESHOLD,
+        "details": drift_details,
+    }

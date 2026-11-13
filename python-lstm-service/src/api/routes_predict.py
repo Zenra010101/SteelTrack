@@ -19,6 +19,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
+from prometheus_client import Counter
 
 from src.api.schemas import ForecastPrediction, PredictRequest, PredictResponse
 from src.config import get_settings
@@ -30,6 +31,11 @@ from src.models.model_registry import ModelRegistry
 router = APIRouter(prefix="/predict", tags=["predictions"])
 
 _settings = get_settings()
+
+PREDICTION_REQUESTS_TOTAL = Counter(
+    "prediction_requests_total",
+    "Total number of prediction requests served by LSTM API",
+)
 
 
 async def _run_predictions(
@@ -66,6 +72,7 @@ async def _run_predictions(
                 horizon_months=horizon_months,
                 model_version=model_version,
             )
+            PREDICTION_REQUESTS_TOTAL.inc()
         except RuntimeError as exc:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)

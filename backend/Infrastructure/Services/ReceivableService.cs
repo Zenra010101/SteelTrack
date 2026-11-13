@@ -246,6 +246,28 @@ public class ReceivableService : IReceivableService
             .Distinct()
             .Count();
 
+        // Aging Buckets Calculation
+        var bucket_0_30 = open.Where(d => (today - d.DueDate.Date).TotalDays <= 30).ToList();
+        var bucket_31_60 = open.Where(d => { var days = (today - d.DueDate.Date).TotalDays; return days is > 30 and <= 60; }).ToList();
+        var bucket_61_90 = open.Where(d => { var days = (today - d.DueDate.Date).TotalDays; return days is > 60 and <= 90; }).ToList();
+        var bucket_90Plus = open.Where(d => (today - d.DueDate.Date).TotalDays > 90).ToList();
+
+        // Cash Flow Projections based on DueDates
+        var next30 = today.AddDays(30);
+        var next60 = today.AddDays(60);
+        var next90 = today.AddDays(90);
+
+        var projected30 = open.Where(d => d.DueDate.Date <= next30).Sum(d => d.RemainingBalance);
+        var projected60 = open.Where(d => d.DueDate.Date > next30 && d.DueDate.Date <= next60).Sum(d => d.RemainingBalance);
+        var projected90 = open.Where(d => d.DueDate.Date > next60 && d.DueDate.Date <= next90).Sum(d => d.RemainingBalance);
+
+        var cashFlowPoints = new List<CashFlowProjectionPointDto>
+        {
+            new() { Period = "Next 30 Days", ExpectedInflow = projected30, HistoricalCollected = await _receivableRepository.GetCollectedTodayAsync(filterUserId, cancellationToken) * 30 },
+            new() { Period = "31-60 Days", ExpectedInflow = projected60, HistoricalCollected = 0 },
+            new() { Period = "61-90 Days", ExpectedInflow = projected90, HistoricalCollected = 0 }
+        };
+
         return new ReceivablesSummaryDto
         {
             TotalOutstanding = open.Sum(d => d.RemainingBalance),
@@ -255,7 +277,21 @@ public class ReceivableService : IReceivableService
             UnpaidCount = open.Count(d => d.PaidAmount == 0),
             PartialCount = open.Count(d => d.PaidAmount > 0 && d.Status == ReceivableStatus.Partial),
             OverdueCount = overdue.Count,
-            OverdueReceivables = overdue.OrderBy(d => d.DueDate).Take(10).ToList()
+            OverdueReceivables = overdue.OrderBy(d => d.DueDate).Take(10).ToList(),
+
+            Current_0_30 = bucket_0_30.Sum(d => d.RemainingBalance),
+            PastDue_31_60 = bucket_31_60.Sum(d => d.RemainingBalance),
+            PastDue_61_90 = bucket_61_90.Sum(d => d.RemainingBalance),
+            PastDue_90Plus = bucket_90Plus.Sum(d => d.RemainingBalance),
+            Count_0_30 = bucket_0_30.Count,
+            Count_31_60 = bucket_31_60.Count,
+            Count_61_90 = bucket_61_90.Count,
+            Count_90Plus = bucket_90Plus.Count,
+
+            ProjectedCashFlowNext30Days = projected30,
+            ProjectedCashFlowNext60Days = projected60,
+            ProjectedCashFlowNext90Days = projected90,
+            CashFlowProjections = cashFlowPoints
         };
     }
 

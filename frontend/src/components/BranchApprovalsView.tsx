@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ClipboardCheck, CheckCircle2, AlertCircle, XCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+import { ClipboardCheck, CheckCircle2, AlertCircle, XCircle, RefreshCw, ShieldCheck, Bell } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import { fetchApprovals, reviewApproval, type ApprovalRequestItem } from '../services/api';
+import { onApprovalRequired, onTransferRequested } from '../services/signalrService';
 import { TableExportButtons } from './TableExportButtons';
 
 interface BranchApprovalsViewProps {
@@ -15,6 +16,7 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [realtimeNotice, setRealtimeNotice] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -32,6 +34,50 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Request browser notification permission if available
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  // Listen for real-time approvals and transfer alerts
+  useEffect(() => {
+    const unsubApproval = onApprovalRequired((event) => {
+      loadData();
+      setRealtimeNotice(`🔔 ${event.title || 'New Approval'}: ${event.message}`);
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification(event.title || 'SteelTrack Approval Required', {
+            body: event.message,
+            icon: '/favicon.ico',
+          });
+        } catch {}
+      }
+    });
+
+    const unsubTransfer = onTransferRequested((event) => {
+      if (event.destinationBranch === branch || event.sourceBranch === branch) {
+        loadData();
+        const msg = `Transfer ${event.transferNumber} requested (${event.sourceBranch} → ${event.destinationBranch}, ${event.weightInTons}t)`;
+        setRealtimeNotice(`🔔 Inbound Transfer Alert: ${msg}`);
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('New Transfer Approval Required', {
+              body: msg,
+              icon: '/favicon.ico',
+            });
+          } catch {}
+        }
+      }
+    });
+
+    return () => {
+      unsubApproval();
+      unsubTransfer();
+    };
+  }, [branch, loadData]);
 
   const handleApprove = async (id: string) => {
     setProcessingId(id);
@@ -162,6 +208,21 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
           </button>
         </div>
       </div>
+
+      {realtimeNotice && (
+        <div style={{ margin: '0.75rem 0', padding: '0.75rem 1rem', background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '8px', color: '#92400E', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Bell size={16} />
+            <span>{realtimeNotice}</span>
+          </div>
+          <button
+            onClick={() => setRealtimeNotice(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#92400E', fontWeight: 700, fontSize: '0.9rem' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {actionMessage && (
         <div style={{ margin: '0.75rem 0', padding: '0.75rem 1rem', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px', color: '#0369A1', fontSize: '0.85rem', fontWeight: 600 }}>

@@ -13,6 +13,8 @@ import {
   ShieldAlert,
   AlertCircle,
   Receipt,
+  TrendingUp,
+  Calendar,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type {
@@ -25,6 +27,7 @@ import {
   fetchReceivables,
   fetchReceivableStats,
   recordReceivablePayment,
+  getAuthHeaders,
 } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
 
@@ -36,6 +39,7 @@ interface ReceivablesViewProps {
 export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesViewProps) {
   const [receivables, setReceivables] = useState<CustomerReceivable[]>([]);
   const [stats, setStats] = useState<ReceivableStats | null>(null);
+  const [summary, setSummary] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>('');
   const [agingFilter, setAgingFilter] = useState<string>('BalanceOnly');
@@ -60,12 +64,18 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
   const loadData = async () => {
     setLoading(true);
     try {
-      const [list, statsData] = await Promise.all([
+      const [list, statsData, summaryRes] = await Promise.all([
         fetchReceivables(currentBranch),
         fetchReceivableStats(currentBranch),
+        fetch('/api/receivables/summary', { headers: getAuthHeaders() })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
       ]);
       setReceivables(list);
       setStats(statsData);
+      if (summaryRes?.data) {
+        setSummary(summaryRes.data);
+      }
     } catch (err) {
       console.error('Error fetching receivables:', err);
     } finally {
@@ -223,6 +233,97 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
           </div>
           <div style={{ color: '#64748B', fontSize: '0.75rem', marginTop: '0.25rem' }}>
             {stats?.pendingPdcCount ?? 0} Cheques Awaiting Maturity
+          </div>
+        </div>
+      </div>
+
+      {/* AGING BUCKETS & CASH-FLOW PROJECTION (Deliverable 14) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        {/* Aging Buckets Breakdown */}
+        <div style={{ background: '#FFFFFF', borderRadius: '8px', padding: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Calendar size={16} color="#0284C7" />
+              Receivables Aging Analysis
+            </span>
+            <span style={{ fontSize: '0.75rem', color: '#64748B' }}>By Days Past Due</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '6px', padding: '0.65rem' }}>
+              <div style={{ fontSize: '0.72rem', color: '#166534', fontWeight: 600 }}>Current (0-30 Days)</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#166534', marginTop: '0.2rem' }}>
+                ₱{Number(summary?.current_0_30 ?? stats?.totalCurrentPHP ?? 0).toLocaleString()}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#15803D' }}>{summary?.count_0_30 ?? '—'} active items</div>
+            </div>
+
+            <div style={{ background: '#FEFCE8', border: '1px solid #FEF08A', borderRadius: '6px', padding: '0.65rem' }}>
+              <div style={{ fontSize: '0.72rem', color: '#854D0E', fontWeight: 600 }}>31-60 Days Overdue</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#854D0E', marginTop: '0.2rem' }}>
+                ₱{Number(summary?.pastDue_31_60 ?? 0).toLocaleString()}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#A16207' }}>{summary?.count_31_60 ?? '—'} overdue items</div>
+            </div>
+
+            <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '6px', padding: '0.65rem' }}>
+              <div style={{ fontSize: '0.72rem', color: '#9A3412', fontWeight: 600 }}>61-90 Days Overdue</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#9A3412', marginTop: '0.2rem' }}>
+                ₱{Number(summary?.pastDue_61_90 ?? 0).toLocaleString()}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#C2410C' }}>{summary?.count_61_90 ?? '—'} overdue items</div>
+            </div>
+
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', padding: '0.65rem' }}>
+              <div style={{ fontSize: '0.72rem', color: '#991B1B', fontWeight: 600 }}>90+ Days (Severe)</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#991B1B', marginTop: '0.2rem' }}>
+                ₱{Number(summary?.pastDue_90Plus ?? 0).toLocaleString()}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#B91C1C' }}>{summary?.count_90Plus ?? '—'} delinquent items</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Expected vs Collected Cash-Flow Projection */}
+        <div style={{ background: '#FFFFFF', borderRadius: '8px', padding: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <TrendingUp size={16} color="#059669" />
+              Projected Cash-Flow Inflows
+            </span>
+            <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Expected Collection Timeline</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.85rem', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0F172A' }}>Next 30 Days (Expected Inflow)</div>
+                <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Maturing invoices & prompt payments</div>
+              </div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#059669' }}>
+                ₱{Number(summary?.projectedCashFlowNext30Days ?? summary?.current_0_30 ?? stats?.totalCurrentPHP ?? 0).toLocaleString()}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.85rem', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0F172A' }}>31 to 60 Days Inflow</div>
+                <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Secondary collection target</div>
+              </div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0284C7' }}>
+                ₱{Number(summary?.projectedCashFlowNext60Days ?? summary?.pastDue_31_60 ?? 0).toLocaleString()}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.85rem', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0F172A' }}>61 to 90 Days & Beyond</div>
+                <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Long-cycle recoveries</div>
+              </div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#D97706' }}>
+                ₱{Number(summary?.projectedCashFlowNext90Days ?? summary?.pastDue_61_90 ?? 0).toLocaleString()}
+              </div>
+            </div>
           </div>
         </div>
       </div>

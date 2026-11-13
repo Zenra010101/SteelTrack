@@ -5,6 +5,9 @@ public class GlobalSearchResultDto
     public List<GlobalSearchHitDto> Products { get; set; } = [];
     public List<GlobalSearchHitDto> Customers { get; set; } = [];
     public List<GlobalSearchHitDto> Suppliers { get; set; } = [];
+    public List<GlobalSearchHitDto> Batches { get; set; } = [];
+    public List<GlobalSearchHitDto> Invoices { get; set; } = [];
+    public List<GlobalSearchHitDto> Transfers { get; set; } = [];
 }
 
 public class GlobalSearchHitDto

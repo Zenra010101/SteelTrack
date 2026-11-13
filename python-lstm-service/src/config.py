@@ -52,7 +52,7 @@ class LstmServiceSettings(BaseSettings):
         description="AdamW learning rate for the LSTM optimizer",
     )
     min_history_months: int = Field(
-        default=12, alias="LSTM_MIN_HISTORY_MONTHS", ge=1,
+        default=2, alias="LSTM_MIN_HISTORY_MONTHS", ge=1,
         description="Minimum history required to train a per-series model; "
                     "series below this fall back to seasonal-naive",
     )

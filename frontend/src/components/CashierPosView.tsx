@@ -16,11 +16,18 @@ import {
   AlertTriangle,
   Download,
   Zap,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { PosTransaction, PosCartItem, SteelCategory } from '../types/pos';
 import { fetchPosBatches, processPosSale, fetchCustomers, type PosBatchItem } from '../services/api';
 import { printReceiptPdf } from '../utils/tableExport';
+import {
+  enqueueOfflineSale,
+  getPendingOfflineSalesCount,
+  syncOfflineSales,
+} from '../utils/offlinePosQueue';
 
 interface CashierPosViewProps {
   branch: BranchLocation;
@@ -77,13 +84,11 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   const [isProcessingSale, setIsProcessingSale] = useState<boolean>(false);
   const [fifoNotice, setFifoNotice] = useState<string | null>(null);
 
-  // Debounce search keystrokes to ensure smooth live typing
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  // Offline / Edge POS Queue State (Deliverable 9)
+  const [offlinePendingCount, setOfflinePendingCount] = useState<number>(0);
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [offlineSyncNotice, setOfflineSyncNotice] = useState<string | null>(null);
+  const [isSyncingOffline, setIsSyncingOffline] = useState<boolean>(false);
 
   // Automatically load batch data from database for THIS branch
   const loadData = useCallback(async () => {
@@ -111,6 +116,60 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
       setLoading(false);
     }
   }, [branch, selectedCategory, debouncedSearch]);
+
+  const refreshOfflineCount = useCallback(async () => {
+    try {
+      const count = await getPendingOfflineSalesCount();
+      setOfflinePendingCount(count);
+    } catch {}
+  }, []);
+
+  const triggerOfflineSync = useCallback(async () => {
+    if (isSyncingOffline) return;
+    setIsSyncingOffline(true);
+    setOfflineSyncNotice(null);
+    try {
+      const res = await syncOfflineSales(processPosSale);
+      if (res.synced > 0) {
+        setOfflineSyncNotice(`Successfully synced ${res.synced} offline transaction(s) to the backend.`);
+        loadData();
+      }
+      await refreshOfflineCount();
+    } catch (err: any) {
+      console.warn('Manual sync failed:', err);
+    } finally {
+      setIsSyncingOffline(false);
+    }
+  }, [isSyncingOffline, loadData, refreshOfflineCount]);
+
+  useEffect(() => {
+    void refreshOfflineCount();
+
+    const handleOnlineStatus = () => {
+      setIsOnline(true);
+      void triggerOfflineSync();
+    };
+
+    const handleOfflineStatus = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOfflineStatus);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOfflineStatus);
+    };
+  }, [refreshOfflineCount, triggerOfflineSync]);
+
+  // Debounce search keystrokes to ensure smooth live typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     loadData();
@@ -283,45 +342,87 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
     return Math.max(0, Number((splitCashTender - requiredCash).toFixed(2)));
   }, [paymentMethod, grandTotalPHP, splitNonCashSum, splitCashTender]);
 
-  // Sale Execution from Dedicated Payment Modal
+  // Sale Execution from Dedicated Payment Modal (Supports Offline Queueing)
   const handleExecuteSale = async () => {
     if (cart.length === 0 || isProcessingSale) return;
     setIsProcessingSale(true);
 
+    const customer = selectedCustomerName === 'Other' ? customCustomerInput || 'Cash Customer' : selectedCustomerName;
+    const foundTin = customers.find((c) => c.name === customer)?.tin;
+
+    const isSplit = paymentMethod === 'Split Payment';
+    const cleanSplitTenders = isSplit
+      ? splitTenders.filter((t) => t.amount > 0).map((t) => ({
+          method: t.method,
+          amount: Number(t.amount),
+          referenceNumber: t.referenceNumber || undefined,
+        }))
+      : undefined;
+
+    const salePayload = {
+      branch,
+      cashierName,
+      customerName: customer,
+      customerTin: foundTin,
+      items: [...cart],
+      totalTonnage: Number(totalQuantityUnits.toFixed(2)),
+      subtotalPHP: Number(subtotalPHP.toFixed(2)),
+      taxPHP,
+      discountPHP: discountAmount,
+      totalAmountPHP: grandTotalPHP,
+      paymentMethod,
+      splitTenders: cleanSplitTenders,
+      amountTenderedPHP: isSplit
+        ? totalSplitAllocated
+        : paymentMethod === 'Cash'
+        ? amountTendered
+        : grandTotalPHP,
+      changeDuePHP: isSplit ? splitChangeDue : paymentMethod === 'Cash' ? changeDuePHP : 0,
+      referenceNumber: referenceNumber || undefined,
+    };
+
+    // If client is currently offline, enqueue directly to IndexedDB
+    if (!navigator.onLine) {
+      try {
+        const offlineId = await enqueueOfflineSale(salePayload);
+        const offlineReceipt: PosTransaction = {
+          id: offlineId,
+          invoiceNumber: `OFFLINE-${Date.now().toString().slice(-6)}`,
+          branch,
+          cashierName,
+          customerName: customer,
+          customerTin: foundTin,
+          items: [...cart],
+          totalTonnage: Number(totalQuantityUnits.toFixed(2)),
+          subtotalPHP: Number(subtotalPHP.toFixed(2)),
+          taxPHP,
+          discountPHP: discountAmount,
+          totalAmountPHP: grandTotalPHP,
+          paymentMethod,
+          amountTenderedPHP: salePayload.amountTenderedPHP,
+          changeDuePHP: salePayload.changeDuePHP,
+          referenceNumber: 'OFFLINE_LOCAL',
+          createdAt: new Date().toISOString(),
+        };
+        setIsPaymentModalOpen(false);
+        setActiveReceipt(offlineReceipt);
+        setCart([]);
+        setAmountTendered(0);
+        setReferenceNumber('');
+        await refreshOfflineCount();
+        return;
+      } catch (offlineErr: any) {
+        setTransactionError({
+          message: 'Failed to queue offline sale: ' + (offlineErr.message || 'IndexedDB error'),
+        });
+        return;
+      } finally {
+        setIsProcessingSale(false);
+      }
+    }
+
     try {
-      const customer = selectedCustomerName === 'Other' ? customCustomerInput || 'Cash Customer' : selectedCustomerName;
-      const foundTin = customers.find((c) => c.name === customer)?.tin;
-
-      const isSplit = paymentMethod === 'Split Payment';
-      const cleanSplitTenders = isSplit
-        ? splitTenders.filter((t) => t.amount > 0).map((t) => ({
-            method: t.method,
-            amount: Number(t.amount),
-            referenceNumber: t.referenceNumber || undefined,
-          }))
-        : undefined;
-
-      const newTx = await processPosSale({
-        branch,
-        cashierName,
-        customerName: customer,
-        customerTin: foundTin,
-        items: [...cart],
-        totalTonnage: Number(totalQuantityUnits.toFixed(2)),
-        subtotalPHP: Number(subtotalPHP.toFixed(2)),
-        taxPHP,
-        discountPHP: discountAmount,
-        totalAmountPHP: grandTotalPHP,
-        paymentMethod,
-        splitTenders: cleanSplitTenders,
-        amountTenderedPHP: isSplit
-          ? totalSplitAllocated
-          : paymentMethod === 'Cash'
-          ? amountTendered
-          : grandTotalPHP,
-        changeDuePHP: isSplit ? splitChangeDue : paymentMethod === 'Cash' ? changeDuePHP : 0,
-        referenceNumber: referenceNumber || undefined,
-      });
+      const newTx = await processPosSale(salePayload);
 
       // Close payment modal and issue receipt immediately
       setIsPaymentModalOpen(false);
@@ -335,6 +436,42 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
       ]);
       await loadData();
     } catch (err: any) {
+      // If error is network related, fallback gracefully to offline queue
+      const errMsg = (err.message || '').toLowerCase();
+      if (!navigator.onLine || errMsg.includes('fetch') || errMsg.includes('network') || errMsg.includes('failed to fetch')) {
+        try {
+          const offlineId = await enqueueOfflineSale(salePayload);
+          const offlineReceipt: PosTransaction = {
+            id: offlineId,
+            invoiceNumber: `OFFLINE-${Date.now().toString().slice(-6)}`,
+            branch,
+            cashierName,
+            customerName: customer,
+            customerTin: foundTin,
+            items: [...cart],
+            totalTonnage: Number(totalQuantityUnits.toFixed(2)),
+            subtotalPHP: Number(subtotalPHP.toFixed(2)),
+            taxPHP,
+            discountPHP: discountAmount,
+            totalAmountPHP: grandTotalPHP,
+            paymentMethod,
+            amountTenderedPHP: salePayload.amountTenderedPHP,
+            changeDuePHP: salePayload.changeDuePHP,
+            referenceNumber: 'OFFLINE_LOCAL',
+            createdAt: new Date().toISOString(),
+          };
+          setIsPaymentModalOpen(false);
+          setActiveReceipt(offlineReceipt);
+          setCart([]);
+          setAmountTendered(0);
+          setReferenceNumber('');
+          await refreshOfflineCount();
+          return;
+        } catch (enqueueErr) {
+          console.error('Offline fallback failed:', enqueueErr);
+        }
+      }
+
       console.error('POS Checkout Error:', err);
       setTransactionError({
         message: err.message || 'Failed to complete sale transaction.',
@@ -360,10 +497,64 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
       <div className="pos-layout-grid">
         {/* LEFT: PRODUCT CATALOG WITH SEARCH & CATEGORIES */}
         <div className="pos-catalog-panel">
-          <div className="pos-panel-title">
-            <Boxes size={18} style={{ color: '#0284C7' }} />
-            <span>Available Inventory Catalog ({branch} Branch Stock)</span>
+          <div className="pos-panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Boxes size={18} style={{ color: '#0284C7' }} />
+              <span>Available Inventory Catalog ({branch} Branch Stock)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  padding: '0.25rem 0.6rem',
+                  borderRadius: '9999px',
+                  background: isOnline ? '#ECFDF5' : '#FEF3C7',
+                  color: isOnline ? '#059669' : '#D97706',
+                  border: `1px solid ${isOnline ? '#A7F3D0' : '#FDE68A'}`,
+                }}
+              >
+                {isOnline ? <Wifi size={13} /> : <WifiOff size={13} />}
+                {isOnline ? 'Online POS' : 'Offline / Edge Mode'}
+              </span>
+              {offlinePendingCount > 0 && (
+                <button
+                  type="button"
+                  onClick={triggerOfflineSync}
+                  disabled={isSyncingOffline || !isOnline}
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    padding: '0.25rem 0.6rem',
+                    borderRadius: '6px',
+                    background: '#0284C7',
+                    color: '#FFF',
+                    border: 'none',
+                    cursor: isOnline ? 'pointer' : 'not-allowed',
+                    opacity: isSyncingOffline ? 0.7 : 1,
+                  }}
+                >
+                  {isSyncingOffline ? 'Syncing...' : `Sync (${offlinePendingCount})`}
+                </button>
+              )}
+            </div>
           </div>
+
+          {offlineSyncNotice && (
+            <div style={{ margin: '0 0 0.75rem 0', padding: '0.6rem 0.85rem', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 6, color: '#065F46', fontSize: '0.78rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>{offlineSyncNotice}</span>
+              <button
+                type="button"
+                onClick={() => setOfflineSyncNotice(null)}
+                style={{ background: 'none', border: 'none', color: '#065F46', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* FIFO Policy Notification Banner */}
           {fifoNotice && (

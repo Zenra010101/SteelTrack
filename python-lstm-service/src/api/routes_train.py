@@ -88,6 +88,7 @@ async def _run_job(job_id: str, request: TrainRequest) -> None:
             branch_ids=list(request.branch_ids) if request.branch_ids else None,
             lookback=request.lookback_months,
             horizon=request.horizon_months,
+            min_history_months=request.min_history_months,
         )
         job["status"] = "completed"
         job["model_version"] = summary.get("version")

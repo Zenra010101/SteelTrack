@@ -45,6 +45,38 @@ public class GlobalSearchService : IGlobalSearchService
             .Select(s => new { s.Id, s.Name })
             .ToListAsync(cancellationToken);
 
+        var batches = await _context.ProductBatches
+            .Include(b => b.Product)
+            .Include(b => b.Branch)
+            .Where(b => b.IsActive && b.BatchCode != null && (
+                b.BatchCode.ToLower().Contains(term) ||
+                b.Product.Name.ToLower().Contains(term) ||
+                b.Product.Sku.ToLower().Contains(term)))
+            .OrderByDescending(b => b.CreatedAt)
+            .Take(6)
+            .Select(b => new { b.Id, BatchCode = b.BatchCode ?? "", ProductName = b.Product.Name, BranchName = b.Branch != null ? b.Branch.Name : "Main", b.Quantity })
+            .ToListAsync(cancellationToken);
+
+        var invoices = await _context.Sales
+            .Where(s => !s.IsArchived && (
+                s.SaleNumber.ToLower().Contains(term) ||
+                (s.CustomerName != null && s.CustomerName.ToLower().Contains(term))))
+            .OrderByDescending(s => s.CreatedAt)
+            .Take(6)
+            .Select(s => new { s.Id, s.SaleNumber, s.CustomerName, s.TotalAmount, s.CreatedAt })
+            .ToListAsync(cancellationToken);
+
+        var transfers = await _context.StockTransfers
+            .Where(t =>
+                t.TransferNumber.ToLower().Contains(term) ||
+                t.HeatNumber.ToLower().Contains(term) ||
+                t.SourceBranch.ToLower().Contains(term) ||
+                t.DestinationBranch.ToLower().Contains(term))
+            .OrderByDescending(t => t.RequestedAt)
+            .Take(6)
+            .Select(t => new { t.Id, t.TransferNumber, t.SourceBranch, t.DestinationBranch, t.WeightInTons, t.Status })
+            .ToListAsync(cancellationToken);
+
         return new GlobalSearchResultDto
         {
             Products = products.Select(p => new GlobalSearchHitDto
@@ -66,6 +98,27 @@ public class GlobalSearchService : IGlobalSearchService
                 Id = s.Id.ToString(),
                 Label = s.Name,
                 Route = $"/suppliers?id={s.Id}"
+            }).ToList(),
+            Batches = batches.Select(b => new GlobalSearchHitDto
+            {
+                Id = b.Id.ToString(),
+                Label = b.BatchCode,
+                Subtitle = $"{b.ProductName} • {b.BranchName} ({b.Quantity} units)",
+                Route = $"/inventory?search={Uri.EscapeDataString(b.BatchCode)}"
+            }).ToList(),
+            Invoices = invoices.Select(s => new GlobalSearchHitDto
+            {
+                Id = s.Id.ToString(),
+                Label = s.SaleNumber,
+                Subtitle = $"{s.CustomerName ?? "Walk-in"} • ₱{s.TotalAmount:N2} • {s.CreatedAt:yyyy-MM-dd}",
+                Route = $"/sales?search={Uri.EscapeDataString(s.SaleNumber)}"
+            }).ToList(),
+            Transfers = transfers.Select(t => new GlobalSearchHitDto
+            {
+                Id = t.Id,
+                Label = t.TransferNumber,
+                Subtitle = $"{t.SourceBranch} → {t.DestinationBranch} ({t.WeightInTons}t) • {t.Status}",
+                Route = $"/transfers?search={Uri.EscapeDataString(t.TransferNumber)}"
             }).ToList()
         };
     }

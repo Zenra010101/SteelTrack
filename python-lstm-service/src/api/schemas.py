@@ -42,6 +42,11 @@ class TrainRequest(BaseModel):
         default=False,
         description="If true, overwrite existing model artifacts; if false, only train missing models.",
     )
+    min_history_months: int | None = Field(
+        default=None,
+        ge=1,
+        description="Optional minimum non-zero history months required to train. Defaults to service config.",
+    )
 
     model_config = ConfigDict(from_attributes=True)
 

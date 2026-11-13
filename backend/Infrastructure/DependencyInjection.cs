@@ -119,6 +119,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<ILstmForecastService, LstmForecastService>();
+        services.AddScoped<IRbdssService, RbdssService>();
 
         services.AddHostedService<ExpenseAttachmentRetentionService>();
 

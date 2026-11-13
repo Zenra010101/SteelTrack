@@ -205,8 +205,8 @@ class Predictor:
             x = torch.tensor(scaled, dtype=torch.float32).view(1, seq_len, 1)
             mu, sigma = model(x)
 
-        mu_np = mu[0].numpy()
-        sigma_np = sigma[0].numpy()
+        mu_np = mu[0].detach().cpu().numpy()
+        sigma_np = sigma[0].detach().cpu().numpy()
 
         results: list[RawPrediction] = []
         for step in range(horizon_months):
@@ -295,5 +295,5 @@ class _FrozenScaler:
 
     def inverse_single(self, x: float) -> float:
         """Invert the log1p + scaling transform for a single value."""
-        log_value = x * self.scale + self.center
+        log_value = min(x * self.scale + self.center, 50.0)
         return float(np.expm1(log_value))

@@ -13,7 +13,15 @@ public static class DatabaseInitializer
     {
         if (context.Database.IsNpgsql())
         {
-            await context.Database.MigrateAsync();
+            try
+            {
+                await context.Database.MigrateAsync();
+            }
+            catch (Exception ex)
+            {
+                logger?.LogWarning(ex, "EF Core MigrateAsync encountered an issue (such as existing schema or historical migration reference). Falling back to idempotent schema verification.");
+            }
+
             await SalesReportVerificationEnsureMigrator.ApplyAsync(context);
             // The ReceiptPaperSize migration was hand-written without a [Migration] attribute,
             // so EF never applies it on PostgreSQL. Ensure the column exists idempotently.

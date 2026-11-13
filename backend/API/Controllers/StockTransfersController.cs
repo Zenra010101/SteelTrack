@@ -14,6 +14,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+using Microsoft.AspNetCore.SignalR;
+using SteelTrack.Api.Hubs;
+
 namespace SteelTrack.Api.Controllers;
 
 [ApiController]
@@ -23,11 +26,16 @@ public class StockTransfersController : ControllerBase
 {
     private readonly AppDbContext? _dbContext;
     private readonly ILogger<StockTransfersController> _logger;
+    private readonly IHubContext<SteelTrackHub>? _hubContext;
 
-    public StockTransfersController(AppDbContext? dbContext, ILogger<StockTransfersController> logger)
+    public StockTransfersController(
+        AppDbContext? dbContext,
+        ILogger<StockTransfersController> logger,
+        IHubContext<SteelTrackHub>? hubContext = null)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _hubContext = hubContext;
     }
 
     [HttpGet]
@@ -94,6 +102,34 @@ public class StockTransfersController : ControllerBase
         {
             _dbContext.StockTransfers.Add(entity);
             await _dbContext.SaveChangesAsync();
+        }
+
+        if (_hubContext != null)
+        {
+            try
+            {
+                await _hubContext.Clients.All.SendAsync("TransferRequested", new
+                {
+                    transferNumber = entity.TransferNumber,
+                    sourceBranch = entity.SourceBranch,
+                    destinationBranch = entity.DestinationBranch,
+                    weightInTons = entity.WeightInTons,
+                    timestamp = DateTime.UtcNow
+                });
+
+                await _hubContext.Clients.Group($"branch_{entity.DestinationBranch.ToLowerInvariant()}").SendAsync("ApprovalRequired", new
+                {
+                    type = "StockTransfer",
+                    title = $"New Transfer Request #{entity.TransferNumber}",
+                    message = $"{entity.SourceBranch} requested to transfer {entity.WeightInTons}T to {entity.DestinationBranch}.",
+                    transferId = entity.Id,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to broadcast transfer notification via SignalR");
+            }
         }
 
         return CreatedAtAction(nameof(GetAll), new { id = entity.Id }, entity);

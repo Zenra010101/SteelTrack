@@ -71,6 +71,29 @@ public class ReceivablesSummaryDto
     public int PartialCount { get; set; }
     public int OverdueCount { get; set; }
     public List<ReceivableDto> OverdueReceivables { get; set; } = [];
+
+    // Aging Buckets (Deliverable 14)
+    public decimal Current_0_30 { get; set; }
+    public decimal PastDue_31_60 { get; set; }
+    public decimal PastDue_61_90 { get; set; }
+    public decimal PastDue_90Plus { get; set; }
+    public int Count_0_30 { get; set; }
+    public int Count_31_60 { get; set; }
+    public int Count_61_90 { get; set; }
+    public int Count_90Plus { get; set; }
+
+    // Cash-Flow Projections
+    public decimal ProjectedCashFlowNext30Days { get; set; }
+    public decimal ProjectedCashFlowNext60Days { get; set; }
+    public decimal ProjectedCashFlowNext90Days { get; set; }
+    public List<CashFlowProjectionPointDto> CashFlowProjections { get; set; } = [];
+}
+
+public class CashFlowProjectionPointDto
+{
+    public string Period { get; set; } = string.Empty;
+    public decimal ExpectedInflow { get; set; }
+    public decimal HistoricalCollected { get; set; }
 }
 
 public class CustomerLedgerDto

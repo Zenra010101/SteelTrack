@@ -604,6 +604,124 @@ public class ProfitAnalyticsService : IProfitAnalyticsService
 
     }
 
+    public async Task<ProfitMarginAnalyticsDto> GetProfitMarginAnalyticsAsync(
+        DateTime? from,
+        DateTime? to,
+        Guid? branchId,
+        Guid? productId,
+        CancellationToken cancellationToken = default)
+    {
+        var startDate = from ?? DateTime.UtcNow.AddMonths(-1);
+        var endDate = to ?? DateTime.UtcNow;
+
+        var salesQuery = _context.Sales.AsNoTracking()
+            .Include(s => s.Items)
+            .Include(s => s.Branch)
+            .Where(s => s.Status == SaleStatus.Completed && !s.IsArchived && s.CreatedAt >= startDate && s.CreatedAt <= endDate);
+
+        if (branchId.HasValue)
+        {
+            salesQuery = salesQuery.Where(s => s.BranchId == branchId.Value);
+        }
+
+        var sales = await salesQuery.ToListAsync(cancellationToken);
+
+        var allItems = sales.SelectMany(s => s.Items.Select(item => new { Sale = s, Item = item }))
+            .Where(x => !productId.HasValue || x.Item.ProductId == productId.Value)
+            .ToList();
+
+        decimal totalRevenue = allItems.Sum(x => x.Item.LineTotal);
+        decimal totalCogs = allItems.Sum(x => x.Item.CostPriceAtSale * x.Item.Quantity);
+        decimal grossProfit = totalRevenue - totalCogs;
+        decimal grossProfitMarginPct = totalRevenue > 0 ? Math.Round((grossProfit / totalRevenue) * 100m, 2) : 0;
+
+        var expenseQuery = _context.ExpenseVouchers.AsNoTracking()
+            .Where(e => e.Status == ExpenseVoucherStatus.Paid && e.ExpenseDate >= DateOnly.FromDateTime(startDate) && e.ExpenseDate <= DateOnly.FromDateTime(endDate));
+
+        var totalOperatingExpenses = await expenseQuery.SumAsync(e => (decimal?)e.Amount, cancellationToken) ?? 0;
+        decimal netProfit = grossProfit - totalOperatingExpenses;
+        decimal netProfitMarginPct = totalRevenue > 0 ? Math.Round((netProfit / totalRevenue) * 100m, 2) : 0;
+
+        var productGroups = allItems
+            .GroupBy(x => new { x.Item.ProductId, x.Item.ProductSku, x.Item.ProductName })
+            .Select(g =>
+            {
+                var rev = g.Sum(x => x.Item.LineTotal);
+                var cogs = g.Sum(x => x.Item.CostPriceAtSale * x.Item.Quantity);
+                var gp = rev - cogs;
+                var margin = rev > 0 ? Math.Round((gp / rev) * 100m, 2) : 0;
+                return new ProductProfitMarginDto
+                {
+                    ProductId = g.Key.ProductId,
+                    ProductSku = g.Key.ProductSku,
+                    ProductName = g.Key.ProductName,
+                    QuantitySold = g.Sum(x => x.Item.Quantity),
+                    Revenue = rev,
+                    Cogs = cogs,
+                    GrossProfit = gp,
+                    GrossProfitMarginPct = margin
+                };
+            })
+            .OrderByDescending(p => p.Revenue)
+            .ToList();
+
+        var branchGroups = sales
+            .GroupBy(s => new { s.BranchId, BranchName = s.Branch?.Name ?? "Unassigned" })
+            .Select(g =>
+            {
+                var items = g.SelectMany(s => s.Items).Where(i => !productId.HasValue || i.ProductId == productId.Value).ToList();
+                var rev = items.Sum(i => i.LineTotal);
+                var cogs = items.Sum(i => i.CostPriceAtSale * i.Quantity);
+                var gp = rev - cogs;
+                var margin = rev > 0 ? Math.Round((gp / rev) * 100m, 2) : 0;
+                return new BranchProfitMarginDto
+                {
+                    BranchId = g.Key.BranchId,
+                    BranchName = g.Key.BranchName,
+                    Revenue = rev,
+                    Cogs = cogs,
+                    GrossProfit = gp,
+                    GrossProfitMarginPct = margin,
+                    NetProfit = gp
+                };
+            })
+            .OrderByDescending(b => b.Revenue)
+            .ToList();
+
+        var isDaily = (endDate - startDate).TotalDays <= 31;
+        var timeframePoints = allItems
+            .GroupBy(x => isDaily ? x.Sale.CreatedAt.ToString("yyyy-MM-dd") : x.Sale.CreatedAt.ToString("yyyy-MM"))
+            .OrderBy(g => g.Key)
+            .Select(g =>
+            {
+                var rev = g.Sum(x => x.Item.LineTotal);
+                var cogs = g.Sum(x => x.Item.CostPriceAtSale * x.Item.Quantity);
+                var gp = rev - cogs;
+                return new TimeframeProfitPointDto
+                {
+                    Period = g.Key,
+                    Revenue = rev,
+                    Cogs = cogs,
+                    GrossProfit = gp,
+                    NetProfit = gp
+                };
+            })
+            .ToList();
+
+        return new ProfitMarginAnalyticsDto
+        {
+            TotalRevenue = totalRevenue,
+            TotalCogs = totalCogs,
+            GrossProfit = grossProfit,
+            GrossProfitMarginPct = grossProfitMarginPct,
+            TotalOperatingExpenses = totalOperatingExpenses,
+            NetProfit = netProfit,
+            NetProfitMarginPct = netProfitMarginPct,
+            ProductBreakdown = productGroups,
+            BranchBreakdown = branchGroups,
+            TimeframeBreakdown = timeframePoints
+        };
+    }
 }
 
 
