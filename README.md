@@ -1,21 +1,29 @@
 # SteelTrack Enterprise Web Project
 
-SteelTrack Enterprise is an industrial multi-branch steel inventory tracking, financial analytics, and logistics management system featuring a **Clean Architecture C# ASP.NET Core Web API backend** and a modern **React + TypeScript + Vite frontend** with **Role-Based Access Control (RBAC)**.
+SteelTrack Enterprise is an industrial multi-branch steel inventory tracking, financial analytics, logistics management, and deep learning demand forecasting system. It features a **Clean Architecture C# ASP.NET Core 10 Web API backend**, a modern **React 19 + TypeScript + Vite frontend** with **Role-Based Access Control (RBAC)**, and a dedicated **Keras 3 & TensorFlow 2.21 LSTM Demand Forecasting Microservice**.
 
 ---
 
 ## 🚀 Key Features
 
 - **🔐 Multi-Role Access Control (RBAC)**:
-  - **Owner**: Full executive access across all operational branches, cross-branch revenue breakdown, LSTM demand forecasting, comprehensive staff management, and system configuration.
+  - **Owner**: Full executive access across all operational branches, cross-branch revenue breakdown, Keras LSTM demand forecasting, comprehensive staff management, and system configuration.
   - **Branch Manager**: Scoped strictly to assigned branch operations, branch staff account creation, local revenue reporting, inter-branch stock transfer approvals, and quality sign-offs.
   - **Cashier**: Scoped to assigned branch counter, Point of Sale (POS) checkout terminal, automatic BIR receipt generation, and transaction reprinting.
 
 - **🏢 Operational Branch Facilities**:
   - **Davao Branch**
-  - **Cagayan Branch**
+  - **Cagayan De Oro Branch**
   - **Mandaue Branch**
   - **Cebu Branch**
+
+- **🤖 Keras 3 & TensorFlow 2.21 LSTM Demand Forecasting Engine**:
+  - **Architecture**: Multi-layer stacked LSTM (`keras.layers.LSTM(64)` $\rightarrow$ `LSTM(32)` $\rightarrow$ `Dense(32, relu)` $\rightarrow$ `Dropout(0.1)` $\rightarrow$ `Dense(3, linear)`) built directly with Keras 3 RNN layers.
+  - **Training Dataset**: Trained on a 10-year historical dataset (`CSV_for_LSTM/monthly_series_cache.sqlite` with 128,939 records) across all 4 branches.
+  - **Full Catalog Coverage**: Generates forward predictions for **all 646 steel products** in the system database (Bars, Plates, Pipes, Structural Steel, Stainless Steel, Accessories).
+  - **Multi-Step Horizon**: Forecasts a 3-month forward consumption demand curve with 95% confidence intervals and multi-month trend analysis (`Rising`, `Stable`, `Declining`).
+  - **Clean 4-Month Forecast Graph**: Scoped strictly to the **current month and the 3-month forward projection window** (no distracting past historical months on the forecast line chart).
+  - **FastAPI Microservice**: High-throughput inference server (`/health`, `/models`, `/predict`, `/train`, `/metrics`) operating on port 8000 with sub-second single product predictions and batched branch-wide inference.
 
 - **💰 Role-Based Revenue Breakdown & Timeframe Sorting**:
   - **Executive Owner Scope**: Real-time total revenue calculation alongside an itemized per-branch revenue dissemination with dynamic single-branch filtering.
@@ -32,7 +40,7 @@ SteelTrack Enterprise is an industrial multi-branch steel inventory tracking, fi
   - **Low Stock Threshold**: Stock count between `10` and `20`.
   - **Zero-Stock Visibility**: Includes zero-quantity items (`StockQuantity = 0`) in the "Low Stock Only" filter so stockouts are immediately addressable.
   - **Clean Table Presentation**: Clean default white table rows with no distracting row color fills or warning badges.
-  - **Interactive Status Management**: Fully persistent batch status action control (`PUT /api/branchproducts/{id}/status` & `PUT /api/inventory/{id}/status`) updating `IsAvailable`, `IsActive`, and batch status with responsive layout (inline on desktop, dedicated row on constrained screens).
+  - **Interactive Status Management**: Fully persistent batch status action control (`PUT /api/branchproducts/{id}/status` & `PUT /api/inventory/{id}/status`) updating `IsAvailable`, `IsActive`, and batch status with responsive layout.
 
 - **📄 Universal CSV & Formatted PDF Table Export**:
   - Standardized export utility across data tables (Inventory On-Hand, Stock Movements, Product Catalogs, Stock Transfers, Customer Receivables, and Sales).
@@ -43,14 +51,11 @@ SteelTrack Enterprise is an industrial multi-branch steel inventory tracking, fi
   - Automatic receipt modal and instant PDF download option upon checkout completion.
   - Reliable "Reprint Receipt" functionality for historical transactions.
 
-- **🛡️ Session Security & Silent Invalidation**:
-  - Ephemeral server instance tracking clears user session tokens upon system/server restart, enforcing clean re-authentication silently without intrusive UI alert banners.
-
 - **🚚 Inter-Branch Stock Transfer Logistics**:
-  - Request, approve, dispatch, and track stock transfers across branches with full audit status (`Pending` → `Approved` → `InTransit` → `Completed`).
+  - Request, approve, dispatch, and track stock transfers across branches with full audit status (`Pending` $\rightarrow$ `Approved` $\rightarrow$ `InTransit` $\rightarrow$ `Completed`).
 
-- **📈 AI Demand Forecasting Engine**:
-  - Interactive forecasting comparing historical steel demand against projected consumption with confidence intervals and reorder alerts.
+- **🛡️ Ephemeral Session Security & Silent Invalidation**:
+  - Ephemeral server instance tracking clears user session tokens upon system/server restart, enforcing clean re-authentication silently without intrusive UI alert banners.
 
 ---
 
@@ -60,14 +65,40 @@ SteelTrack Enterprise is an industrial multi-branch steel inventory tracking, fi
 SteelTrack/
 ├── SteelTrack.slnx                     # .NET Solution file
 ├── README.md                           # Main Project Documentation & Changelog
-├── backend/                            # C# Backend (Clean Architecture)
+├── Dockerfile.lstm                     # Production Dockerfile for Keras LSTM Service
+├── docker-compose.yml                  # Full stack orchestration (PostgreSQL, LSTM, API, Web)
+├── requirements-ml.txt                 # Python dependencies for ML/LSTM service
+├── start_keras_lstm.bat                # Windows batch launcher for LSTM FastAPI service
+├── start_keras_lstm.ps1                # PowerShell launcher for LSTM FastAPI service
+├── pyrightconfig.json                  # Python language server & type checker configuration
+│
+├── ml/                                 # Keras 3 & TensorFlow LSTM Demand Forecasting Service
+│   ├── model.py                        # Stacked LSTM network definition (keras.layers.LSTM)
+│   ├── dataset.py                      # Historical SQLite ingestion, log scaling & sliding windows
+│   ├── train.py                        # Model training pipeline, early stopping & weight export
+│   ├── predictor.py                    # Batched inference engine with 95% CI & trend classifier
+│   ├── server.py                       # FastAPI REST service (/predict, /train, /models, /health)
+│   ├── check_data.py                   # Catalog extraction & SKU mapping utility
+│   └── products_catalog.json           # Catalog metadata for all 646 steel SKUs
+│
+├── models/                             # Serialized ML artifacts & model versions
+│   ├── steeltrack_keras_lstm.keras     # Trained Keras 3 native model format
+│   ├── scaler.json                     # Log-transform normalization parameters
+│   ├── recent_history.json             # 24-month sliding feature tensor cache
+│   └── manifest.json                   # Versioning, training metrics & SKU counts
+│
+├── CSV_for_LSTM/                       # Historical sales & withdrawal dataset
+│   ├── monthly_series_cache.sqlite     # 128,939 historical monthly transaction records
+│   └── withdrawal_*.csv                # Multi-year historical raw branch data
+│
+├── backend/                            # C# Backend (Clean Architecture ASP.NET Core 10)
 │   ├── Domain/                         # Entities, Enums & Domain Rules
 │   │   ├── Common/                     # BaseEntity, AuditableEntity
 │   │   ├── Entities/                   # Product, Sale, BranchProduct, Customer, StockReceiving, etc.
 │   │   └── Enums/                      # UserRole, BranchLocation, BatchStatus, PaymentMethod, etc.
 │   ├── Application/                    # DTOs, Service Contracts & Use Cases
 │   │   ├── DTOs/                       # Inventory, Sales, Transfers, Users, Reports DTOs
-│   │   ├── Interfaces/                 # Repository and Service Interfaces
+│   │   ├── Interfaces/                 # Repository, Service & ILstmPredictorClient Interfaces
 │   │   └── Services/                   # Application Service Implementations
 │   ├── Infrastructure/                 # EF Core 10, PostgreSQL Persistence & Repositories
 │   │   ├── Migrations/                 # EF Core Database Migrations
@@ -77,10 +108,12 @@ SteelTrack/
 │   └── API/                            # ASP.NET Core Web API Controllers & Middleware
 │       ├── Controllers/                # BranchProducts, Inventory, Sales, Users, Reports, etc.
 │       ├── Program.cs                  # Dependency Injection, Authentication & Startup Pipeline
-│       └── appsettings.json            # Database Connections, JWT & Server Instance Config
-└── frontend/                           # React + TypeScript + Vite Frontend
+│       ├── appsettings.json            # Database Connections, JWT, LSTM Microservice Config
+│       └── appsettings.Production.json # Production Database & Service Config
+│
+└── frontend/                           # React 19 + TypeScript + Vite Frontend
     ├── src/
-    │   ├── components/                 # UI Views (Dashboard, InventoryTable, POS, System, Reports)
+    │   ├── components/                 # UI Views (OwnerForecastView, Dashboard, POS, System, etc.)
     │   ├── services/                   # Axios/Fetch API Integration & Session Handlers
     │   ├── types/                      # TypeScript Interfaces & Enums
     │   ├── App.tsx                     # App Shell, Authentication State & View Router
@@ -90,41 +123,124 @@ SteelTrack/
 
 ---
 
-## ⚙️ Getting Started & Database Setup
+## 💻 Prerequisites
 
-### 1. Database Migrations (PostgreSQL)
+Ensure you have the following installed on your machine:
 
-> **Database Configuration**: The connection string is configured in [`backend/API/appsettings.json`](file:///d:/It_Project/Capstone/SteelTrack/backend/API/appsettings.json) for PostgreSQL.
+1. **.NET SDK**: Version **10.0** (or compatible .NET 8/9 runtime).
+2. **Node.js**: Version **18.x** or higher (with `npm`).
+3. **Python**: Version **3.11 - 3.15** (64-bit).
+4. **PostgreSQL**: Version **15+** (or use the provided Docker Compose PostgreSQL service).
 
-To apply database schema migrations:
+---
+
+## 🛠️ How to Run Locally
+
+### Option A: Standard Local Multi-Terminal Startup (Recommended for Development)
+
+Running the project locally involves three lightweight services: the **Keras LSTM AI Service**, the **C# Web API**, and the **React Frontend**.
+
+#### Step 1: Database Setup (PostgreSQL)
+
+1. Verify or edit your PostgreSQL connection string in [`backend/API/appsettings.json`](file:///d:/It_Project/Capstone/SteelTrack/backend/API/appsettings.json):
+   ```json
+   "ConnectionStrings": {
+     "PostgreSQLConnection": "Server=localhost;Port=5432;Database=SteelTrackDb;User Id=postgres;Password=your_password;Ssl Mode=Prefer;"
+   }
+   ```
+2. Apply Entity Framework Core database migrations:
+   ```powershell
+   cd backend
+   dotnet ef database update --project Infrastructure --startup-project API
+   ```
+   *(Optional: If seeding from SQL dump, execute `backend/sql/03_data_insertions.sql` into your database).*
+
+---
+
+#### Step 2: Start the Keras LSTM Demand Forecasting Service (Python / FastAPI)
+
+1. Open a terminal in the project root and activate the Python virtual environment:
+   ```powershell
+   # If setting up venv for the first time:
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1
+   pip install -r requirements-ml.txt
+   ```
+2. Launch the FastAPI service:
+   ```powershell
+   .\start_keras_lstm.bat
+   ```
+   *or run directly with Python:*
+   ```powershell
+   .\venv\Scripts\python.exe -m uvicorn ml.server:app --host 0.0.0.0 --port 8000
+   ```
+
+> [!IMPORTANT]
+> **Accessing the Service in your Browser**:
+> Uvicorn binds to `0.0.0.0:8000` to accept connections on all network interfaces. However, web browsers on Windows do not accept `0.0.0.0` as a client address (causing `ERR_ADDRESS_INVALID`). Always navigate to:
+> - **Service Info**: [`http://localhost:8000/models`](http://localhost:8000/models) or [`http://127.0.0.1:8000/models`](http://127.0.0.1:8000/models)
+> - **Interactive Swagger Docs**: [`http://localhost:8000/docs`](http://localhost:8000/docs)
+> - **Health Status**: [`http://localhost:8000/health`](http://localhost:8000/health)
+
+*(Optional) Retraining the Model:*
+If you wish to retrain the LSTM network on updated dataset CSVs:
+```powershell
+.\venv\Scripts\python.exe -m ml.train
+```
+
+---
+
+#### Step 3: Start the Backend Web API (C# ASP.NET Core)
+
+1. Open a new terminal in `backend/API`:
+   ```powershell
+   cd backend/API
+   dotnet run --urls "http://localhost:5000"
+   ```
+2. The Web API will be available at:
+   - **Interactive API Swagger**: [`http://localhost:5000/swagger`](http://localhost:5000/swagger)
+   - **Health Check**: [`http://localhost:5000/health`](http://localhost:5000/health)
+
+---
+
+#### Step 4: Start the Frontend UI (React + TypeScript + Vite)
+
+1. Open a new terminal in `frontend`:
+   ```powershell
+   cd frontend
+   npm install        # (Only required on first run)
+   npm run dev
+   ```
+2. The React application will start at:
+   - **Web Application Workspace**: [`http://localhost:5173`](http://localhost:5173)
+
+---
+
+### Option B: Docker Compose Full-Stack Startup
+
+To spin up the entire system including PostgreSQL, Keras LSTM service, C# API, and Frontend with a single command:
 
 ```powershell
-cd backend
-
-# Apply EF Core migrations to PostgreSQL
-dotnet ef database update --project Infrastructure --startup-project API
+docker compose up --build
 ```
 
-### 2. Run Backend (C# ASP.NET Core Web API)
+The services will be exposed at:
+- Frontend: `http://localhost:5173`
+- ASP.NET Core Web API: `http://localhost:5000`
+- Keras LSTM Service: `http://localhost:8000`
+- PostgreSQL: `localhost:5432`
 
-```bash
-cd backend/API
-dotnet run --urls "http://localhost:5000"
-```
+---
 
-The Web API will be available at:
-- **Swagger Interactive API Docs**: [`http://localhost:5000/swagger`](http://localhost:5000/swagger)
+## 👥 Default Demo Accounts
 
-### 3. Run Frontend (React + TypeScript + Vite)
-
-```bash
-cd frontend
-npm install    # (First run only)
-npm run dev
-```
-
-The React development server will start at:
-- **Frontend Workspace UI**: [`http://localhost:5173`](http://localhost:5173)
+| Role | Email | Default Branch | Capabilities |
+| :--- | :--- | :--- | :--- |
+| **Owner** | `ericabalit08@gmail.com` | Enterprise (All Branches) | Executive cross-branch analytics, full Keras LSTM demand forecasting, system config |
+| **Branch Manager** | `manager.davao@steeltrack.com` | Davao Branch | Branch inventory management, local revenue, stock transfer approvals, staff creation |
+| **Branch Manager** | `manager.cebu@steeltrack.com` | Cebu Branch | Branch operations, stock sign-offs |
+| **Cashier** | `testdavao@gmail.com` | Davao Branch Counter | Point of Sale (POS) checkout terminal, official receipt printing |
+| **Cashier** | `testcebu@gmail.com` | Cebu Branch Counter | POS checkout, cashier shift sales |
 
 ---
 
@@ -142,6 +258,7 @@ The React development server will start at:
 | **Universal Export (CSV/PDF)** | ✅ Full Tables Across All Branches | ✅ Scoped Branch Tables | ❌ Restricted (Receipts Only) |
 | **Log New Steel Batch** | ✅ Allowed | ✅ Allowed (Assigned Branch) | ❌ Restricted |
 | **Inter-Branch Transfers** | ✅ Full Control | ✅ Request / Approve for Branch | ❌ Restricted |
+| **Keras LSTM AI Forecasting** | ✅ Full Catalog Projections (646 SKUs) | ❌ Restricted | ❌ Restricted |
 | **POS Checkout Terminal** | ✅ View & Test | ❌ Restricted | ✅ Primary Counter Function |
 | **Receipt Generation & Reprint** | ✅ Allowed | ❌ Restricted | ✅ Automatic Modal + PDF Download |
 | **Staff & User Management** | ✅ All Branches & All Roles | ✅ Create Accounts for Own Branch Only | ❌ Restricted |
@@ -149,6 +266,22 @@ The React development server will start at:
 ---
 
 ## 📝 Recent Change History
+
+- **v1.7.0**:
+  - **Keras 3 / TensorFlow 2.21 LSTM Demand Forecasting Microservice**:
+    - Implemented production LSTM network directly utilizing `keras.layers.LSTM` from `keras.src.layers.rnn.lstm`.
+    - Trained on 10-year historical dataset (`monthly_series_cache.sqlite` with 128,939 records) covering all 4 operational branches (`Davao`, `Cagayan De Oro`, `Cebu`, `Mandaue`).
+    - Extended predictions to cover **all 646 catalog steel products** across all product categories.
+    - Added batched inference engine generating forward predictions with 95% confidence intervals and multi-month consumption trend classification.
+    - Delivered FastAPI HTTP endpoints (`/health`, `/models`, `/predict`, `/train`, `/metrics`) on port 8000.
+  - **Frontend Forecast Graph Refinement**:
+    - Scoped the demand forecast line chart strictly to the **current month and 3 forward projection months** (no historical past months rendered in the forecast curve).
+    - Expanded product selector to support the full catalog of 646 steel SKUs with interactive search and category filtering.
+  - **Type Checking & Tooling Hardening**:
+    - Fixed Python type invariance and NoneType narrowing issues in `ml/predictor.py` and `ml/server.py`.
+    - Configured `pyrightconfig.json` and `.vscode/settings.json` to reference the active project `venv`.
+  - **Production Environment Configuration**:
+    - Created and populated [`backend/API/appsettings.Production.json`](file:///d:/It_Project/Capstone/SteelTrack/backend/API/appsettings.Production.json) with production connection strings, JWT policies, and LSTM microservice URLs.
 
 - **v1.6.0**:
   - **Dashboard Welcome Card UI Redesign**: Updated welcome card background to clean white (`#FFFFFF`) with border (`#E2E8F0`) and subtle shadow; removed all legacy "Branch Workspace" badges/labels; center-aligned **Quality Approvals** and **Branch Products** buttons for Branch Managers.

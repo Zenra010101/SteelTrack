@@ -22,8 +22,8 @@ services:
 
   steeltrack-lstm:
     build:
-      context: ./python-lstm-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.lstm
     container_name: steeltrack-lstm
     restart: unless-stopped
     environment:

@@ -45,7 +45,6 @@ const MONTH_LABELS = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
-const HISTORY_MONTHS = 6;
 const FORECAST_MONTHS = 3;
 
 function startOfMonth(d: Date): Date {
@@ -135,11 +134,11 @@ export function OwnerForecastView() {
     [BranchLocation.Mandaue]: 3,
   });
 
-  // The window we ask the API for: history behind us, forecast ahead.
+  // The window we ask the API for: current month + 3-month forward demand (no past months)
   const { fromMonth, toMonth, currentMonthKey } = useMemo(() => {
     const now = startOfMonth(new Date());
     return {
-      fromMonth: monthKey(addMonths(now, -HISTORY_MONTHS)),
+      fromMonth: monthKey(now),
       toMonth: monthKey(addMonths(now, FORECAST_MONTHS)),
       currentMonthKey: monthKey(now),
     };
@@ -184,7 +183,7 @@ export function OwnerForecastView() {
       const branchId =
         selectedBranch === 'All' ? undefined : branchIds[selectedBranch];
 
-      const result = await fetchLstmForecast(fromMonth, toMonth, undefined, branchId, 'v0.2.0-csv-20261102T133101Z');
+      const result = await fetchLstmForecast(fromMonth, toMonth, undefined, branchId);
 
       if (!result.ok) {
         setForecast(null);
@@ -292,25 +291,23 @@ export function OwnerForecastView() {
 
   const reorderThresholdUnits = Math.round(peakMonthlyDemand * 1.15);
 
-  // --- Selected product series -------------------------------------------
+  // --- Selected product series: covers every product in the project ---
   const productOptions = useMemo(() => {
-    const best = new Map<string, { row: LstmForecastRow; qty: number }>();
+    const byProduct = new Map<string, { row: LstmForecastRow; qty: number }>();
     for (const r of rows) {
-      if (r.month <= currentMonthKey) continue;
-      const cur = best.get(r.productId);
+      const cur = byProduct.get(r.productId);
       if (!cur || r.predictedQuantity > cur.qty) {
-        best.set(r.productId, { row: r, qty: r.predictedQuantity });
+        byProduct.set(r.productId, { row: r, qty: r.predictedQuantity });
       }
     }
-    return [...best.values()]
-      .sort((a, b) => b.qty - a.qty)
-      .slice(0, 40)
+    return [...byProduct.values()]
+      .sort((a, b) => (b.qty !== a.qty ? b.qty - a.qty : a.row.productName.localeCompare(b.row.productName)))
       .map((v) => ({
         id: v.row.productId,
         label: `${v.row.productName} (${v.row.productSku})`,
         qty: v.qty,
       }));
-  }, [rows, currentMonthKey]);
+  }, [rows]);
 
   const effectiveProductId = useMemo(() => {
     if (selectedProductId && productOptions.some((p) => p.id === selectedProductId)) {
@@ -319,11 +316,12 @@ export function OwnerForecastView() {
     return productOptions[0]?.id ?? '';
   }, [productOptions, selectedProductId]);
 
+  // Forecast graph: includes ONLY the current month and the 3-month forward demand (no past months)
   const series = useMemo(() => {
     return rows
-      .filter((r) => r.productId === effectiveProductId)
+      .filter((r) => r.productId === effectiveProductId && r.month >= currentMonthKey)
       .sort((a, b) => a.month.localeCompare(b.month));
-  }, [rows, effectiveProductId]);
+  }, [rows, effectiveProductId, currentMonthKey]);
 
   const maxVal = useMemo(() => {
     const values = series.flatMap((r) => [
@@ -335,17 +333,19 @@ export function OwnerForecastView() {
   }, [series]);
 
   const chartPoints = useMemo(() => {
-    const spacing =
-      series.length > 1 ? Math.min(85, 690 / (series.length - 1)) : 85;
+    const count = series.length;
+    const spacing = count > 1 ? Math.min(200, 640 / (count - 1)) : 200;
+    const xOffset = count > 1 ? (760 - (count - 1) * spacing) / 2 : 400;
     return series.map((r, i) => ({
       row: r,
-      x: 60 + i * spacing,
-      yPred: 260 - (r.predictedQuantity / maxVal) * 220,
-      yUpper: 260 - (r.confidenceUpper / maxVal) * 220,
-      yLower: 260 - (r.confidenceLower / maxVal) * 220,
+      x: xOffset + i * spacing,
+      yPred: 240 - (r.predictedQuantity / maxVal) * 190,
+      yUpper: 240 - (r.confidenceUpper / maxVal) * 190,
+      yLower: 240 - (r.confidenceLower / maxVal) * 190,
       yActual:
-        r.actualQuantity > 0 ? 260 - (r.actualQuantity / maxVal) * 220 : null,
+        r.actualQuantity > 0 ? 240 - (r.actualQuantity / maxVal) * 190 : null,
       isForecast: r.month > currentMonthKey,
+      isCurrent: r.month === currentMonthKey,
     }));
   }, [series, maxVal, currentMonthKey]);
 
@@ -859,8 +859,8 @@ export function OwnerForecastView() {
           </div>
           <h2 className="section-title">Steel Demand Forecasting & Decision Support</h2>
           <p className="section-sub">
-            {HISTORY_MONTHS}-month historical consumption vs. {FORECAST_MONTHS}-month AI projected
-            steel demand with Section 2.3.2.2 Rule-Based Decision Support System (RBDSS).
+            Current month ({monthLabel(currentMonthKey)}) demand and {FORECAST_MONTHS}-month forward AI projection
+            powered by TensorFlow/Keras LSTM with Section 2.3.2.2 Rule-Based Decision Support System (RBDSS).
           </p>
         </div>
 
@@ -1479,11 +1479,11 @@ export function OwnerForecastView() {
                     x={p.x}
                     y="275"
                     textAnchor="middle"
-                    fill={p.isForecast ? '#D97706' : '#64748B'}
+                    fill={p.isCurrent ? '#059669' : p.isForecast ? '#0284C7' : '#64748B'}
                     fontSize="11"
-                    fontWeight="600"
+                    fontWeight="700"
                   >
-                    {monthLabel(p.row.month)}
+                    {monthLabel(p.row.month)}{p.isCurrent ? ' (Current)' : ''}
                   </text>
                 </g>
               ))}

@@ -1,0 +1,16 @@
+{
+  "version": "v1.0.0-keras-lstm-20261115T153914Z",
+  "framework": "TensorFlow 2.21 / Keras 3.15",
+  "created_at": "2026-11-15T15:39:14.421893+00:00",
+  "total_series": 2584,
+  "total_products": 646,
+  "epochs_trained": 13,
+  "train_loss": 0.2888219654560089,
+  "val_loss": 0.27242371439933777,
+  "metrics": {
+    "val_mae_units": 29.37,
+    "val_rmse_units": 187.85,
+    "val_wape_percent": 86.64
+  },
+  "training_time_seconds": 429.93
+}

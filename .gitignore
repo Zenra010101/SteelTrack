@@ -34,3 +34,15 @@ seed/
 seeds/
 **/seeds/
 CSV_for_LSTM/
+
+# Python & Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+__pycache__/
+*.py[cod]
+*$py.class
+
