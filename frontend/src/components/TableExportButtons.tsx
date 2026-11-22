@@ -57,7 +57,7 @@ export function TableExportButtons({
           gap: '0.35rem',
           background: '#FFFFFF',
           borderColor: '#CBD5E1',
-          color: '#334155',
+          color: '#000000',
           fontWeight: 600,
           borderRadius: '6px',
         }}
@@ -79,7 +79,7 @@ export function TableExportButtons({
           gap: '0.35rem',
           background: '#FFFFFF',
           borderColor: '#CBD5E1',
-          color: '#334155',
+          color: '#000000',
           fontWeight: 600,
           borderRadius: '6px',
         }}

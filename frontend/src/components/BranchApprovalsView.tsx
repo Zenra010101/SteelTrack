@@ -150,11 +150,11 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
     <div className="approvals-container">
       <div className="controls-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h3 style={{ fontSize: '1.3rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0F172A', margin: 0 }}>
+          <h3 style={{ fontSize: '1.3rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#000000', margin: 0 }}>
             <ShieldCheck size={22} color="#0284C7" />
             Quality Control & Status Approvals ({branch} Branch)
           </h3>
-          <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0 0' }}>
+          <p style={{ fontSize: '0.85rem', color: '#000000', margin: '0.25rem 0 0 0' }}>
             Supervised by {managerName} • Authorize stock releases, return slips, and special overrides from the database
           </p>
         </div>
@@ -232,19 +232,19 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', margin: '1.25rem 0' }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '1.1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Total Requests</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A', marginTop: '0.35rem' }}>{approvals.length}</div>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.2rem' }}>All logged quality & override requests</div>
+          <div style={{ fontSize: '0.75rem', color: '#000000', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Total Requests</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#000000', marginTop: '0.35rem' }}>{approvals.length}</div>
+          <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: '0.2rem' }}>All logged quality & override requests</div>
         </div>
         <div style={{ background: '#FFFFFF', border: '1px solid #FEF3C7', borderRadius: '10px', padding: '1.1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ fontSize: '0.75rem', color: '#D97706', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Pending Review</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#D97706', marginTop: '0.35rem' }}>{pendingCount}</div>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.2rem' }}>Awaiting manager authorization</div>
+          <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: '0.2rem' }}>Awaiting manager authorization</div>
         </div>
         <div style={{ background: '#FFFFFF', border: '1px solid #D1FAE5', borderRadius: '10px', padding: '1.1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ fontSize: '0.75rem', color: '#059669', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>Approved / Cleared</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#059669', marginTop: '0.35rem' }}>{approvedCount}</div>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '0.2rem' }}>Successfully cleared and authorized</div>
+          <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: '0.2rem' }}>Successfully cleared and authorized</div>
         </div>
       </div>
 
@@ -264,16 +264,16 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: '#94A3B8' }}>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '2.5rem', color: '#000000' }}>
                   <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 0.5rem' }} />
                   <div>Loading approvals from Supabase PostgreSQL database...</div>
                 </td>
               </tr>
             ) : approvals.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: '#64748B' }}>
-                  <ShieldCheck size={36} style={{ margin: '0 auto 0.75rem', color: '#334155' }} />
-                  <div style={{ fontWeight: 600, color: '#94A3B8', fontSize: '1rem' }}>No approval requests found</div>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: '#000000' }}>
+                  <ShieldCheck size={36} style={{ margin: '0 auto 0.75rem', color: '#000000' }} />
+                  <div style={{ fontWeight: 600, color: '#000000', fontSize: '1rem' }}>No approval requests found</div>
                   <div style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
                     {filterStatus === 'All' ? 'No pending quality inspections or authorizations for this branch.' : `No requests with status '${filterStatus}'.`}
                   </div>
@@ -290,11 +290,11 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
                     <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0284C7', fontWeight: 600 }}>
                       {app.id.length > 12 ? `${app.id.slice(0, 8)}...` : app.id}
                     </td>
-                    <td style={{ fontWeight: 600, color: '#0F172A' }}>{app.type}</td>
+                    <td style={{ fontWeight: 600, color: '#000000' }}>{app.type}</td>
                     <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0284C7', fontWeight: 600 }}>
                       {app.referenceNumber}
                     </td>
-                    <td style={{ color: '#334155', maxWidth: '300px' }}>
+                    <td style={{ color: '#000000', maxWidth: '300px' }}>
                       <div style={{ fontSize: '0.88rem' }}>{app.details}</div>
                       {app.rejectionReason && (
                         <div style={{ fontSize: '0.75rem', color: '#DC2626', marginTop: '0.2rem', fontWeight: 600 }}>
@@ -302,9 +302,9 @@ export function BranchApprovalsView({ branch, managerName }: BranchApprovalsView
                         </div>
                       )}
                     </td>
-                    <td style={{ color: '#475569', fontSize: '0.85rem' }}>
-                      <div style={{ fontWeight: 600, color: '#0F172A' }}>{app.requestedBy}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                    <td style={{ color: '#000000', fontSize: '0.85rem' }}>
+                      <div style={{ fontWeight: 600, color: '#000000' }}>{app.requestedBy}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#000000' }}>
                         {new Date(app.requestedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </div>
                     </td>

@@ -30,19 +30,19 @@ export function StockAdjustmentModal({
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
+      <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Sliders size={20} style={{ color: '#B45309' }} /> Adjust Physical Batch Stock
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}>
             <X size={20} />
           </button>
         </div>
 
         <div style={{ background: '#F8FAFC', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem', border: '1px solid #E2E8F0', fontSize: '0.85rem' }}>
-          <div style={{ fontWeight: 600, color: '#0F172A' }}>Heat #: {batch.heatNumber}</div>
-          <div style={{ color: '#475569' }}>Grade: {batch.grade} ({batch.dimensions})</div>
+          <div style={{ fontWeight: 600, color: '#000000' }}>Heat #: {batch.heatNumber}</div>
+          <div style={{ color: '#000000' }}>Grade: {batch.grade} ({batch.dimensions})</div>
           <div style={{ color: '#0369A1', fontWeight: 700, marginTop: '0.25rem' }}>
             Current Recorded Tonnage: {batch.weightInTons} MT
           </div>
@@ -50,7 +50,7 @@ export function StockAdjustmentModal({
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', color: '#475569', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
               New Adjusted Tonnage (MT)
             </label>
             <input
@@ -60,18 +60,18 @@ export function StockAdjustmentModal({
               placeholder={batch.weightInTons.toString()}
               value={adjustedTons}
               onChange={(e) => setAdjustedTons(e.target.value)}
-              style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+              style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
             />
           </div>
 
           <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', color: '#475569', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
               Adjustment Reason / Notes
             </label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+              style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
             >
               <option value="Physical Audit Discrepancy">Physical Audit Discrepancy</option>
               <option value="Damage / Scrap Write-off">Damage / Scrap Write-off</option>

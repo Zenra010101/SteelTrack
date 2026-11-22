@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Plus, Filter, Loader2, LogOut, X } from 'lucide-react';
+import { Search, Plus, Filter, Loader2, LogOut, X, AlertTriangle } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MetricsOverview } from './components/MetricsOverview';
@@ -85,6 +85,7 @@ export function App() {
   const [debouncedSearch, setDebouncedSearch] = useState<string>('');
   const [gradeFilter, setGradeFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [lowStockFilter, setLowStockFilter] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
 
@@ -168,7 +169,7 @@ export function App() {
       setLoading(true);
     }
     try {
-      const prodResult = await fetchBranchProducts(debouncedSearch, undefined, gradeFilter, false, effectiveBranch);
+      const prodResult = await fetchBranchProducts(debouncedSearch, undefined, gradeFilter, lowStockFilter, effectiveBranch);
       setBranchProducts(prodResult.data);
 
       const items = prodResult.data;
@@ -194,7 +195,7 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, gradeFilter, effectiveBranch, branchProducts.length]);
+  }, [debouncedSearch, gradeFilter, lowStockFilter, effectiveBranch, branchProducts.length]);
 
   // Begin boot validation once. While it is running the login screen must
   // not flash at somebody who is already signed in.
@@ -376,7 +377,7 @@ export function App() {
           <div className="login-container single-card">
             <div
               className="login-form-pane"
-              style={{ textAlign: 'center', color: '#64748B' }}
+              style={{ textAlign: 'center', color: '#000000' }}
             >
               <Loader2 size={22} />
               <p style={{ marginTop: '0.75rem', fontSize: '0.85rem' }}>
@@ -497,7 +498,7 @@ export function App() {
 
               <div className="controls-bar">
                 <div className="search-box">
-                  <Search size={18} style={{ color: '#94A3B8' }} />
+                  <Search size={18} style={{ color: '#000000' }} />
                   <input
                     type="text"
                     placeholder="Search heat #, yard location, dimensions, or branch..."
@@ -507,7 +508,7 @@ export function App() {
                 </div>
 
                 <div className="filter-group">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94A3B8', fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#000000', fontSize: '0.85rem' }}>
                     <Filter size={16} /> Filters:
                   </div>
 
@@ -536,6 +537,28 @@ export function App() {
                     <option value="Shipped">Shipped</option>
                   </select>
 
+                  <button
+                    type="button"
+                    onClick={() => setLowStockFilter(!lowStockFilter)}
+                    style={{
+                      background: lowStockFilter ? '#DC2626' : '#FFFFFF',
+                      color: lowStockFilter ? '#FFFFFF' : '#475569',
+                      border: lowStockFilter ? '1px solid #DC2626' : '1px solid #CBD5E1',
+                      padding: '0.45rem 0.85rem',
+                      borderRadius: '6px',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      fontWeight: lowStockFilter ? 700 : 500,
+                      transition: 'all 0.15s ease-in-out',
+                    }}
+                    title="Filter branch products with low or critical inventory"
+                  >
+                    <AlertTriangle size={15} /> Low Stock Only
+                  </button>
+
                   {/* RBAC Protection: Only Owner and Branch Manager can log new batches */}
                   {userSession.role !== UserRole.Cashier && (
                     <button
@@ -552,6 +575,7 @@ export function App() {
                 batches={displayedBranchProducts as unknown as import('./types/steel').SteelBatch[]}
                 loading={loading}
                 onUpdateStatus={handleUpdateStatus}
+                onStockAdded={() => loadData(true)}
               />
             </>
           )}
@@ -609,7 +633,7 @@ export function App() {
 
           {/* TAB 4: AI LSTM DEMAND FORECASTING (OWNER ONLY) */}
           {activeTab === 'forecast' && userSession.role === UserRole.Owner && (
-            <OwnerForecastView />
+            <OwnerForecastView selectedBranch={selectedBranch as BranchLocation | 'All'} />
           )}
 
           {/* TAB 5: CROSS-BRANCH ANALYTICS (OWNER ONLY) */}
@@ -656,7 +680,7 @@ export function App() {
                     <LogOut size={17} />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#000000' }}>
                       Confirm Sign Out
                     </h3>
                   </div>
@@ -667,11 +691,11 @@ export function App() {
                   style={{ padding: '0.25rem 0.5rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
                   title="Close"
                 >
-                  <X size={18} style={{ color: '#64748B' }} />
+                  <X size={18} style={{ color: '#000000' }} />
                 </button>
               </div>
 
-              <div className="modal-body" style={{ padding: '1.25rem', color: '#334155', fontSize: '0.88rem', lineHeight: 1.5 }}>
+              <div className="modal-body" style={{ padding: '1.25rem', color: '#000000', fontSize: '0.88rem', lineHeight: 1.5 }}>
                 <p style={{ margin: '0 0 1rem 0' }}>
                   Are you sure you want to end your current session and sign out of <strong>SteelTrack Enterprise Hub</strong>?
                 </p>
@@ -689,10 +713,10 @@ export function App() {
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 600, color: '#0F172A', fontSize: '0.85rem' }}>
+                      <div style={{ fontWeight: 600, color: '#000000', fontSize: '0.85rem' }}>
                         {userSession.name}
                       </div>
-                      <div style={{ color: '#64748B', fontSize: '0.75rem', marginTop: 2 }}>
+                      <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: 2 }}>
                         {userSession.role} • {userSession.branch ? `${userSession.branch} Branch` : 'Executive Scope (All Branches)'}
                       </div>
                     </div>
@@ -703,7 +727,7 @@ export function App() {
                         padding: '0.2rem 0.5rem',
                         borderRadius: 4,
                         background: '#E2E8F0',
-                        color: '#475569',
+                        color: '#000000',
                       }}
                     >
                       Active Session

@@ -38,35 +38,36 @@ export function SalesReportVerificationModal({
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #334155', width: '90%', maxWidth: '520px', padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Calculator size={20} style={{ color: '#38BDF8' }} /> End-of-Day (EOD) Drawer Balancing
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '520px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.75rem' }}>
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#000000' }}>
+            <Calculator size={20} style={{ color: '#0284C7' }} /> End-of-Day (EOD) Drawer Balancing
           </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '0.2rem' }}>
             <X size={20} />
           </button>
         </div>
 
-        <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '8px', marginBottom: '1.25rem', border: '1px solid #334155' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
-            <span style={{ color: '#94A3B8' }}>Terminal Branch:</span>
-            <span style={{ color: '#F8FAFC', fontWeight: 600 }}>{branch} Counter</span>
+        {/* Terminal Info Card: Pure White Background (#FFFFFF) & Pure Black Text (#000000) */}
+        <div style={{ background: '#FFFFFF', padding: '1.1rem', borderRadius: '8px', marginBottom: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.88rem' }}>
+            <span style={{ color: '#000000', fontWeight: 600 }}>Terminal Branch:</span>
+            <span style={{ color: '#000000', fontWeight: 700 }}>{branch} Counter</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
-            <span style={{ color: '#94A3B8' }}>Cashier on Duty:</span>
-            <span style={{ color: '#F8FAFC', fontWeight: 600 }}>{cashierName}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.88rem' }}>
+            <span style={{ color: '#000000', fontWeight: 600 }}>Cashier on Duty:</span>
+            <span style={{ color: '#000000', fontWeight: 700 }}>{cashierName}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #334155', fontSize: '0.95rem' }}>
-            <span style={{ color: '#94A3B8' }}>System Recorded Net Sales:</span>
-            <strong style={{ color: '#38BDF8' }}>₱{systemTotalPHP.toLocaleString()}</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #E2E8F0', fontSize: '0.98rem' }}>
+            <span style={{ color: '#000000', fontWeight: 600 }}>System Recorded Net Sales:</span>
+            <strong style={{ color: '#000000', fontSize: '1.1rem' }}>₱{systemTotalPHP.toLocaleString()}</strong>
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
               Physical Cash Count in Drawer (PHP)
             </label>
             <input
@@ -75,24 +76,36 @@ export function SalesReportVerificationModal({
               required
               value={actualCash}
               onChange={(e) => setActualCash(e.target.value)}
-              style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.65rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 700 }}
+              style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.65rem', borderRadius: '6px', fontSize: '1.1rem', fontWeight: 700, outline: 'none' }}
             />
           </div>
 
-          <div style={{ background: variance === 0 ? '#064E3B' : variance > 0 ? '#1E3A8A' : '#7F1D1D', padding: '0.85rem', borderRadius: '6px', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '0.85rem' }}>
-              <strong>Cash Variance:</strong>
-              {variance === 0 && <span> (Exact Match)</span>}
-              {variance > 0 && <span> (Over Cash)</span>}
-              {variance < 0 && <span> (Shortage)</span>}
+          {/* Cash Variance Card: Pure White Background (#FFFFFF) & Pure Black Text (#000000) */}
+          <div style={{
+            background: '#FFFFFF',
+            padding: '1rem',
+            borderRadius: '8px',
+            marginBottom: '1.25rem',
+            border: variance === 0 ? '2px solid #059669' : variance > 0 ? '2px solid #0284C7' : '2px solid #DC2626',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            color: '#000000',
+          }}>
+            <div style={{ fontSize: '0.9rem', color: '#000000' }}>
+              <strong style={{ color: '#000000' }}>Cash Variance:</strong>
+              {variance === 0 && <span style={{ color: '#000000', fontWeight: 600 }}> (Exact Match)</span>}
+              {variance > 0 && <span style={{ color: '#000000', fontWeight: 600 }}> (Over Cash)</span>}
+              {variance < 0 && <span style={{ color: '#000000', fontWeight: 600 }}> (Shortage)</span>}
             </div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#000000' }}>
               ₱{Math.abs(variance).toLocaleString()}
             </div>
           </div>
 
           <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+            <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
               Verification Notes / Shortage Explanation
             </label>
             <textarea
@@ -100,12 +113,12 @@ export function SalesReportVerificationModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Explain any drawer discrepancy, petty cash vouchers, or float amounts..."
-              style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+              style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px', outline: 'none', resize: 'vertical' }}
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-            <button type="button" className="btn-secondary" onClick={onClose}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+            <button type="button" className="btn-secondary" onClick={onClose} style={{ color: '#000000' }}>
               Cancel
             </button>
             <button type="submit" className="btn-primary">

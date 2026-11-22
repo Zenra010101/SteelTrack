@@ -13,8 +13,6 @@ import {
   ShieldAlert,
   AlertCircle,
   Receipt,
-  TrendingUp,
-  Calendar,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type {
@@ -27,7 +25,6 @@ import {
   fetchReceivables,
   fetchReceivableStats,
   recordReceivablePayment,
-  getAuthHeaders,
 } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
 
@@ -39,7 +36,6 @@ interface ReceivablesViewProps {
 export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesViewProps) {
   const [receivables, setReceivables] = useState<CustomerReceivable[]>([]);
   const [stats, setStats] = useState<ReceivableStats | null>(null);
-  const [summary, setSummary] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>('');
   const [agingFilter, setAgingFilter] = useState<string>('BalanceOnly');
@@ -64,18 +60,12 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
   const loadData = async () => {
     setLoading(true);
     try {
-      const [list, statsData, summaryRes] = await Promise.all([
+      const [list, statsData] = await Promise.all([
         fetchReceivables(currentBranch),
         fetchReceivableStats(currentBranch),
-        fetch('/api/receivables/summary', { headers: getAuthHeaders() })
-          .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null),
       ]);
       setReceivables(list);
       setStats(statsData);
-      if (summaryRes?.data) {
-        setSummary(summaryRes.data);
-      }
     } catch (err) {
       console.error('Error fetching receivables:', err);
     } finally {
@@ -173,10 +163,10 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
       {/* HEADER BAR */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h2 style={{ color: '#F8FAFC', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+          <h2 style={{ color: '#000000', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
             Accounts Receivable & Credit Control
           </h2>
-          <p style={{ color: '#94A3B8', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#000000', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
             Monitor customer credit limits, outstanding aging balances, and collect ledger payments.
           </p>
         </div>
@@ -185,11 +175,11 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
       {/* METRIC OVERVIEW CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ background: '#FFFFFF', borderRadius: '8px', padding: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000', fontSize: '0.85rem' }}>
             <span>Total Outstanding A/R</span>
             <DollarSign size={18} style={{ color: '#0284C7' }} />
           </div>
-          <div style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem' }}>
+          <div style={{ color: '#000000', fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem' }}>
             ₱{stats?.totalReceivablesPHP.toLocaleString() ?? 0}
           </div>
           <div style={{ color: '#0284C7', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 600 }}>
@@ -198,20 +188,20 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
         </div>
 
         <div style={{ background: '#FFFFFF', borderRadius: '8px', padding: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000', fontSize: '0.85rem' }}>
             <span>Current Balance (0-30 Days)</span>
             <CheckCircle2 size={18} style={{ color: '#059669' }} />
           </div>
           <div style={{ color: '#059669', fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem' }}>
             ₱{stats?.totalCurrentPHP.toLocaleString() ?? 0}
           </div>
-          <div style={{ color: '#64748B', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+          <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '0.25rem' }}>
             Within Normal Terms
           </div>
         </div>
 
         <div style={{ background: '#FFFFFF', borderRadius: '8px', padding: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000', fontSize: '0.85rem' }}>
             <span>Overdue Balance (30+ Days)</span>
             <AlertTriangle size={18} style={{ color: '#D97706' }} />
           </div>
@@ -224,106 +214,15 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
         </div>
 
         <div style={{ background: '#FFFFFF', borderRadius: '8px', padding: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000', fontSize: '0.85rem' }}>
             <span>Pending PDCs Intransit</span>
             <CreditCard size={18} style={{ color: '#7C3AED' }} />
           </div>
           <div style={{ color: '#7C3AED', fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem' }}>
             ₱{stats?.pendingPdcAmountPHP.toLocaleString() ?? 0}
           </div>
-          <div style={{ color: '#64748B', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+          <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '0.25rem' }}>
             {stats?.pendingPdcCount ?? 0} Cheques Awaiting Maturity
-          </div>
-        </div>
-      </div>
-
-      {/* AGING BUCKETS & CASH-FLOW PROJECTION (Deliverable 14) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        {/* Aging Buckets Breakdown */}
-        <div style={{ background: '#FFFFFF', borderRadius: '8px', padding: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Calendar size={16} color="#0284C7" />
-              Receivables Aging Analysis
-            </span>
-            <span style={{ fontSize: '0.75rem', color: '#64748B' }}>By Days Past Due</span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '6px', padding: '0.65rem' }}>
-              <div style={{ fontSize: '0.72rem', color: '#166534', fontWeight: 600 }}>Current (0-30 Days)</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#166534', marginTop: '0.2rem' }}>
-                ₱{Number(summary?.current_0_30 ?? stats?.totalCurrentPHP ?? 0).toLocaleString()}
-              </div>
-              <div style={{ fontSize: '0.7rem', color: '#15803D' }}>{summary?.count_0_30 ?? '—'} active items</div>
-            </div>
-
-            <div style={{ background: '#FEFCE8', border: '1px solid #FEF08A', borderRadius: '6px', padding: '0.65rem' }}>
-              <div style={{ fontSize: '0.72rem', color: '#854D0E', fontWeight: 600 }}>31-60 Days Overdue</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#854D0E', marginTop: '0.2rem' }}>
-                ₱{Number(summary?.pastDue_31_60 ?? 0).toLocaleString()}
-              </div>
-              <div style={{ fontSize: '0.7rem', color: '#A16207' }}>{summary?.count_31_60 ?? '—'} overdue items</div>
-            </div>
-
-            <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '6px', padding: '0.65rem' }}>
-              <div style={{ fontSize: '0.72rem', color: '#9A3412', fontWeight: 600 }}>61-90 Days Overdue</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#9A3412', marginTop: '0.2rem' }}>
-                ₱{Number(summary?.pastDue_61_90 ?? 0).toLocaleString()}
-              </div>
-              <div style={{ fontSize: '0.7rem', color: '#C2410C' }}>{summary?.count_61_90 ?? '—'} overdue items</div>
-            </div>
-
-            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', padding: '0.65rem' }}>
-              <div style={{ fontSize: '0.72rem', color: '#991B1B', fontWeight: 600 }}>90+ Days (Severe)</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#991B1B', marginTop: '0.2rem' }}>
-                ₱{Number(summary?.pastDue_90Plus ?? 0).toLocaleString()}
-              </div>
-              <div style={{ fontSize: '0.7rem', color: '#B91C1C' }}>{summary?.count_90Plus ?? '—'} delinquent items</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Expected vs Collected Cash-Flow Projection */}
-        <div style={{ background: '#FFFFFF', borderRadius: '8px', padding: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <TrendingUp size={16} color="#059669" />
-              Projected Cash-Flow Inflows
-            </span>
-            <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Expected Collection Timeline</span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.85rem', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0F172A' }}>Next 30 Days (Expected Inflow)</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Maturing invoices & prompt payments</div>
-              </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#059669' }}>
-                ₱{Number(summary?.projectedCashFlowNext30Days ?? summary?.current_0_30 ?? stats?.totalCurrentPHP ?? 0).toLocaleString()}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.85rem', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0F172A' }}>31 to 60 Days Inflow</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Secondary collection target</div>
-              </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0284C7' }}>
-                ₱{Number(summary?.projectedCashFlowNext60Days ?? summary?.pastDue_31_60 ?? 0).toLocaleString()}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.85rem', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0F172A' }}>61 to 90 Days & Beyond</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748B' }}>Long-cycle recoveries</div>
-              </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#D97706' }}>
-                ₱{Number(summary?.projectedCashFlowNext90Days ?? summary?.pastDue_61_90 ?? 0).toLocaleString()}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -331,7 +230,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
       {/* FILTER & CONTROL BAR */}
       <div className="controls-bar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', gap: '1rem' }}>
         <div className="search-box" style={{ flex: 1, maxWidth: '400px' }}>
-          <Search size={18} style={{ color: '#94A3B8' }} />
+          <Search size={18} style={{ color: '#000000' }} />
           <input
             type="text"
             placeholder="Search customer name, company, or TIN..."
@@ -341,7 +240,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
         </div>
 
         <div className="filter-group" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94A3B8', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#000000', fontSize: '0.85rem' }}>
             <Filter size={16} /> Aging:
           </div>
           <select value={agingFilter} onChange={(e) => setAgingFilter(e.target.value)}>
@@ -375,10 +274,10 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
       </div>
 
       {/* RECEIVABLES TABLE WITH WHITE BACKGROUND */}
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+            <tr style={{ background: '#F8FAFC', color: '#000000', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
               <th style={{ padding: '0.75rem 1rem' }}>Customer & TIN</th>
               <th style={{ padding: '0.75rem 1rem' }}>Credit Line Used</th>
               <th style={{ padding: '0.75rem 1rem' }}>Total Outstanding</th>
@@ -390,13 +289,13 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   Loading Customer Receivables...
                 </td>
               </tr>
             ) : filteredList.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   No customer accounts match the current filter.
                 </td>
               </tr>
@@ -404,19 +303,19 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               filteredList.map((item) => {
                 const usedPct = Math.min(100, (item.totalOutstandingPHP / item.creditLimitPHP) * 100);
                 return (
-                  <tr key={item.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.9rem', background: '#FFFFFF' }}>
+                  <tr key={item.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#000000', fontSize: '0.9rem', background: '#FFFFFF' }}>
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <div style={{ fontWeight: 600, color: '#0F172A' }}>{item.customerName}</div>
-                      <div style={{ color: '#475569', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <div style={{ fontWeight: 600, color: '#000000' }}>{item.customerName}</div>
+                      <div style={{ color: '#000000', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         <Building2 size={12} /> {item.companyName}
                       </div>
-                      <div style={{ color: '#64748B', fontSize: '0.75rem' }}>TIN: {item.tin}</div>
+                      <div style={{ color: '#000000', fontSize: '0.75rem' }}>TIN: {item.tin}</div>
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem', width: '200px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                        <span style={{ color: '#0F172A', fontWeight: 600 }}>₱{item.totalOutstandingPHP.toLocaleString()}</span>
-                        <span style={{ color: '#64748B' }}>/ ₱{(item.creditLimitPHP / 1000000).toFixed(1)}M</span>
+                        <span style={{ color: '#000000', fontWeight: 600 }}>₱{item.totalOutstandingPHP.toLocaleString()}</span>
+                        <span style={{ color: '#000000' }}>/ ₱{(item.creditLimitPHP / 1000000).toFixed(1)}M</span>
                       </div>
                       <div style={{ width: '100%', height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
                         <div
@@ -429,7 +328,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                       </div>
                     </td>
 
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#0F172A' }}>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#000000' }}>
                       ₱{item.totalOutstandingPHP.toLocaleString()}
                     </td>
 
@@ -517,27 +416,27 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '520px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, color: '#F8FAFC', fontSize: '1.2rem', fontWeight: 700 }}>
+              <h3 style={{ margin: 0, color: '#000000', fontSize: '1.2rem', fontWeight: 700 }}>
                 Record Ledger Payment
               </h3>
-              <button onClick={() => setSelectedReceivable(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+              <button onClick={() => setSelectedReceivable(null)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
-            <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '8px', marginBottom: '1.25rem', border: '1px solid #334155' }}>
-              <div style={{ color: '#F8FAFC', fontWeight: 600 }}>{selectedReceivable.customerName}</div>
-              <div style={{ color: '#94A3B8', fontSize: '0.8rem' }}>{selectedReceivable.companyName}</div>
+            <div style={{ background: '#FFFFFF', padding: '1rem', borderRadius: '8px', marginBottom: '1.25rem', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ color: '#000000', fontWeight: 600 }}>{selectedReceivable.customerName}</div>
+              <div style={{ color: '#000000', fontSize: '0.8rem' }}>{selectedReceivable.companyName}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                <span style={{ color: '#94A3B8' }}>Total Outstanding:</span>
-                <span style={{ color: '#38BDF8', fontWeight: 700 }}>₱{selectedReceivable.totalOutstandingPHP.toLocaleString()}</span>
+                <span style={{ color: '#000000' }}>Total Outstanding:</span>
+                <span style={{ color: '#0284C7', fontWeight: 700 }}>₱{selectedReceivable.totalOutstandingPHP.toLocaleString()}</span>
               </div>
             </div>
 
             <form onSubmit={handleProcessPayment}>
               <div style={{ marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                  <label style={{ color: '#94A3B8', fontSize: '0.85rem' }}>
+                  <label style={{ color: '#000000', fontSize: '0.85rem' }}>
                     Payment Amount (PHP) <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <span style={{ fontSize: '0.75rem', color: '#38BDF8' }}>Strict Numeric Validation</span>
@@ -561,7 +460,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                     width: '100%',
                     background: '#FFFFFF',
                     border: inputWarning ? '1px solid #EF4444' : '1px solid #CBD5E1',
-                    color: '#0F172A',
+                    color: '#000000',
                     padding: '0.6rem',
                     borderRadius: '6px',
                     fontSize: '1rem',
@@ -576,13 +475,13 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
                   Payment Method
                 </label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethodType)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                 >
                   <option value="Cash">Cash Payment</option>
                   <option value="Cheque">Post-Dated / Dated Cheque (PDC)</option>
@@ -598,33 +497,33 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                     <div>
-                      <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600 }}>Bank Name</label>
+                      <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600 }}>Bank Name</label>
                       <input
                         type="text"
                         placeholder="e.g. BDO, BPI"
                         value={bankName}
                         onChange={(e) => setBankName(e.target.value)}
-                        style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                        style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
                       />
                     </div>
                     <div>
-                      <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600 }}>Cheque Number</label>
+                      <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600 }}>Cheque Number</label>
                       <input
                         type="text"
                         placeholder="e.g. 004819"
                         value={chequeNumber}
                         onChange={(e) => setChequeNumber(e.target.value)}
-                        style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                        style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
                       />
                     </div>
                   </div>
                   <div style={{ marginTop: '0.5rem' }}>
-                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600 }}>Maturity Date (PDC)</label>
+                    <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600 }}>Maturity Date (PDC)</label>
                     <input
                       type="date"
                       value={chequeDate}
                       onChange={(e) => setChequeDate(e.target.value)}
-                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
@@ -632,7 +531,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
 
               {paymentMethod === 'Bank Transfer' && (
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
                     Bank Reference / Transaction #
                   </label>
                   <input
@@ -640,13 +539,13 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                     placeholder="e.g. BDO-TRX-884902"
                     value={refNumber}
                     onChange={(e) => setRefNumber(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
               )}
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
                   Payment Remarks / Collection Notes
                 </label>
                 <textarea
@@ -654,7 +553,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
                   placeholder="Collector name, official receipt number, or special arrangement notes..."
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 
@@ -678,16 +577,16 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
       {/* STATEMENT OF ACCOUNT (SOA) PRINT MODAL */}
       {soaCustomer && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', width: '90%', maxWidth: '700px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', width: '90%', maxWidth: '700px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #0F172A', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>STEELTRACK ENTERPRISE</h2>
-                <div style={{ fontSize: '0.85rem', color: '#475569' }}>Industrial Steel Logistics & Distribution</div>
-                <div style={{ fontSize: '0.85rem', color: '#475569' }}>Branch: {soaCustomer.branch} Office</div>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>Industrial Steel Logistics & Distribution</div>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>Branch: {soaCustomer.branch} Office</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#0F172A' }}>STATEMENT OF ACCOUNT</h3>
-                <div style={{ fontSize: '0.85rem', color: '#475569' }}>Date: {new Date().toLocaleDateString()}</div>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#000000' }}>STATEMENT OF ACCOUNT</h3>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>Date: {new Date().toLocaleDateString()}</div>
               </div>
             </div>
 
@@ -696,10 +595,10 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                 <div style={{ fontWeight: 700, fontSize: '1rem' }}>Billed To:</div>
                 <div style={{ fontWeight: 600 }}>{soaCustomer.customerName}</div>
                 <div>{soaCustomer.companyName}</div>
-                <div style={{ fontSize: '0.85rem', color: '#475569' }}>TIN: {soaCustomer.tin}</div>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>TIN: {soaCustomer.tin}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.85rem', color: '#475569' }}>Credit Limit: ₱{soaCustomer.creditLimitPHP.toLocaleString()}</div>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>Credit Limit: ₱{soaCustomer.creditLimitPHP.toLocaleString()}</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#DC2626', marginTop: '0.25rem' }}>
                   Total Due: ₱{soaCustomer.totalOutstandingPHP.toLocaleString()}
                 </div>
@@ -730,7 +629,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               </table>
             </div>
 
-            <div style={{ fontSize: '0.8rem', color: '#475569', borderTop: '1px solid #E2E8F0', paddingTop: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ fontSize: '0.8rem', color: '#000000', borderTop: '1px solid #E2E8F0', paddingTop: '1rem', marginBottom: '1.5rem' }}>
               <p style={{ margin: '0 0 0.25rem 0' }}>Please remit payment to SteelTrack Enterprise Treasury or via BDO Account #1002-8841-99.</p>
               <p style={{ margin: 0 }}>For billing inquiries, contact accounting@{soaCustomer.branch.toLowerCase()}.steeltrack.ph</p>
             </div>
@@ -739,7 +638,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               <button
                 className="btn-secondary no-print"
                 onClick={() => setSoaCustomer(null)}
-                style={{ background: '#E2E8F0', color: '#0F172A', border: 'none', padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '4px' }}
+                style={{ background: '#E2E8F0', color: '#000000', border: 'none', padding: '0.5rem 1rem', cursor: 'pointer', borderRadius: '4px' }}
               >
                 Close
               </button>
@@ -758,17 +657,17 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
       {/* CUSTOMER PAYMENT HISTORY & LIQUIDATION STATEMENT PRINT MODAL */}
       {historyCustomer && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', width: '92%', maxWidth: '850px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', width: '92%', maxWidth: '850px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
             {/* OFFICIAL DOCUMENT HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #0F172A', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.025em' }}>
+                <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#000000', letterSpacing: '-0.025em' }}>
                   STEELTRACK ENTERPRISE
                 </h2>
-                <div style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 500 }}>
+                <div style={{ fontSize: '0.85rem', color: '#000000', fontWeight: 500 }}>
                   Industrial Steel Logistics, Supply & Distribution
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#475569' }}>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>
                   Regional Branch: {historyCustomer.branch} Commercial Office
                 </div>
               </div>
@@ -776,10 +675,10 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                 <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0284C7', fontWeight: 800 }}>
                   OFFICIAL LIQUIDATION & PAYMENT STATEMENT
                 </h3>
-                <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '0.85rem', color: '#000000', marginTop: '0.2rem' }}>
                   Statement Ref: LIQ-{historyCustomer.id.toUpperCase()}-{new Date().getFullYear()}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#475569' }}>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>
                   Date Issued: {new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
               </div>
@@ -788,21 +687,21 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
             {/* CUSTOMER DEBTOR PROFILE */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: '#F8FAFC', padding: '1rem', borderRadius: '6px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
               <div>
-                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B', fontWeight: 700 }}>Customer Account</div>
-                <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#0F172A' }}>{historyCustomer.customerName}</div>
-                <div style={{ color: '#334155', fontSize: '0.9rem' }}>{historyCustomer.companyName}</div>
-                <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '0.25rem' }}>Tax Identification Number (TIN): {historyCustomer.tin}</div>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#000000', fontWeight: 700 }}>Customer Account</div>
+                <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#000000' }}>{historyCustomer.customerName}</div>
+                <div style={{ color: '#000000', fontSize: '0.9rem' }}>{historyCustomer.companyName}</div>
+                <div style={{ fontSize: '0.8rem', color: '#000000', marginTop: '0.25rem' }}>Tax Identification Number (TIN): {historyCustomer.tin}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748B', fontWeight: 700 }}>Account Financial Standing</div>
-                <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '0.15rem' }}>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#000000', fontWeight: 700 }}>Account Financial Standing</div>
+                <div style={{ fontSize: '0.85rem', color: '#000000', marginTop: '0.15rem' }}>
                   Credit Limit: <span style={{ fontWeight: 600 }}>₱{historyCustomer.creditLimitPHP.toLocaleString()}</span>
                 </div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '0.25rem', color: historyCustomer.totalOutstandingPHP > 0 ? '#DC2626' : '#059669' }}>
                   {historyCustomer.totalOutstandingPHP > 0 ? `Current Debt: ₱${historyCustomer.totalOutstandingPHP.toLocaleString()}` : 'STATUS: FULLY LIQUIDATED (₱0.00)'}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                  Account Standing: <span style={{ fontWeight: 600, color: '#0F172A' }}>{historyCustomer.status}</span>
+                <div style={{ fontSize: '0.75rem', color: '#000000' }}>
+                  Account Standing: <span style={{ fontWeight: 600, color: '#000000' }}>{historyCustomer.status}</span>
                 </div>
               </div>
             </div>
@@ -810,10 +709,10 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
             {/* PAYMENT HISTORY & LIQUIDATION LEDGER */}
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#0F172A' }}>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#000000' }}>
                   Itemized Payments & Settlement Ledger
                 </h4>
-                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                <span style={{ fontSize: '0.8rem', color: '#000000' }}>
                   {historyCustomer.payments && historyCustomer.payments.length > 0
                     ? `${historyCustomer.payments.length} Transaction(s) on file`
                     : 'No past recorded payments'}
@@ -821,13 +720,13 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               </div>
 
               {(!historyCustomer.payments || historyCustomer.payments.length === 0) ? (
-                <div style={{ padding: '2rem', textAlign: 'center', background: '#F8FAFC', borderRadius: '6px', border: '1px dashed #CBD5E1', color: '#64748B', fontSize: '0.9rem' }}>
+                <div style={{ padding: '2rem', textAlign: 'center', background: '#F8FAFC', borderRadius: '6px', border: '1px dashed #CBD5E1', color: '#000000', fontSize: '0.9rem' }}>
                   No payment transactions have been logged for this customer account yet.
                 </div>
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #CBD5E1', fontSize: '0.82rem' }}>
                   <thead>
-                    <tr style={{ background: '#E2E8F0', color: '#334155', textAlign: 'left', fontWeight: 700 }}>
+                    <tr style={{ background: '#E2E8F0', color: '#000000', textAlign: 'left', fontWeight: 700 }}>
                       <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}>Date & Time</th>
                       <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}>Ref / OR #</th>
                       <th style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}>Method</th>
@@ -844,7 +743,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                         <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', whiteSpace: 'nowrap' }}>
                           {new Date(p.paymentDate).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })}
                         </td>
-                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontWeight: 600, color: '#0F172A' }}>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontWeight: 600, color: '#000000' }}>
                           {p.reference || 'N/A'}
                         </td>
                         <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1' }}>
@@ -852,19 +751,19 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                             {p.paymentMethod || 'Payment'}
                           </span>
                         </td>
-                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', color: '#64748B' }}>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', color: '#000000' }}>
                           ₱{p.balanceBefore.toLocaleString()}
                         </td>
                         <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', fontWeight: 700, color: '#059669' }}>
                           ₱{p.amount.toLocaleString()}
                         </td>
-                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', fontWeight: 600, color: '#0F172A' }}>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', fontWeight: 600, color: '#000000' }}>
                           ₱{p.balanceAfter.toLocaleString()}
                         </td>
-                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontSize: '0.75rem', color: '#475569' }}>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontSize: '0.75rem', color: '#000000' }}>
                           {p.recordedByName || 'Authorized Officer'}
                         </td>
-                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontSize: '0.75rem', color: '#64748B' }}>
+                        <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontSize: '0.75rem', color: '#000000' }}>
                           {p.notes || '-'}
                         </td>
                       </tr>
@@ -886,26 +785,26 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
             </div>
 
             {/* AUDIT & SIGNATURE ATTESTATION BLOCK */}
-            <div style={{ marginTop: '2rem', borderTop: '1px solid #CBD5E1', paddingTop: '1.25rem', fontSize: '0.8rem', color: '#475569' }}>
-              <p style={{ margin: '0 0 1.5rem 0', fontStyle: 'italic', color: '#64748B' }}>
+            <div style={{ marginTop: '2rem', borderTop: '1px solid #CBD5E1', paddingTop: '1.25rem', fontSize: '0.8rem', color: '#000000' }}>
+              <p style={{ margin: '0 0 1.5rem 0', fontStyle: 'italic', color: '#000000' }}>
                 Certification: I hereby certify that the ledger entries above represent genuine payments officially recorded and validated against the financial books of SteelTrack Enterprise.
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', marginTop: '2rem', textAlign: 'center' }}>
                 <div>
                   <div style={{ borderBottom: '1px solid #0F172A', height: '2rem', marginBottom: '0.35rem' }}></div>
-                  <div style={{ fontWeight: 700, color: '#0F172A' }}>{currentUserName}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Prepared By / Credit Officer</div>
+                  <div style={{ fontWeight: 700, color: '#000000' }}>{currentUserName}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#000000' }}>Prepared By / Credit Officer</div>
                 </div>
                 <div>
                   <div style={{ borderBottom: '1px solid #0F172A', height: '2rem', marginBottom: '0.35rem' }}></div>
-                  <div style={{ fontWeight: 700, color: '#0F172A' }}>Branch Treasury Controller</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Audited & Verified By</div>
+                  <div style={{ fontWeight: 700, color: '#000000' }}>Branch Treasury Controller</div>
+                  <div style={{ fontSize: '0.75rem', color: '#000000' }}>Audited & Verified By</div>
                 </div>
                 <div>
                   <div style={{ borderBottom: '1px solid #0F172A', height: '2rem', marginBottom: '0.35rem' }}></div>
-                  <div style={{ fontWeight: 700, color: '#0F172A' }}>{historyCustomer.customerName}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Customer Conforme / Authorized Representative</div>
+                  <div style={{ fontWeight: 700, color: '#000000' }}>{historyCustomer.customerName}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#000000' }}>Customer Conforme / Authorized Representative</div>
                 </div>
               </div>
             </div>
@@ -915,7 +814,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               <button
                 className="btn-secondary no-print"
                 onClick={() => setHistoryCustomer(null)}
-                style={{ background: '#E2E8F0', color: '#0F172A', border: 'none', padding: '0.55rem 1.25rem', cursor: 'pointer', borderRadius: '4px', fontWeight: 600 }}
+                style={{ background: '#E2E8F0', color: '#000000', border: 'none', padding: '0.55rem 1.25rem', cursor: 'pointer', borderRadius: '4px', fontWeight: 600 }}
               >
                 Close
               </button>

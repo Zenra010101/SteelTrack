@@ -238,7 +238,7 @@ export function DashboardView({
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
             borderRadius: 12,
             padding: '1.75rem 2rem',
-            color: '#0F172A',
+            color: '#000000',
             marginBottom: '1.5rem',
             display: 'flex',
             flexDirection: 'column',
@@ -249,11 +249,11 @@ export function DashboardView({
           }}
         >
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.55rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#0F172A' }}>
+            <h1 style={{ margin: 0, fontSize: '1.55rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#000000' }}>
               Welcome, {userSession.name}
             </h1>
 
-            <p style={{ margin: '0.4rem 0 0 0', color: '#64748B', fontSize: '0.9rem' }}>
+            <p style={{ margin: '0.4rem 0 0 0', color: '#000000', fontSize: '0.9rem' }}>
               Full operational supervision for {userSession.branch} Branch facility, quality approvals & local inventory.
             </p>
           </div>
@@ -282,7 +282,7 @@ export function DashboardView({
                 fontSize: '0.88rem',
                 fontWeight: 600,
                 background: '#F8FAFC',
-                color: '#0F172A',
+                color: '#000000',
                 borderColor: '#CBD5E1',
                 display: 'flex',
                 alignItems: 'center',
@@ -301,7 +301,7 @@ export function DashboardView({
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
             borderRadius: 12,
             padding: '1.5rem 1.75rem',
-            color: '#0F172A',
+            color: '#000000',
             marginBottom: '1.5rem',
             display: 'flex',
             justifyContent: 'space-between',
@@ -311,11 +311,11 @@ export function DashboardView({
           }}
         >
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#0F172A' }}>
+            <h1 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#000000' }}>
               Welcome, {userSession.name}
             </h1>
 
-            <p style={{ margin: '0.35rem 0 0 0', color: '#64748B', fontSize: '0.85rem' }}>
+            <p style={{ margin: '0.35rem 0 0 0', color: '#000000', fontSize: '0.85rem' }}>
               {userSession.role === UserRole.Owner &&
                 'Executive enterprise scope active across all 4 operational branch facilities.'}
               {userSession.role === UserRole.Cashier &&
@@ -346,27 +346,23 @@ export function DashboardView({
             )}
 
             {userSession.role === UserRole.Owner && (
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600 }}>Scope:</div>
-                <select
-                  value={selectedBranch}
-                  onChange={(e) => onSelectBranch(e.target.value)}
-                  style={{
-                    padding: '0.5rem 0.85rem',
-                    borderRadius: 6,
-                    background: '#F8FAFC',
-                    color: '#0F172A',
-                    border: '1px solid #CBD5E1',
-                    fontSize: '0.82rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  <option value="All">All 4 Branches Combined</option>
-                  <option value={BranchLocation.Davao}>Davao Branch</option>
-                  <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
-                  <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
-                  <option value={BranchLocation.Cebu}>Cebu Branch</option>
-                </select>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '0.4rem',
+                  alignItems: 'center',
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: 6,
+                  background: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  fontSize: '0.8rem',
+                }}
+                title="Branch scope is managed globally via the sidebar"
+              >
+                <span style={{ color: '#000000', fontWeight: 600 }}>Active Scope:</span>
+                <strong style={{ color: '#000000' }}>
+                  {selectedBranch === 'All' ? 'All 4 Branches Combined' : `${selectedBranch} Branch`}
+                </strong>
               </div>
             )}
           </div>
@@ -391,10 +387,10 @@ export function DashboardView({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Calendar size={18} color="#0284C7" />
-          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0F172A' }}>
+          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#000000' }}>
             Revenue & Sales Timeframe:
           </span>
-          <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+          <span style={{ fontSize: '0.8rem', color: '#000000' }}>
             ({timeframe === 'Daily' ? 'Today 00:00 to now' : timeframe === 'Monthly' ? 'Current Month' : timeframe === 'Trimester' ? 'Past 3 Months' : timeframe === 'Semester' ? 'Past 6 Months' : 'Past 12 Months'})
           </span>
         </div>
@@ -445,14 +441,14 @@ export function DashboardView({
         <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#000000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {userSession.role === UserRole.Cashier
                   ? `Counter Sales (${timeframe})`
                   : userSession.role === UserRole.BranchManager
                   ? `${userSession.branch} Revenue (${timeframe})`
                   : `Total Revenue (${timeframe})`}
               </div>
-              <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0F172A', marginTop: 4 }}>
+              <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#000000', marginTop: 4 }}>
                 ₱{salesRevenueTotal.toLocaleString()}
               </div>
             </div>
@@ -469,7 +465,7 @@ export function DashboardView({
         <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#000000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 On-Hand Steel Tonnage
               </div>
               <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0284C7', marginTop: 4 }}>
@@ -480,7 +476,7 @@ export function DashboardView({
               <Layers size={20} />
             </div>
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: 8, display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: 8, display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
             <span>{availableStockCount} specifications</span>
             {veryLowStockItems.length > 0 && (
               <span style={{ color: '#DC2626', fontWeight: 700, background: '#FEF2F2', padding: '0.1rem 0.35rem', borderRadius: 4 }}>
@@ -499,7 +495,7 @@ export function DashboardView({
         <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#000000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {userSession.role === UserRole.Cashier ? 'Branch Items Ready' : 'Quality & Approvals'}
               </div>
               <div style={{ fontSize: '1.65rem', fontWeight: 800, color: approvalsCount > 0 ? '#D97706' : '#0F172A', marginTop: 4 }}>
@@ -523,10 +519,10 @@ export function DashboardView({
         <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#000000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {userSession.role === UserRole.Cashier ? 'Active Stock Transfers' : 'Inter-Branch Transfers'}
               </div>
-              <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0F172A', marginTop: 4 }}>
+              <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#000000', marginTop: 4 }}>
                 {transfersCount}
               </div>
             </div>
@@ -534,7 +530,7 @@ export function DashboardView({
               <ArrowRightLeft size={20} />
             </div>
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: 8 }}>
+          <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: 8 }}>
             Active logistics in transit / pending
           </div>
         </div>
@@ -550,11 +546,11 @@ export function DashboardView({
               <div style={{ width: 32, height: 32, borderRadius: 6, background: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <ShoppingCart size={18} />
               </div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#000000' }}>
                 Cashier Point of Sale Terminal
               </h3>
             </div>
-            <p style={{ color: '#64748B', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+            <p style={{ color: '#000000', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
               Fast multi-item barcode lookup, automated FIFO stock allocation, multiple payment methods (Cash, Transfer, Cheque, Credit Line), and official BIR thermal receipt issuing.
             </p>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -581,14 +577,14 @@ export function DashboardView({
               <div style={{ width: 32, height: 32, borderRadius: 6, background: '#DCFCE7', color: '#15803D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Zap size={18} />
               </div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#000000' }}>
                 Automated FIFO Inventory Active
               </h3>
             </div>
-            <p style={{ color: '#475569', fontSize: '0.82rem', lineHeight: 1.5 }}>
+            <p style={{ color: '#000000', fontSize: '0.82rem', lineHeight: 1.5 }}>
               First-In, First-Out (FIFO) ensures older inventory batches received at the counter are sold first before newer stock with updated pricing is accessed.
             </p>
-            <div style={{ marginTop: '0.85rem', padding: '0.75rem', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.78rem', color: '#334155' }}>
+            <div style={{ marginTop: '0.85rem', padding: '0.75rem', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.78rem', color: '#000000' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#15803D', marginBottom: 2 }}>
                 <CheckCircle2 size={13} /> Automatic Batch Depletion
               </div>
@@ -608,7 +604,7 @@ export function DashboardView({
                 <div style={{ width: 32, height: 32, borderRadius: 6, background: '#FEF3C7', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ClipboardCheck size={18} />
                 </div>
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A' }}>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#000000' }}>
                   Quality Control Sign-Off
                 </h3>
               </div>
@@ -616,7 +612,7 @@ export function DashboardView({
                 {approvalsCount} Pending
               </span>
             </div>
-            <p style={{ color: '#64748B', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+            <p style={{ color: '#000000', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
               Inspect and authorize incoming steel batches, mill test certificates (MTC), and physical tonnage adjustments for {userSession.branch} Branch.
             </p>
             <button
@@ -634,11 +630,11 @@ export function DashboardView({
               <div style={{ width: 32, height: 32, borderRadius: 6, background: '#E0F2FE', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Building2 size={18} />
               </div>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#000000' }}>
                 Inter-Branch Stock Transfers
               </h3>
             </div>
-            <p style={{ color: '#64748B', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+            <p style={{ color: '#000000', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
               Query real-time stock balances across all 4 branch depots (Davao, Cagayan, Cebu, Mandaue) and request inventory replenishment with 1 click.
             </p>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -663,11 +659,11 @@ export function DashboardView({
           <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '1.5rem', gridColumn: '1 / -1' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#000000', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                   <TrendingUp size={18} style={{ color: '#059669' }} />
                   {userSession.branch} Branch Revenue Breakdown ({timeframe})
                 </h3>
-                <p style={{ margin: '0.2rem 0 0 0', color: '#64748B', fontSize: '0.8rem' }}>
+                <p style={{ margin: '0.2rem 0 0 0', color: '#000000', fontSize: '0.8rem' }}>
                   Audited financial settlement and tender channel metrics strictly scoped to {userSession.branch} Branch.
                 </p>
               </div>
@@ -688,10 +684,10 @@ export function DashboardView({
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
               <div style={{ background: '#F8FAFC', padding: '1.25rem', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
+                <div style={{ fontSize: '0.78rem', color: '#000000', fontWeight: 600, textTransform: 'uppercase' }}>
                   Branch Period Total
                 </div>
-                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0F172A', marginTop: 4 }}>
+                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#000000', marginTop: 4 }}>
                   ₱{salesRevenueTotal.toLocaleString()}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#059669', marginTop: 4, fontWeight: 600 }}>
@@ -700,21 +696,21 @@ export function DashboardView({
               </div>
 
               <div style={{ background: '#FFFFFF', padding: '1rem', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '0.78rem', color: '#000000', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>
                   Tender Channel Dissemination
                 </div>
                 {branchPaymentBreakdown.length === 0 ? (
-                  <div style={{ color: '#94A3B8', fontSize: '0.82rem', padding: '0.5rem 0' }}>
+                  <div style={{ color: '#000000', fontSize: '0.82rem', padding: '0.5rem 0' }}>
                     No settled sales transactions recorded in this {timeframe.toLowerCase()} window.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {branchPaymentBreakdown.map((t) => (
                       <div key={t.method} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
-                        <span style={{ fontWeight: 600, color: '#334155' }}>{t.method} ({t.count}):</span>
+                        <span style={{ fontWeight: 600, color: '#000000' }}>{t.method} ({t.count}):</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontWeight: 700, color: '#0F172A' }}>₱{t.revenue.toLocaleString()}</span>
-                          <span style={{ fontSize: '0.72rem', background: '#F1F5F9', color: '#64748B', padding: '0.1rem 0.35rem', borderRadius: 4 }}>
+                          <span style={{ fontWeight: 700, color: '#000000' }}>₱{t.revenue.toLocaleString()}</span>
+                          <span style={{ fontSize: '0.72rem', background: '#F1F5F9', color: '#000000', padding: '0.1rem 0.35rem', borderRadius: 4 }}>
                             {t.share.toFixed(1)}%
                           </span>
                         </div>
@@ -735,11 +731,11 @@ export function DashboardView({
           <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '1.5rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#000000', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <PieChart size={20} style={{ color: '#0284C7' }} />
                   Enterprise Revenue Breakdown per Branch ({timeframe})
                 </h3>
-                <p style={{ margin: '0.25rem 0 0 0', color: '#64748B', fontSize: '0.82rem' }}>
+                <p style={{ margin: '0.25rem 0 0 0', color: '#000000', fontSize: '0.82rem' }}>
                   Comprehensive cross-branch revenue dissemination across all 4 regional hubs. Filter scope above or drill into any branch.
                 </p>
               </div>
@@ -763,12 +759,12 @@ export function DashboardView({
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                    <th style={{ textAlign: 'left', padding: '0.65rem 0.85rem', color: '#475569', fontWeight: 700 }}>Branch Facility</th>
-                    <th style={{ textAlign: 'right', padding: '0.65rem 0.85rem', color: '#475569', fontWeight: 700 }}>Revenue (PHP)</th>
-                    <th style={{ textAlign: 'left', padding: '0.65rem 0.85rem', color: '#475569', fontWeight: 700, minWidth: '150px' }}>Share of Revenue</th>
-                    <th style={{ textAlign: 'center', padding: '0.65rem 0.85rem', color: '#475569', fontWeight: 700 }}>Transactions</th>
-                    <th style={{ textAlign: 'right', padding: '0.65rem 0.85rem', color: '#475569', fontWeight: 700 }}>Avg Ticket</th>
-                    <th style={{ textAlign: 'center', padding: '0.65rem 0.85rem', color: '#475569', fontWeight: 700 }}>Scope View</th>
+                    <th style={{ textAlign: 'left', padding: '0.65rem 0.85rem', color: '#000000', fontWeight: 700 }}>Branch Facility</th>
+                    <th style={{ textAlign: 'right', padding: '0.65rem 0.85rem', color: '#000000', fontWeight: 700 }}>Revenue (PHP)</th>
+                    <th style={{ textAlign: 'left', padding: '0.65rem 0.85rem', color: '#000000', fontWeight: 700, minWidth: '150px' }}>Share of Revenue</th>
+                    <th style={{ textAlign: 'center', padding: '0.65rem 0.85rem', color: '#000000', fontWeight: 700 }}>Transactions</th>
+                    <th style={{ textAlign: 'right', padding: '0.65rem 0.85rem', color: '#000000', fontWeight: 700 }}>Avg Ticket</th>
+                    <th style={{ textAlign: 'center', padding: '0.65rem 0.85rem', color: '#000000', fontWeight: 700 }}>Scope View</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -785,7 +781,7 @@ export function DashboardView({
                       >
                         <td style={{ padding: '0.75rem 0.85rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <span style={{ fontWeight: 700, color: '#0F172A' }}>{b.branch} Branch</span>
+                            <span style={{ fontWeight: 700, color: '#000000' }}>{b.branch} Branch</span>
                             {isSelected && (
                               <span style={{ fontSize: '0.7rem', background: '#0284C7', color: '#FFFFFF', padding: '0.1rem 0.4rem', borderRadius: 4, fontWeight: 700 }}>
                                 Active Scope
@@ -793,7 +789,7 @@ export function DashboardView({
                             )}
                           </div>
                         </td>
-                        <td style={{ textAlign: 'right', padding: '0.75rem 0.85rem', fontWeight: 700, color: '#0F172A', fontFamily: 'Outfit, sans-serif' }}>
+                        <td style={{ textAlign: 'right', padding: '0.75rem 0.85rem', fontWeight: 700, color: '#000000', fontFamily: 'Outfit, sans-serif' }}>
                           ₱{b.revenue.toLocaleString()}
                         </td>
                         <td style={{ padding: '0.75rem 0.85rem' }}>
@@ -807,15 +803,15 @@ export function DashboardView({
                                 }}
                               />
                             </div>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', minWidth: '40px' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#000000', minWidth: '40px' }}>
                               {b.share.toFixed(1)}%
                             </span>
                           </div>
                         </td>
-                        <td style={{ textAlign: 'center', padding: '0.75rem 0.85rem', fontWeight: 600, color: '#334155' }}>
+                        <td style={{ textAlign: 'center', padding: '0.75rem 0.85rem', fontWeight: 600, color: '#000000' }}>
                           {b.count}
                         </td>
-                        <td style={{ textAlign: 'right', padding: '0.75rem 0.85rem', color: '#475569' }}>
+                        <td style={{ textAlign: 'right', padding: '0.75rem 0.85rem', color: '#000000' }}>
                           ₱{Math.round(b.avgTicket).toLocaleString()}
                         </td>
                         <td style={{ textAlign: 'center', padding: '0.75rem 0.85rem' }}>
@@ -845,11 +841,11 @@ export function DashboardView({
           {/* Branch Facilities Network Matrix */}
           <div style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#000000', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                 <Building2 size={18} style={{ color: '#0284C7' }} />
                 Regional Facility Performance
               </h3>
-              <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Live Database Replication Active</span>
+              <span style={{ fontSize: '0.78rem', color: '#000000' }}>Live Database Replication Active</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
@@ -876,8 +872,8 @@ export function DashboardView({
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0F172A' }}>{f.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{f.region}</div>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#000000' }}>{f.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#000000' }}>{f.region}</div>
                     </div>
                     <span style={{ fontSize: '0.7rem', fontWeight: 700, background: '#ECFDF5', color: '#059669', padding: '0.15rem 0.45rem', borderRadius: 4 }}>
                       ● Online
@@ -886,7 +882,7 @@ export function DashboardView({
 
                   <div style={{ marginTop: '0.85rem', paddingTop: '0.75rem', borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem' }}>
                     <span style={{ color: '#0284C7', fontWeight: 600 }}>Supervise Inventory</span>
-                    <ChevronRight size={14} style={{ color: '#94A3B8' }} />
+                    <ChevronRight size={14} style={{ color: '#000000' }} />
                   </div>
                 </div>
               ))}
@@ -896,12 +892,12 @@ export function DashboardView({
           {/* Executive Quick Actions */}
           <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10, padding: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-              <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#000000', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Executive Tools & Operations
               </h4>
               {receivablesTotal > 0 && (
-                <span style={{ fontSize: '0.78rem', color: '#64748B' }}>
-                  Total Receivables: <strong style={{ color: '#0F172A' }}>₱{receivablesTotal.toLocaleString()}</strong>
+                <span style={{ fontSize: '0.78rem', color: '#000000' }}>
+                  Total Receivables: <strong style={{ color: '#000000' }}>₱{receivablesTotal.toLocaleString()}</strong>
                 </span>
               )}
             </div>

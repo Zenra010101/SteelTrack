@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Lock,
   Building2,
@@ -11,6 +11,10 @@ import {
   UserPlus,
   ShieldAlert,
   Info,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { UserRole, BranchLocation, type UserSession } from '../types/auth';
 import type { BranchRecord } from '../types/branch';
@@ -50,6 +54,33 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
   const [newUserPassword, setNewUserPassword] = useState('SteelTrack@2026');
   const [newUserRole, setNewUserRole] = useState<UserRole>(UserRole.Cashier);
   const [newUserBranch, setNewUserBranch] = useState<BranchLocation>(userBranch);
+
+  // Filter staff users strictly to those holding the Branch Manager role
+  const branchManagers = useMemo(() => {
+    return staffUsers.filter((u) => {
+      const r = (u.roleName || '').toLowerCase().replace(/[\s_-]/g, '');
+      return r === 'branchmanager' || r === 'manager';
+    });
+  }, [staffUsers]);
+
+  // Dynamically align managers according to the selected branch facility (editName)
+  const alignedManagers = useMemo(() => {
+    if (!editName) return branchManagers;
+    const target = editName.toLowerCase().trim();
+    return branchManagers.filter((u) => {
+      const ub = (u.branchName || '').toLowerCase().trim();
+      return ub.includes(target) || target.includes(ub);
+    });
+  }, [branchManagers, editName]);
+
+  const otherManagers = useMemo(() => {
+    if (!editName) return [];
+    const target = editName.toLowerCase().trim();
+    return branchManagers.filter((u) => {
+      const ub = (u.branchName || '').toLowerCase().trim();
+      return !ub.includes(target) && !target.includes(ub);
+    });
+  }, [branchManagers, editName]);
 
   useEffect(() => {
     loadBranches();
@@ -149,11 +180,23 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
   // Branch Managers strictly only see staff accounts belonging to their branch
   const displayedStaffUsers = isBranchManager
     ? staffUsers.filter((u) => {
-        const b = (u.branchName || '').toLowerCase();
-        const mgrB = userBranch.toLowerCase();
-        return b.includes(mgrB) || mgrB.includes(b);
-      })
+      const b = (u.branchName || '').toLowerCase();
+      const mgrB = userBranch.toLowerCase();
+      return b.includes(mgrB) || mgrB.includes(b);
+    })
     : staffUsers;
+
+  // Staff Users Pagination
+  const [staffPage, setStaffPage] = useState<number>(1);
+  const [staffPageSize, setStaffPageSize] = useState<number>(10);
+
+  const totalStaffItems = displayedStaffUsers.length;
+  const totalStaffPages = Math.max(1, Math.ceil(totalStaffItems / staffPageSize));
+  const safeStaffPage = Math.min(Math.max(1, staffPage), totalStaffPages);
+  const pagedStaffUsers = useMemo(() => {
+    const start = (safeStaffPage - 1) * staffPageSize;
+    return displayedStaffUsers.slice(start, start + staffPageSize);
+  }, [displayedStaffUsers, safeStaffPage, staffPageSize]);
 
   return (
     <div className="system-container">
@@ -166,7 +209,7 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
           <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
             Branch Management & Facilities Overview
           </h3>
-          <p style={{ fontSize: '0.85rem', color: '#94A3B8', margin: '0.25rem 0 0' }}>
+          <p style={{ fontSize: '0.85rem', color: '#000000', margin: '0.25rem 0 0' }}>
             {isBranchManager
               ? `Operational status of regional branches. You are logged in with supervision over ${userBranch} Branch.`
               : 'Configure and maintain operational hubs (Davao, Mandaue, Cebu, Cagayan) across the enterprise.'}
@@ -193,18 +236,18 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
                 <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0284C7', fontWeight: 700 }}>
                   {b.code}
                 </td>
-                <td style={{ fontWeight: 600, color: '#0F172A' }}>{b.name} Branch</td>
-                <td style={{ fontSize: '0.85rem', color: '#475569' }}>
+                <td style={{ fontWeight: 600, color: '#000000' }}>{b.name} Branch</td>
+                <td style={{ fontSize: '0.85rem', color: '#000000' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <MapPin size={12} style={{ color: '#94A3B8' }} /> {b.address || '—'}
+                    <MapPin size={12} style={{ color: '#000000' }} /> {b.address || '—'}
                   </div>
                 </td>
-                <td style={{ fontSize: '0.85rem', color: '#475569', fontFamily: 'JetBrains Mono' }}>
+                <td style={{ fontSize: '0.85rem', color: '#000000', fontFamily: 'JetBrains Mono' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <Phone size={12} style={{ color: '#94A3B8' }} /> {b.contactNumber || '—'}
+                    <Phone size={12} style={{ color: '#000000' }} /> {b.contactNumber || '—'}
                   </div>
                 </td>
-                <td style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
+                <td style={{ fontSize: '0.85rem', fontWeight: 600, color: '#000000' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <UserCheck size={13} style={{ color: '#0284C7' }} /> {b.managerName || 'Unassigned'}
                   </div>
@@ -228,7 +271,7 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
                       <Edit2 size={12} /> Edit Branch
                     </button>
                   ) : (
-                    <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500 }}>
+                    <span style={{ fontSize: '0.75rem', color: '#000000', fontWeight: 500 }}>
                       {b.name === userBranch ? 'Your Branch' : 'View Only'}
                     </span>
                   )}
@@ -248,7 +291,7 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
           <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
             {isBranchManager ? `${userBranch} Branch Staff Directory` : 'Staff User Directory & Authorization Control'}
           </h3>
-          <p style={{ fontSize: '0.85rem', color: '#94A3B8', margin: '0.25rem 0 0' }}>
+          <p style={{ fontSize: '0.85rem', color: '#000000', margin: '0.25rem 0 0' }}>
             {isBranchManager
               ? `Create and manage operational staff credentials strictly for ${userBranch} Branch.`
               : 'Authorized Owner, Branch Manager, and Cashier operational credentials linked to database.'}
@@ -291,15 +334,15 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
           <tbody>
             {displayedStaffUsers.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#000000' }}>
                   No staff users found for this scope. Click <strong>Add Staff Account</strong> to create one.
                 </td>
               </tr>
             ) : (
-              displayedStaffUsers.map((user) => (
+              pagedStaffUsers.map((user) => (
                 <tr key={user.id}>
                   <td style={{ fontWeight: 600 }}>{user.fullName}</td>
-                  <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#64748B' }}>{user.email}</td>
+                  <td style={{ fontFamily: 'JetBrains Mono, monospace', color: '#000000' }}>{user.email}</td>
                   <td>
                     <span className="badge badge-qualitycheck">{user.roleName}</span>
                   </td>
@@ -333,22 +376,110 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
             )}
           </tbody>
         </table>
+
+        {/* TABLE PAGINATION BAR */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.75rem 1rem',
+          borderTop: '1px solid #E2E8F0',
+          background: '#F8FAFC',
+          fontSize: '0.82rem',
+          color: '#000000',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}>
+          <div>
+            Showing {totalStaffItems === 0 ? 0 : (safeStaffPage - 1) * staffPageSize + 1} to {Math.min(safeStaffPage * staffPageSize, totalStaffItems)} of {totalStaffItems} staff accounts
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.5rem' }}>
+              <span>Rows:</span>
+              <select
+                value={staffPageSize}
+                onChange={(e) => {
+                  setStaffPageSize(Number(e.target.value));
+                  setStaffPage(1);
+                }}
+                style={{
+                  padding: '0.2rem 0.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '0.8rem',
+                  background: '#FFFFFF',
+                  color: '#000000',
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safeStaffPage <= 1}
+              onClick={() => setStaffPage(1)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safeStaffPage <= 1 ? 0.5 : 1 }}
+              title="First page"
+            >
+              <ChevronsLeft size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safeStaffPage <= 1}
+              onClick={() => setStaffPage((p) => Math.max(1, p - 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safeStaffPage <= 1 ? 0.5 : 1 }}
+              title="Previous page"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span style={{ fontWeight: 600, color: '#000000', padding: '0 0.35rem' }}>
+              Page {safeStaffPage} of {totalStaffPages}
+            </span>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safeStaffPage >= totalStaffPages}
+              onClick={() => setStaffPage((p) => Math.min(totalStaffPages, p + 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safeStaffPage >= totalStaffPages ? 0.5 : 1 }}
+              title="Next page"
+            >
+              <ChevronRight size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safeStaffPage >= totalStaffPages}
+              onClick={() => setStaffPage(totalStaffPages)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safeStaffPage >= totalStaffPages ? 0.5 : 1 }}
+              title="Last page"
+            >
+              <ChevronsRight size={14} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* EDIT BRANCH MODAL (OWNER ONLY) */}
       {!isBranchManager && editingBranch && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #334155', width: '90%', maxWidth: '520px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #334155', width: '90%', maxWidth: '520px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>
                   Edit Branch Facility: {editingBranch.name} ({editingBranch.code})
                 </h3>
-                <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Update operational details and facility management parameters</span>
+                <span style={{ fontSize: '0.75rem', color: '#000000' }}>Update operational details and facility management parameters</span>
               </div>
               <button
                 onClick={() => setEditingBranch(null)}
-                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '0.25rem' }}
+                style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '0.25rem' }}
               >
                 <X size={20} />
               </button>
@@ -363,64 +494,111 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
             <form onSubmit={handleSaveBranch}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Branch Code</label>
+                  <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Branch Code</label>
                   <input
                     type="text"
                     disabled
                     value={editingBranch.code}
-                    style={{ width: '100%', background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#94A3B8', padding: '0.6rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
+                    style={{ width: '100%', background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
                   />
                 </div>
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Facility Name</label>
-                  <input
-                    type="text"
+                  <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Facility Name</label>
+                  <select
                     required
                     value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
-                  />
+                    onChange={(e) => {
+                      const selectedBranchName = e.target.value;
+                      setEditName(selectedBranchName);
+                      // Dynamically align manager to the selected facility
+                      const target = selectedBranchName.toLowerCase().trim();
+                      const matchingMgr = branchManagers.find((u) => {
+                        const ub = (u.branchName || '').toLowerCase().trim();
+                        return ub.includes(target) || target.includes(ub);
+                      });
+                      if (matchingMgr) {
+                        setEditManager(matchingMgr.fullName);
+                      }
+                    }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                  >
+                    <option value={BranchLocation.Davao}>Davao</option>
+                    <option value={BranchLocation.Cebu}>Cebu</option>
+                    <option value={BranchLocation.Mandaue}>Mandaue</option>
+                    <option value={BranchLocation.Cagayan}>Cagayan</option>
+                  </select>
                 </div>
               </div>
 
               <div style={{ marginBottom: '0.75rem' }}>
-                <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Physical Depot Address</label>
+                <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Physical Depot Address</label>
                 <input
                   type="text"
                   required
                   value={editAddress}
                   onChange={(e) => setEditAddress(e.target.value)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Contact Hotline</label>
+                  <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Contact Hotline</label>
                   <input
                     type="text"
                     value={editContact}
                     onChange={(e) => setEditContact(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Assigned Facility Manager</label>
-                  <input
-                    type="text"
+                  <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Assigned Facility Manager</label>
+                  <select
                     value={editManager}
                     onChange={(e) => setEditManager(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
-                  />
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                  >
+                    <option value="">-- Select Branch Manager --</option>
+                    {alignedManagers.length > 0 && (
+                      <optgroup label={`${editName} Branch Managers`}>
+                        {alignedManagers.map((m) => (
+                          <option key={m.id} value={m.fullName}>
+                            {m.fullName} ({m.email})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {otherManagers.length > 0 && (
+                      <optgroup label="Other Available Branch Managers">
+                        {otherManagers.map((m) => (
+                          <option key={m.id} value={m.fullName}>
+                            {m.fullName} — {m.branchName || 'Unassigned'} ({m.email})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {editManager &&
+                      !branchManagers.some((m) => m.fullName.toLowerCase() === editManager.toLowerCase()) && (
+                        <option value={editManager}>{editManager} (Current Assignment)</option>
+                      )}
+                    {branchManagers.length === 0 && (
+                      <option value="" disabled>
+                        No users with Branch Manager role found
+                      </option>
+                    )}
+                  </select>
+                  <span style={{ fontSize: '0.7rem', color: '#000000', marginTop: '0.2rem', display: 'block' }}>
+                    Filtered strictly to accounts with the Branch Manager role.
+                  </span>
                 </div>
               </div>
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Operational Status</label>
+                <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Operational Status</label>
                 <select
                   value={editIsActive ? 'true' : 'false'}
                   onChange={(e) => setEditIsActive(e.target.value === 'true')}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                 >
                   <option value="true">Active Facility (Open for Operations)</option>
                   <option value="false">Maintenance / Inactive</option>
@@ -450,12 +628,12 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
       {/* ADD STAFF ACCOUNT MODAL */}
       {isAddUserModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '480px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '480px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <UserPlus size={18} color="#0284C7" /> Add Staff Account
               </h3>
-              <button onClick={() => setIsAddUserModalOpen(false)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
+              <button onClick={() => setIsAddUserModalOpen(false)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
@@ -468,49 +646,49 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
 
             <form onSubmit={handleCreateUser}>
               <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Full Legal Name</label>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Full Legal Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Gabriel Alcantara"
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Email / Login Username</label>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Email / Login Username</label>
                 <input
                   type="email"
                   required
                   placeholder="e.g. g.alcantara@steeltrack.com"
                   value={newUserEmail}
                   onChange={(e) => setNewUserEmail(e.target.value)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Initial Temporary Password</label>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Initial Temporary Password</label>
                 <input
                   type="text"
                   required
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Assigned Role</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>Assigned Role</label>
                   {isBranchManager ? (
                     <div
                       style={{
                         background: '#F1F5F9',
                         border: '1px solid #CBD5E1',
-                        color: '#0F172A',
+                        color: '#000000',
                         padding: '0.55rem',
                         borderRadius: '6px',
                         fontSize: '0.82rem',
@@ -523,7 +701,7 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
                     <select
                       value={newUserRole}
                       onChange={(e) => setNewUserRole(e.target.value as UserRole)}
-                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                     >
                       <option value={UserRole.Cashier}>Cashier</option>
                       <option value={UserRole.BranchManager}>Branch Manager</option>
@@ -533,7 +711,7 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                     Facility Branch {isBranchManager && <span style={{ color: '#0284C7' }}>(Strictly Locked)</span>}
                   </label>
                   {isBranchManager ? (
@@ -558,7 +736,7 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
                       disabled={newUserRole === UserRole.Owner}
                       value={newUserBranch}
                       onChange={(e) => setNewUserBranch(e.target.value as BranchLocation)}
-                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', opacity: newUserRole === UserRole.Owner ? 0.5 : 1 }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', opacity: newUserRole === UserRole.Owner ? 0.5 : 1 }}
                     >
                       <option value={BranchLocation.Davao}>Davao Branch</option>
                       <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
@@ -570,7 +748,7 @@ export function SystemManagementView({ userSession }: SystemManagementViewProps)
               </div>
 
               {isBranchManager && (
-                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '0.5rem 0.75rem', marginBottom: '1.25rem', fontSize: '0.74rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 6, padding: '0.5rem 0.75rem', marginBottom: '1.25rem', fontSize: '0.74rem', color: '#000000', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <Info size={14} color="#0284C7" />
                   <span>Branch Managers can only create staff users strictly assigned to their own branch ({userBranch}).</span>
                 </div>

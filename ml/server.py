@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from uuid import UUID
@@ -18,7 +19,7 @@ from ml.predictor import KerasPredictor
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("KerasLstmServer")
 
-API_KEY = "dev-api-key-change-me"
+API_KEY = os.getenv("LSTM_API_KEY", "dev-api-key-change-me")
 
 
 # --- Schemas ----------------------------------------------------------------

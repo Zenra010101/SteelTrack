@@ -500,6 +500,34 @@ export async function updateBatchStatus(
   return await res.json();
 }
 
+export interface AddBranchStockPayload {
+  quantity: number;
+  costPrice?: number;
+  sellingPrice?: number;
+  batchCode?: string;
+  reference?: string;
+  notes?: string;
+}
+
+export async function addBranchProductStock(
+  id: string,
+  payload: AddBranchStockPayload
+): Promise<{ success: boolean; message: string; stockBefore: number; stockAfter: number }> {
+  const res = await fetch(`/api/branchproducts/${id}/add-stock`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errorJson = await res.json().catch(() => null);
+    const errorMsg = errorJson?.message || (await res.text().catch(() => ''));
+    throw new Error(errorMsg || `Failed to add branch stock (HTTP ${res.status})`);
+  }
+
+  return await res.json();
+}
+
 
 
 // ============================================================================

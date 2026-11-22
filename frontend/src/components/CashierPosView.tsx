@@ -576,7 +576,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
           {/* Search and Category Filters */}
           <div className="pos-filter-section">
             <div className="pos-search-bar">
-              <Search size={16} style={{ color: '#94A3B8' }} />
+              <Search size={16} style={{ color: '#000000' }} />
               {/* Removed placeholder text as explicitly requested */}
               <input
                 type="text"
@@ -586,7 +586,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               {searchQuery && (
                 <button
                   type="button"
-                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+                  style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}
                   onClick={() => setSearchQuery('')}
                 >
                   ✕
@@ -613,11 +613,11 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
           {/* Card-Type Items Grid */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#94A3B8' }}>
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#000000' }}>
               Loading available stock at {branch} Branch...
             </div>
           ) : filteredBatches.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#94A3B8', background: '#F8FAFC', borderRadius: '8px' }}>
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#000000', background: '#F8FAFC', borderRadius: '8px' }}>
               No available steel batches match your search criteria in {branch} Branch.
             </div>
           ) : (
@@ -647,15 +647,15 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                         >
                           {batch.categoryName}
                         </span>
-                        <span className="card-heat-no" style={{ fontSize: '0.75rem', color: '#64748B', fontFamily: 'monospace' }}>
+                        <span className="card-heat-no" style={{ fontSize: '0.75rem', color: '#000000', fontFamily: 'monospace' }}>
                           Batch: {batch.batchCode}
                         </span>
                       </div>
 
-                      <div className="card-title" style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.2rem' }}>
+                      <div className="card-title" style={{ fontSize: '0.95rem', fontWeight: 700, color: '#000000', marginBottom: '0.2rem' }}>
                         {batch.productName}
                       </div>
-                      <div className="card-specs" style={{ fontSize: '0.78rem', color: '#64748B', marginBottom: '0.35rem' }}>
+                      <div className="card-specs" style={{ fontSize: '0.78rem', color: '#000000', marginBottom: '0.35rem' }}>
                         SKU: <strong style={{ color: '#0284C7' }}>{batch.sku}</strong> · {batch.dimensions}
                       </div>
 
@@ -671,7 +671,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                           </span>
                         )}
                         {batch.receivedDate && (
-                          <span style={{ fontSize: '0.68rem', color: '#64748B' }}>
+                          <span style={{ fontSize: '0.68rem', color: '#000000' }}>
                             Rec'd: {batch.receivedDate}
                           </span>
                         )}
@@ -683,12 +683,12 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                         <span className="stock-pill" style={{ background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0', fontWeight: 700, fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
                           {batch.quantity} {batch.unitOfMeasure || 'pcs'} in stock
                         </span>
-                        <span className="price-pill" style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A' }}>
+                        <span className="price-pill" style={{ fontSize: '0.95rem', fontWeight: 800, color: '#000000' }}>
                           ₱{batch.sellingPrice.toLocaleString()}
                         </span>
                       </div>
 
-                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '0.2rem', textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#000000', marginTop: '0.2rem', textAlign: 'right' }}>
                         Cost: ₱{batch.costPrice.toLocaleString()}
                       </div>
 
@@ -731,7 +731,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               {cart.length > 0 && (
                 <button
                   type="button"
-                  style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                  style={{ background: 'none', border: 'none', color: '#000000', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                   onClick={handleClearCart}
                   title="Clear all items"
                 >
@@ -744,7 +744,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
           <form onSubmit={(e) => { e.preventDefault(); if (cart.length > 0) setIsPaymentModalOpen(true); }}>
             {/* Customer Information */}
             <div className="customer-section">
-              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '0.35rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#000000', marginBottom: '0.35rem' }}>
                 Customer / Billed Enterprise:
               </label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -790,7 +790,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                       <div className="cart-item-name" style={{ fontWeight: 700 }}>
                         {item.productName || item.grade}
                       </div>
-                      <div className="cart-item-meta" style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                      <div className="cart-item-meta" style={{ fontSize: '0.75rem', color: '#000000' }}>
                         Batch: {item.batchCode || item.heatNumber} • SKU: {item.sku} • Stock: {item.availableQuantity || item.availableTons}
                       </div>
                     </div>
@@ -808,7 +808,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                         className="qty-input"
                         title="Quantity ordered"
                       />
-                      <span style={{ fontSize: '0.75rem', color: '#64748B' }}>{item.unitOfMeasure || 'pc'}</span>
+                      <span style={{ fontSize: '0.75rem', color: '#000000' }}>{item.unitOfMeasure || 'pc'}</span>
                     </div>
 
                     <div className="cart-item-total" style={{ fontWeight: 700 }}>
@@ -915,10 +915,10 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   <CreditCard size={18} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0F172A' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#000000' }}>
                     Tender Payment & Finalize Sale
                   </h3>
-                  <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#000000' }}>
                     Billed to: <strong>{selectedCustomerName === 'Other' ? customCustomerInput || 'Cash Client' : selectedCustomerName}</strong> · {branch} Counter
                   </div>
                 </div>
@@ -929,7 +929,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 style={{ padding: '0.25rem 0.5rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
                 title="Close"
               >
-                <X size={18} style={{ color: '#64748B' }} />
+                <X size={18} style={{ color: '#000000' }} />
               </button>
             </div>
 
@@ -942,13 +942,13 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 <div style={{ fontSize: '2.1rem', fontWeight: 800, color: '#0284C7', marginTop: 2 }}>
                   ₱{grandTotalPHP.toLocaleString()}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: 4 }}>
+                <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: 4 }}>
                   {cart.length} item(s) · Subtotal: ₱{subtotalPHP.toLocaleString()} {applyVat ? `· 12% VAT: ₱${taxPHP.toLocaleString()}` : ''} {discountAmount > 0 ? `· Discount: -₱${discountAmount.toLocaleString()}` : ''}
                 </div>
               </div>
 
               {/* Payment Method Selector */}
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#000000', marginBottom: '0.5rem' }}>
                 Select Payment Method:
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.25rem' }}>
@@ -983,7 +983,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               {paymentMethod === 'Cash' && (
                 <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Amount Tendered (₱):</label>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#000000' }}>Amount Tendered (₱):</label>
                     <input
                       type="number"
                       step="1"
@@ -991,7 +991,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                       value={amountTendered || ''}
                       onChange={(e) => setAmountTendered(parseFloat(e.target.value) || 0)}
                       placeholder="0"
-                      style={{ width: '150px', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem', padding: '0.4rem', borderRadius: 6, border: '1.5px solid #CBD5E1', background: '#FFFFFF', color: '#0F172A' }}
+                      style={{ width: '150px', textAlign: 'right', fontWeight: 700, fontSize: '1.1rem', padding: '0.4rem', borderRadius: 6, border: '1.5px solid #CBD5E1', background: '#FFFFFF', color: '#000000' }}
                       autoFocus
                     />
                   </div>
@@ -1025,7 +1025,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.6rem', borderTop: '1px solid #E2E8F0', fontSize: '0.95rem' }}>
-                    <span style={{ color: '#64748B', fontWeight: 600 }}>Change Returned:</span>
+                    <span style={{ color: '#000000', fontWeight: 600 }}>Change Returned:</span>
                     <strong style={{ fontSize: '1.15rem', color: amountTendered >= grandTotalPHP ? '#059669' : '#DC2626' }}>
                       ₱{changeDuePHP.toLocaleString()}
                     </strong>
@@ -1040,7 +1040,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
               {paymentMethod === 'Card' && (
                 <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '1rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#000000', marginBottom: '0.4rem' }}>
                     Card / QRPH Terminal Reference Number: <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
@@ -1049,10 +1049,10 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                     onChange={(e) => setReferenceNumber(e.target.value)}
                     placeholder="e.g. POS-AUTH-98214 / QRPH-REF-5501"
                     required
-                    style={{ width: '100%', padding: '0.55rem', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.9rem', background: '#FFFFFF', color: '#0F172A' }}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.9rem', background: '#FFFFFF', color: '#000000' }}
                     autoFocus
                   />
-                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 4 }}>
+                  <div style={{ fontSize: '0.72rem', color: '#000000', marginTop: 4 }}>
                     Enter terminal slip approval code or electronic gateway transaction ID.
                   </div>
                 </div>
@@ -1060,7 +1060,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
               {paymentMethod === 'Bank Transfer' && (
                 <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '1rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#000000', marginBottom: '0.4rem' }}>
                     Bank Reference / Online Transaction ID: <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
@@ -1069,10 +1069,10 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                     onChange={(e) => setReferenceNumber(e.target.value)}
                     placeholder="e.g. BDO-TRX-8829410"
                     required
-                    style={{ width: '100%', padding: '0.55rem', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.9rem', background: '#FFFFFF', color: '#0F172A' }}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.9rem', background: '#FFFFFF', color: '#000000' }}
                     autoFocus
                   />
-                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 4 }}>
+                  <div style={{ fontSize: '0.72rem', color: '#000000', marginTop: 4 }}>
                     Enter client's online banking confirmation or deposit slip reference number.
                   </div>
                 </div>
@@ -1080,7 +1080,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
               {paymentMethod === 'Cheque' && (
                 <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '1rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#000000', marginBottom: '0.4rem' }}>
                     Cheque # & Drawee Bank: <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
@@ -1089,10 +1089,10 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                     onChange={(e) => setReferenceNumber(e.target.value)}
                     placeholder="e.g. CHQ-991204 (Metrobank Davao)"
                     required
-                    style={{ width: '100%', padding: '0.55rem', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.9rem', background: '#FFFFFF', color: '#0F172A' }}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.9rem', background: '#FFFFFF', color: '#000000' }}
                     autoFocus
                   />
-                  <div style={{ fontSize: '0.72rem', color: '#64748B', marginTop: 4 }}>
+                  <div style={{ fontSize: '0.72rem', color: '#000000', marginTop: 4 }}>
                     Automatically tracked in the Cheque & PDC Management register as Pending clearing.
                   </div>
                 </div>
@@ -1113,8 +1113,8 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 <div style={{ background: '#F8FAFC', border: '1.5px solid #CBD5E1', borderRadius: 8, padding: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                     <div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0F172A' }}>Split Payment Tenders</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Divide transaction across two or more payment methods</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#000000' }}>Split Payment Tenders</div>
+                      <div style={{ fontSize: '0.75rem', color: '#000000' }}>Divide transaction across two or more payment methods</div>
                     </div>
                     <button
                       type="button"
@@ -1138,7 +1138,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                             const newMethod = e.target.value as any;
                             setSplitTenders((prev) => prev.map((t) => t.id === tender.id ? { ...t, method: newMethod } : t));
                           }}
-                          style={{ padding: '0.45rem', borderRadius: 4, border: '1px solid #CBD5E1', fontSize: '0.8rem', background: '#FFFFFF', color: '#0F172A', fontWeight: 600 }}
+                          style={{ padding: '0.45rem', borderRadius: 4, border: '1px solid #CBD5E1', fontSize: '0.8rem', background: '#FFFFFF', color: '#000000', fontWeight: 600 }}
                         >
                           <option value="Cash">💵 Cash</option>
                           <option value="Card">💳 Card/QRPH</option>
@@ -1158,7 +1158,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                               const val = parseFloat(e.target.value) || 0;
                               setSplitTenders((prev) => prev.map((t) => t.id === tender.id ? { ...t, amount: val } : t));
                             }}
-                            style={{ width: '100%', padding: '0.45rem', borderRadius: 4, border: '1px solid #CBD5E1', fontSize: '0.85rem', fontWeight: 700, background: '#FFFFFF', color: '#0F172A' }}
+                            style={{ width: '100%', padding: '0.45rem', borderRadius: 4, border: '1px solid #CBD5E1', fontSize: '0.85rem', fontWeight: 700, background: '#FFFFFF', color: '#000000' }}
                           />
                         </div>
 
@@ -1172,7 +1172,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                               const val = e.target.value;
                               setSplitTenders((prev) => prev.map((t) => t.id === tender.id ? { ...t, referenceNumber: val } : t));
                             }}
-                            style={{ width: '100%', padding: '0.45rem', borderRadius: 4, border: '1px solid #CBD5E1', fontSize: '0.8rem', background: tender.method === 'Cash' ? '#F1F5F9' : '#FFFFFF', color: '#0F172A' }}
+                            style={{ width: '100%', padding: '0.45rem', borderRadius: 4, border: '1px solid #CBD5E1', fontSize: '0.8rem', background: tender.method === 'Cash' ? '#F1F5F9' : '#FFFFFF', color: '#000000' }}
                           />
                         </div>
 
@@ -1193,17 +1193,17 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   {/* Split Summary Callout */}
                   <div style={{ background: '#F1F5F9', padding: '0.75rem', borderRadius: 6, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', fontSize: '0.8rem' }}>
                     <div>
-                      <span style={{ color: '#64748B', display: 'block' }}>Total Allocated:</span>
+                      <span style={{ color: '#000000', display: 'block' }}>Total Allocated:</span>
                       <strong style={{ fontSize: '0.95rem', color: '#0284C7' }}>₱{totalSplitAllocated.toLocaleString()}</strong>
                     </div>
                     <div>
-                      <span style={{ color: '#64748B', display: 'block' }}>Remaining Due:</span>
+                      <span style={{ color: '#000000', display: 'block' }}>Remaining Due:</span>
                       <strong style={{ fontSize: '0.95rem', color: splitRemainingDue > 0 ? '#DC2626' : '#059669' }}>
                         ₱{splitRemainingDue.toLocaleString()}
                       </strong>
                     </div>
                     <div>
-                      <span style={{ color: '#64748B', display: 'block' }}>Cash Change:</span>
+                      <span style={{ color: '#000000', display: 'block' }}>Cash Change:</span>
                       <strong style={{ fontSize: '0.95rem', color: '#059669' }}>₱{splitChangeDue.toLocaleString()}</strong>
                     </div>
                   </div>
@@ -1313,7 +1313,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                     <tr key={it.id}>
                       <td>
                         <strong>{it.productName || it.grade}</strong>
-                        <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{it.sku || it.dimensions}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#000000' }}>{it.sku || it.dimensions}</div>
                       </td>
                       <td style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{it.batchCode || it.heatNumber}</td>
                       <td style={{ textAlign: 'right' }}>{it.quantityTons} {it.unitOfMeasure || 'pcs'}</td>
@@ -1350,9 +1350,9 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               </div>
               {activeReceipt.splitTenders && activeReceipt.splitTenders.length > 0 && (
                 <div style={{ margin: '0.4rem 0', padding: '0.4rem 0.6rem', background: '#F1F5F9', borderRadius: 4, fontSize: '0.75rem' }}>
-                  <div style={{ fontWeight: 700, color: '#475569', marginBottom: 2 }}>Split Tender Breakdown:</div>
+                  <div style={{ fontWeight: 700, color: '#000000', marginBottom: 2 }}>Split Tender Breakdown:</div>
                   {activeReceipt.splitTenders.map((t, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', color: '#334155' }}>
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', color: '#000000' }}>
                       <span>• {t.method} {t.referenceNumber ? `(${t.referenceNumber})` : ''}:</span>
                       <strong>₱{t.amount.toLocaleString()}</strong>
                     </div>
@@ -1425,7 +1425,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               <div style={{ background: '#FEE2E2', padding: '0.5rem', borderRadius: '50%' }}>
                 <AlertTriangle size={24} color="#DC2626" />
               </div>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0F172A' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#000000' }}>
                 Transaction Not Completed
               </h3>
             </div>
@@ -1446,7 +1446,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
             </div>
 
             {transactionError.details && (
-              <p style={{ fontSize: '0.8rem', color: '#64748B', lineHeight: 1.4, margin: '0 0 1.25rem 0' }}>
+              <p style={{ fontSize: '0.8rem', color: '#000000', lineHeight: 1.4, margin: '0 0 1.25rem 0' }}>
                 <CheckCircle2 size={13} style={{ display: 'inline', color: '#059669', marginRight: 4 }} />
                 {transactionError.details}
               </p>
@@ -1457,7 +1457,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 type="button"
                 className="btn-primary"
                 onClick={() => setTransactionError(null)}
-                style={{ background: '#0F172A', borderColor: '#0F172A', padding: '0.55rem 1.25rem', fontSize: '0.88rem' }}
+                style={{ background: '#0F172A', borderColor: '#000000', padding: '0.55rem 1.25rem', fontSize: '0.88rem' }}
               >
                 Review Cart & Try Again
               </button>

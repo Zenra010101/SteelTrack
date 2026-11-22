@@ -120,9 +120,9 @@ export function OwnerAnalyticsView() {
           marginBottom: '1.25rem',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.88rem', fontWeight: 600, color: '#334155' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.88rem', fontWeight: 600, color: '#000000' }}>
           <Calendar size={16} color="#0284C7" /> Timeframe Scope:
-          <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 400 }}>
+          <span style={{ fontSize: '0.8rem', color: '#000000', fontWeight: 400 }}>
             ({timeframe === 'Daily' ? 'Today 00:00 to now' : timeframe === 'Monthly' ? 'Current Month' : timeframe === 'Trimester' ? 'Past 3 Months' : timeframe === 'Semester' ? 'Past 6 Months' : 'Past 12 Months'})
           </span>
         </div>
@@ -156,7 +156,7 @@ export function OwnerAnalyticsView() {
           <div>
             <div className="metric-label">Total Network Tonnage</div>
             <div className="metric-value">
-              {totalTonnage.toFixed(1)} <span style={{ fontSize: '1rem', color: '#64748B', fontWeight: 500 }}>T</span>
+              {totalTonnage.toFixed(1)} <span style={{ fontSize: '1rem', color: '#000000', fontWeight: 500 }}>T</span>
             </div>
             <div className="metric-sub">Distributed across 4 regional branches</div>
           </div>
@@ -235,7 +235,7 @@ export function OwnerAnalyticsView() {
                       <div style={{ flex: 1, height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden', minWidth: 60 }}>
                         <div style={{ width: `${branch.percentage}%`, height: '100%', background: '#0284C7' }} />
                       </div>
-                      <span style={{ fontSize: '0.8rem', color: '#64748B', width: 32 }}>{branch.percentage}%</span>
+                      <span style={{ fontSize: '0.8rem', color: '#000000', width: 32 }}>{branch.percentage}%</span>
                     </div>
                   </td>
                   <td>{branch.activeBatches} Batches</td>

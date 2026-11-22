@@ -1,10 +1,14 @@
 using System.Security.Claims;
 using SteelTrack.Domain.Constants;
 using SteelTrack.Domain.Entities;
+using SteelTrack.Domain.Enums;
 using SteelTrack.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using SteelTrack.Api.Hubs;
 
 namespace SteelTrack.Api.Controllers;
 
@@ -14,10 +18,17 @@ namespace SteelTrack.Api.Controllers;
 public class BranchProductsController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IHubContext<SteelTrackHub>? _hubContext;
+    private readonly ILogger<BranchProductsController>? _logger;
 
-    public BranchProductsController(AppDbContext context)
+    public BranchProductsController(
+        AppDbContext context,
+        IHubContext<SteelTrackHub>? hubContext = null,
+        ILogger<BranchProductsController>? logger = null)
     {
         _context = context;
+        _hubContext = hubContext;
+        _logger = logger;
     }
 
     private Guid UserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -533,6 +544,177 @@ public class BranchProductsController : ControllerBase
         }
 
         return NotFound(new { message = $"Inventory item or branch product '{id}' not found." });
+    }
+
+    public class AddBranchStockRequest
+    {
+        public int Quantity { get; set; }
+        public decimal? CostPrice { get; set; }
+        public decimal? SellingPrice { get; set; }
+        public string? BatchCode { get; set; }
+        public string? Reference { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    /// <summary>
+    /// Restocks/adds inventory for a branch product with transaction logging,
+    /// audit trail, and real-time SignalR notifications.
+    /// </summary>
+    [HttpPost("{id:guid}/add-stock")]
+    [Authorize(Roles = $"{RoleNames.Owner},{RoleNames.SuperAdmin},{RoleNames.BranchManager},BranchManager,Admin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddStock(
+        Guid id,
+        [FromBody] AddBranchStockRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request == null || request.Quantity <= 0)
+        {
+            return BadRequest(new { message = "Quantity to add must be greater than zero." });
+        }
+
+        if (request.CostPrice.HasValue && request.CostPrice < 0)
+        {
+            return BadRequest(new { message = "Cost price cannot be negative." });
+        }
+
+        if (request.SellingPrice.HasValue && request.SellingPrice < 0)
+        {
+            return BadRequest(new { message = "Selling price cannot be negative." });
+        }
+
+        // Find BranchProduct by Id or ProductId
+        var bp = await _context.BranchProducts
+            .Include(x => x.Product)
+            .Include(x => x.Branch)
+            .FirstOrDefaultAsync(x => x.Id == id || x.ProductId == id, cancellationToken);
+
+        if (bp == null)
+        {
+            return NotFound(new { message = $"Branch product with id '{id}' was not found." });
+        }
+
+        // Branch Manager authorization check: verify user belongs to this branch if not Owner/Admin
+        if (!IsOwnerOrAdmin)
+        {
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == UserId, cancellationToken);
+            if (user?.BranchId != null && user.BranchId != bp.BranchId)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "You are only authorized to restock products at your assigned branch facility." });
+            }
+        }
+
+        var stockBefore = (int)bp.Product.StockQuantity;
+        var stockAfter = stockBefore + request.Quantity;
+        bp.Product.StockQuantity = stockAfter;
+        bp.IsAvailable = true;
+        bp.IsActive = true;
+        bp.UpdatedAt = DateTime.UtcNow;
+
+        if (request.SellingPrice.HasValue && request.SellingPrice > 0)
+        {
+            bp.SellingPrice = request.SellingPrice.Value;
+            bp.Product.UnitPrice = request.SellingPrice.Value;
+        }
+
+        if (request.CostPrice.HasValue && request.CostPrice > 0)
+        {
+            bp.DefaultCostPrice = request.CostPrice.Value;
+            bp.Product.CostPrice = request.CostPrice.Value;
+        }
+
+        // Create new ProductBatch for batch tracking and FIFO costing
+        var batchCode = string.IsNullOrWhiteSpace(request.BatchCode)
+            ? $"BAT-{DateTime.UtcNow:yyyyMMddHHmmss}-{bp.Branch.Code}"
+            : request.BatchCode.Trim();
+
+        var batch = new ProductBatch
+        {
+            ProductId = bp.ProductId,
+            BranchId = bp.BranchId,
+            BatchCode = batchCode,
+            CostPrice = request.CostPrice ?? bp.DefaultCostPrice,
+            SellingPrice = request.SellingPrice ?? bp.SellingPrice,
+            ReceivedQuantity = request.Quantity,
+            Quantity = request.Quantity,
+            ReceivedDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            ReceivedByUserId = UserId,
+            ApprovedByUserId = UserId,
+            IsActive = true
+        };
+        _context.ProductBatches.Add(batch);
+
+        // Record InventoryTransaction for historical ledger
+        var tx = new InventoryTransaction
+        {
+            ProductId = bp.ProductId,
+            ProductBatch = batch,
+            Type = InventoryTransactionType.Purchase,
+            Quantity = request.Quantity,
+            StockBefore = stockBefore,
+            StockAfter = stockAfter,
+            Reference = !string.IsNullOrWhiteSpace(request.Reference)
+                ? request.Reference.Trim()
+                : $"Restock-{bp.Branch.Code}-{DateTime.UtcNow:yyyyMMdd}",
+            Notes = !string.IsNullOrWhiteSpace(request.Notes)
+                ? request.Notes.Trim()
+                : $"Restocked {request.Quantity} units at {bp.Branch.Name}.",
+            UserId = UserId
+        };
+        _context.InventoryTransactions.Add(tx);
+
+        // Record AuditLog
+        var userEmail = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name ?? "system";
+        var audit = new AuditLog
+        {
+            UserId = UserId,
+            UserEmail = userEmail,
+            Category = AuditLogCategory.Operational,
+            Action = "AddStock",
+            EntityType = "BranchProduct",
+            EntityId = bp.Id.ToString(),
+            Details = $"Restocked {request.Quantity} units for product '{bp.Product.Name}' ({bp.Product.Sku}) at {bp.Branch.Name}. Stock updated from {stockBefore} to {stockAfter}.",
+            OldValue = stockBefore.ToString(),
+            NewValue = stockAfter.ToString(),
+            Status = "Success"
+        };
+        _context.AuditLogs.Add(audit);
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Broadcast real-time inventory change via SignalR
+        if (_hubContext != null)
+        {
+            try
+            {
+                await _hubContext.Clients.All.SendAsync("InventoryChanged", new
+                {
+                    productId = bp.ProductId.ToString(),
+                    branchId = bp.BranchId.ToString(),
+                    newQuantity = stockAfter,
+                    timestamp = DateTime.UtcNow
+                }, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to broadcast inventory update via SignalR hub");
+            }
+        }
+
+        return Ok(new
+        {
+            success = true,
+            message = $"Successfully added {request.Quantity} units to {bp.Branch.Name}. Current stock is now {stockAfter}.",
+            branchProductId = bp.Id.ToString(),
+            productId = bp.ProductId.ToString(),
+            branchName = bp.Branch.Name,
+            stockBefore,
+            stockAfter,
+            batchCode = batch.BatchCode
+        });
     }
 }
 

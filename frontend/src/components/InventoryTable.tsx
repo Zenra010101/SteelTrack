@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Tag, Sliders, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, RefreshCw, Info, Building2, X, Boxes } from 'lucide-react';
+import { Tag, Sliders, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, RefreshCw, Info, Building2, X, Boxes, PackagePlus, AlertTriangle } from 'lucide-react';
 import type { SteelBatch, BatchStatus } from '../types/steel';
-import { fetchCrossBranchStock, type CrossBranchStockResponse } from '../services/api';
+import { fetchCrossBranchStock, addBranchProductStock, type CrossBranchStockResponse } from '../services/api';
 import { BarcodePrintModal } from './BarcodePrintModal';
 import { StockAdjustmentModal } from './StockAdjustmentModal';
 import { TableExportButtons } from './TableExportButtons';
@@ -11,16 +11,80 @@ interface InventoryTableProps {
   loading: boolean;
   onUpdateStatus: (id: string, newStatus: BatchStatus) => void;
   onAdjustStock?: (id: string, newTons: number, reason: string) => Promise<void>;
+  onStockAdded?: () => void;
 }
 
 export function InventoryTable({
   batches,
   loading,
-  onUpdateStatus,
+  onUpdateStatus: _onUpdateStatus,
   onAdjustStock,
+  onStockAdded,
 }: InventoryTableProps) {
   const [selectedBarcodeBatch, setSelectedBarcodeBatch] = useState<SteelBatch | null>(null);
   const [selectedAdjustmentBatch, setSelectedAdjustmentBatch] = useState<SteelBatch | null>(null);
+
+  // Add/Restock Branch Product modal state
+  const [selectedRestockBatch, setSelectedRestockBatch] = useState<SteelBatch | null>(null);
+  const [restockQty, setRestockQty] = useState<string>('50');
+  const [restockCost, setRestockCost] = useState<string>('');
+  const [restockSelling, setRestockSelling] = useState<string>('');
+  const [restockBatchCode, setRestockBatchCode] = useState<string>('');
+  const [restockRef, setRestockRef] = useState<string>('');
+  const [restockNotes, setRestockNotes] = useState<string>('');
+  const [restockLoading, setRestockLoading] = useState<boolean>(false);
+  const [restockError, setRestockError] = useState<string | null>(null);
+
+  const handleOpenRestock = (batch: SteelBatch) => {
+    const bAny = batch as any;
+    setSelectedRestockBatch(batch);
+    setRestockQty('50');
+    setRestockCost(bAny.defaultCostPrice || bAny.costPrice ? String(bAny.defaultCostPrice || bAny.costPrice) : '');
+    setRestockSelling(bAny.sellingPrice ? String(bAny.sellingPrice) : '');
+    const branchCode = ((bAny.branch || bAny.branchName || 'DVO') as string).slice(0, 3).toUpperCase();
+    const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    setRestockBatchCode(`BAT-${dateStamp}-${branchCode}`);
+    setRestockRef(`PO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
+    setRestockNotes('');
+    setRestockError(null);
+  };
+
+  const handleConfirmRestock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRestockBatch) return;
+
+    const qty = parseInt(restockQty, 10);
+    if (isNaN(qty) || qty <= 0) {
+      setRestockError('Restock quantity must be a positive integer greater than zero.');
+      return;
+    }
+
+    setRestockLoading(true);
+    setRestockError(null);
+
+    try {
+      const bAny = selectedRestockBatch as any;
+      const targetId = bAny.id || bAny.productId;
+      await addBranchProductStock(targetId, {
+        quantity: qty,
+        costPrice: restockCost ? parseFloat(restockCost) : undefined,
+        sellingPrice: restockSelling ? parseFloat(restockSelling) : undefined,
+        batchCode: restockBatchCode.trim() || undefined,
+        reference: restockRef.trim() || undefined,
+        notes: restockNotes.trim() || undefined,
+      });
+
+      setSelectedRestockBatch(null);
+      if (onStockAdded) {
+        onStockAdded();
+      }
+    } catch (err: any) {
+      console.error('Failed restocking branch product:', err);
+      setRestockError(err.message || 'Failed to restock inventory.');
+    } finally {
+      setRestockLoading(false);
+    }
+  };
 
   // Cross-branch product stock modal state for Branch Managers
   const [crossBranchData, setCrossBranchData] = useState<{
@@ -75,23 +139,6 @@ export function InventoryTable({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(50);
 
-  const getBadgeClass = (status: string) => {
-    switch (status) {
-      case 'InProduction':
-        return 'badge-inproduction';
-      case 'QualityCheck':
-        return 'badge-qualitycheck';
-      case 'Available':
-        return 'badge-available';
-      case 'Reserved':
-        return 'badge-reserved';
-      case 'Shipped':
-        return 'badge-shipped';
-      default:
-        return 'badge-available';
-    }
-  };
-
   const formatGrade = (gradeStr: string) => {
     return gradeStr.replace(/_/g, ' ');
   };
@@ -126,12 +173,12 @@ export function InventoryTable({
       )}
 
       {loading && batches.length === 0 ? (
-        <div style={{ padding: '3.5rem', textAlign: 'center', color: '#94A3B8' }}>
+        <div style={{ padding: '3.5rem', textAlign: 'center', color: '#000000' }}>
           <RefreshCw size={24} className="spin" style={{ margin: '0 auto 0.75rem auto', color: '#0284C7' }} />
           <div>Loading branch products from database...</div>
         </div>
       ) : batches.length === 0 ? (
-        <div style={{ padding: '3rem', textAlign: 'center', color: '#94A3B8' }}>
+        <div style={{ padding: '3rem', textAlign: 'center', color: '#000000' }}>
           No steel inventory batches match your filter criteria.
         </div>
       ) : (
@@ -148,7 +195,7 @@ export function InventoryTable({
               gap: '0.5rem',
             }}
           >
-            <div style={{ fontSize: '0.8rem', color: '#64748B' }}>
+            <div style={{ fontSize: '0.8rem', color: '#000000' }}>
               Showing {pagedBatches.length} of <strong>{batches.length}</strong> inventory records
             </div>
             <TableExportButtons
@@ -179,7 +226,6 @@ export function InventoryTable({
                 <th>Dimensions & Specs</th>
                 <th>Yard / Selling Price</th>
                 <th>Date Added</th>
-                <th>Status</th>
                 <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
@@ -188,11 +234,18 @@ export function InventoryTable({
                 const bAny = b as any;
                 const displayBranch = b.branch || bAny.branchName || 'Davao';
                 const displaySku = b.heatNumber || bAny.sku || bAny.productSku || '—';
-                const displayStatus = b.status || (bAny.isAvailable !== false ? 'Available' : 'Reserved');
                 const stockQty = Number(bAny.stockQuantity ?? bAny.currentStock ?? b.weightInTons ?? 0);
+                const reorderLevel = Number(bAny.reorderLevel ?? 10);
+                const isLowStock = stockQty <= reorderLevel || stockQty <= 20 || stockQty <= 0;
 
                 return (
-                  <tr key={b.id} style={{ background: '#FFFFFF' }}>
+                  <tr
+                    key={b.id}
+                    style={{
+                      background: isLowStock ? '#FEF2F2' : '#FFFFFF',
+                      borderLeft: isLowStock ? '3px solid #DC2626' : '3px solid transparent',
+                    }}
+                  >
                     <td>
                       <span className="branch-tag highlight">{displayBranch}</span>
                     </td>
@@ -201,43 +254,59 @@ export function InventoryTable({
                     </td>
                     <td>
                       {bAny.productName && (
-                        <div style={{ fontWeight: 600, color: '#0F172A', fontSize: '0.88rem' }}>{bAny.productName}</div>
+                        <div style={{ fontWeight: 600, color: '#000000', fontSize: '0.88rem' }}>{bAny.productName}</div>
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginTop: bAny.productName ? '0.15rem' : '0' }}>
                         <span style={{ color: '#0284C7', fontWeight: 600, fontSize: bAny.productName ? '0.78rem' : '0.88rem' }}>
                           {formatGrade(b.grade || 'Standard')}
                         </span>
                         {bAny.categoryName && (
-                          <span style={{ color: '#64748B', fontSize: '0.75rem' }}>• {bAny.categoryName}</span>
+                          <span style={{ color: '#000000', fontSize: '0.75rem' }}>• {bAny.categoryName}</span>
                         )}
                       </div>
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9rem' }}>
+                        <span style={{ fontWeight: 700, color: isLowStock ? '#DC2626' : '#0F172A', fontSize: '0.9rem' }}>
                           {stockQty} {bAny.unitOfMeasure || (b.weightInTons ? 't' : 'pc')}
                         </span>
                       </div>
-                      {b.weightInTons !== undefined && bAny.stockQuantity !== undefined && (
-                        <div style={{ fontSize: '0.72rem', color: '#94A3B8' }}>{b.weightInTons} tons</div>
+                      {isLowStock ? (
+                        <div style={{ marginTop: '0.2rem' }}>
+                          <span
+                            style={{
+                              fontSize: '0.7rem',
+                              color: '#DC2626',
+                              fontWeight: 700,
+                              background: '#FEE2E2',
+                              border: '1px solid #FECACA',
+                              padding: '0.1rem 0.35rem',
+                              borderRadius: 3,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.2rem',
+                            }}
+                          >
+                            <AlertTriangle size={10} /> Low Stock (&le;{reorderLevel})
+                          </span>
+                        </div>
+                      ) : (
+                        b.weightInTons !== undefined && bAny.stockQuantity !== undefined && (
+                          <div style={{ fontSize: '0.72rem', color: '#000000' }}>{b.weightInTons} tons</div>
+                        )
                       )}
                     </td>
-                    <td style={{ color: '#64748B', fontSize: '0.83rem' }}>
+                    <td style={{ color: '#000000', fontSize: '0.83rem' }}>
                       {b.dimensions || bAny.size || [bAny.thickness, bAny.length].filter(Boolean).join(' • ') || 'Standard specifications'}
                     </td>
                     <td>
                       {bAny.sellingPrice !== undefined && Number(bAny.sellingPrice) > 0 ? (
-                        <div style={{ fontWeight: 700, color: '#0F172A' }}>₱{Number(bAny.sellingPrice).toLocaleString()}</div>
+                        <div style={{ fontWeight: 700, color: '#000000' }}>₱{Number(bAny.sellingPrice).toLocaleString()}</div>
                       ) : null}
-                      <div style={{ color: '#64748B', fontSize: '0.75rem' }}>{b.location || 'Main Yard'}</div>
+                      <div style={{ color: '#000000', fontSize: '0.75rem' }}>{b.location || 'Main Yard'}</div>
                     </td>
-                    <td style={{ color: '#64748B', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+                    <td style={{ color: '#000000', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
                       {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
-                    </td>
-                    <td>
-                      <span className={`badge ${getBadgeClass(displayStatus)}`}>
-                        {displayStatus}
-                      </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div
@@ -250,6 +319,28 @@ export function InventoryTable({
                         }}
                       >
                         <div className="branch-products-actions-icons" style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            style={{
+                              width: '30px',
+                              height: '30px',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: '6px',
+                              background: '#ECFDF5',
+                              color: '#059669',
+                              borderColor: '#A7F3D0',
+                            }}
+                            title="Add / Restock Branch Inventory"
+                            aria-label="Add Stock"
+                            onClick={() => handleOpenRestock(b)}
+                          >
+                            <PackagePlus size={14} />
+                          </button>
+
                           <button
                             type="button"
                             className="btn-secondary"
@@ -310,35 +401,6 @@ export function InventoryTable({
                             <Sliders size={14} />
                           </button>
                         </div>
-
-                        <select
-                          className="branch-product-status-select"
-                          value={displayStatus}
-                          onChange={(e) =>
-                            onUpdateStatus(b.id, e.target.value as BatchStatus)
-                          }
-                          style={{
-                            width: '88px',
-                            maxWidth: '88px',
-                            height: '30px',
-                            fontSize: '0.74rem',
-                            fontWeight: 600,
-                            padding: '0 0.3rem',
-                            borderRadius: '6px',
-                            border: '1px solid #CBD5E1',
-                            background: '#FFFFFF',
-                            color: '#1E293B',
-                            cursor: 'pointer',
-                          }}
-                          title="Change Batch Status"
-                          aria-label="Status Action"
-                        >
-                          <option value="Available">Available</option>
-                          <option value="Reserved">Reserved</option>
-                          <option value="QualityCheck">QualityCheck</option>
-                          <option value="InProduction">InProduction</option>
-                          <option value="Shipped">Shipped</option>
-                        </select>
                       </div>
                     </td>
                   </tr>
@@ -356,14 +418,14 @@ export function InventoryTable({
             borderTop: '1px solid #E2E8F0',
             background: '#F8FAFC',
             fontSize: '0.82rem',
-            color: '#64748B',
+            color: '#000000',
             flexWrap: 'wrap',
             gap: '0.5rem',
           }}>
             <div>
-              Showing <strong style={{ color: '#0F172A' }}>{totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1}</strong> to{' '}
-              <strong style={{ color: '#0F172A' }}>{Math.min(safePage * pageSize, totalItems)}</strong> of{' '}
-              <strong style={{ color: '#0F172A' }}>{totalItems.toLocaleString()}</strong> items
+              Showing <strong style={{ color: '#000000' }}>{totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1}</strong> to{' '}
+              <strong style={{ color: '#000000' }}>{Math.min(safePage * pageSize, totalItems)}</strong> of{' '}
+              <strong style={{ color: '#000000' }}>{totalItems.toLocaleString()}</strong> items
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -409,7 +471,7 @@ export function InventoryTable({
                 >
                   <ChevronLeft size={14} />
                 </button>
-                <span style={{ padding: '0 0.5rem', fontWeight: 600, color: '#0F172A' }}>
+                <span style={{ padding: '0 0.5rem', fontWeight: 600, color: '#000000' }}>
                   Page {safePage} of {totalPages}
                 </span>
                 <button
@@ -467,10 +529,10 @@ export function InventoryTable({
                   <Building2 size={20} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#0F172A' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#000000' }}>
                     Cross-Branch Stock Availability
                   </h3>
-                  <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: 2 }}>
+                  <div style={{ fontSize: '0.8rem', color: '#000000', marginTop: 2 }}>
                     <strong>{crossBranchData.productName}</strong> · SKU: <span style={{ color: '#0284C7', fontFamily: 'monospace' }}>{crossBranchData.sku}</span> · Grade: {crossBranchData.grade?.replace(/_/g, ' ')}
                   </div>
                 </div>
@@ -481,16 +543,16 @@ export function InventoryTable({
                 style={{ padding: '0.25rem 0.5rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
                 title="Close"
               >
-                <X size={18} style={{ color: '#64748B' }} />
+                <X size={18} style={{ color: '#000000' }} />
               </button>
             </div>
 
-            <div className="modal-body" style={{ padding: '1.5rem', color: '#334155', maxHeight: '70vh', overflowY: 'auto' }}>
+            <div className="modal-body" style={{ padding: '1.5rem', color: '#000000', maxHeight: '70vh', overflowY: 'auto' }}>
               {(() => {
                 const resp = crossBranchData.response;
                 if (crossBranchData.loading) {
                   return (
-                    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748B' }}>
+                    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#000000' }}>
                       <RefreshCw size={24} className="spin" style={{ margin: '0 auto 0.75rem auto', color: '#0284C7' }} />
                       <div>Querying real-time inventory balances across all branches…</div>
                     </div>
@@ -515,8 +577,8 @@ export function InventoryTable({
                       </div>
 
                       <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '0.85rem 1rem', borderRadius: 8 }}>
-                        <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>Standard Specifications</div>
-                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A', marginTop: 4 }}>
+                        <div style={{ fontSize: '0.75rem', color: '#000000', fontWeight: 600 }}>Standard Specifications</div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#000000', marginTop: 4 }}>
                           {resp.dimensions}
                         </div>
                       </div>
@@ -533,7 +595,7 @@ export function InventoryTable({
                     <div style={{ borderRadius: 8, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                         <thead>
-                          <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', textAlign: 'left' }}>
+                          <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#000000', textAlign: 'left' }}>
                             <th style={{ padding: '0.75rem 1rem' }}>Branch Facility</th>
                             <th style={{ padding: '0.75rem 1rem' }}>Available Stock</th>
                             <th style={{ padding: '0.75rem 1rem' }}>Selling Price</th>
@@ -553,14 +615,14 @@ export function InventoryTable({
                               <tr key={b.branchId} style={{ borderBottom: '1px solid #F1F5F9', background: isCurrent ? '#F0F9FF' : '#FFFFFF' }}>
                                 <td style={{ padding: '0.85rem 1rem' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                                    <strong style={{ color: '#0F172A' }}>{b.branchName}</strong>
+                                    <strong style={{ color: '#000000' }}>{b.branchName}</strong>
                                     {isCurrent && (
                                       <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4, background: '#BAE6FD', color: '#0369A1', fontWeight: 700 }}>
                                         Current Branch
                                       </span>
                                     )}
                                   </div>
-                                  <span style={{ fontSize: '0.72rem', color: '#64748B' }}>Code: {b.branchCode}</span>
+                                  <span style={{ fontSize: '0.72rem', color: '#000000' }}>Code: {b.branchCode}</span>
                                 </td>
 
                                 <td style={{ padding: '0.85rem 1rem' }}>
@@ -568,17 +630,17 @@ export function InventoryTable({
                                     {b.stockQuantity.toLocaleString()} {resp.unitOfMeasure}
                                   </div>
                                   {b.oldestBatchReceivedDate && (
-                                    <div style={{ fontSize: '0.7rem', color: '#64748B' }}>
+                                    <div style={{ fontSize: '0.7rem', color: '#000000' }}>
                                       FIFO Oldest: {b.oldestBatchReceivedDate}
                                     </div>
                                   )}
                                 </td>
 
-                                <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#0F172A' }}>
+                                <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#000000' }}>
                                   ₱{Number(b.sellingPrice).toLocaleString()}
                                 </td>
 
-                                <td style={{ padding: '0.85rem 1rem', color: '#475569' }}>
+                                <td style={{ padding: '0.85rem 1rem', color: '#000000' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                     <Boxes size={14} style={{ color: '#0284C7' }} />
                                     <span>{b.batchCount} batch(es)</span>
@@ -617,6 +679,172 @@ export function InventoryTable({
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* RESTOCK / ADD STOCKS MODAL */}
+      {selectedRestockBatch && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '520px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#000000' }}>
+                <PackagePlus size={20} style={{ color: '#059669' }} /> Restock Branch Product
+              </h3>
+              <button
+                onClick={() => setSelectedRestockBatch(null)}
+                style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '0.2rem' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Product & Branch Info Card */}
+            {(() => {
+              const bAny = selectedRestockBatch as any;
+              const branchName = selectedRestockBatch.branch || bAny.branchName || 'Current Branch';
+              const prodName = bAny.productName || 'Steel Product';
+              const sku = bAny.sku || selectedRestockBatch.heatNumber || 'N/A';
+              const currentStock = Number(bAny.stockQuantity ?? bAny.currentStock ?? selectedRestockBatch.weightInTons ?? 0);
+              const uom = bAny.unitOfMeasure || (selectedRestockBatch.weightInTons ? 't' : 'pc');
+
+              return (
+                <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '8px', marginBottom: '1.25rem', border: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.88rem' }}>
+                    <span style={{ color: '#000000', fontWeight: 600 }}>Facility Branch:</span>
+                    <span style={{ color: '#000000', fontWeight: 700 }}>{branchName}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.88rem' }}>
+                    <span style={{ color: '#000000', fontWeight: 600 }}>Product Name:</span>
+                    <span style={{ color: '#0284C7', fontWeight: 700 }}>{prodName}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.88rem' }}>
+                    <span style={{ color: '#000000', fontWeight: 600 }}>SKU / Heat #:</span>
+                    <span style={{ color: '#000000', fontFamily: 'JetBrains Mono, monospace' }}>{sku}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.45rem', borderTop: '1px solid #E2E8F0', fontSize: '0.92rem' }}>
+                    <span style={{ color: '#000000', fontWeight: 600 }}>Current On-Hand Stock:</span>
+                    <strong style={{ color: currentStock <= 20 ? '#DC2626' : '#059669', fontSize: '1rem' }}>
+                      {currentStock} {uom}
+                    </strong>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {restockError && (
+              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                {restockError}
+              </div>
+            )}
+
+            <form onSubmit={handleConfirmRestock}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
+                  Quantity to Restock / Add *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  required
+                  value={restockQty}
+                  onChange={(e) => setRestockQty(e.target.value)}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px', fontSize: '1.05rem', fontWeight: 700, outline: 'none' }}
+                  placeholder="e.g. 50"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.82rem', marginBottom: '0.35rem', fontWeight: 600 }}>
+                    Unit Cost Price (PHP)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={restockCost}
+                    onChange={(e) => setRestockCost(e.target.value)}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.9rem', outline: 'none' }}
+                    placeholder="Optional cost"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.82rem', marginBottom: '0.35rem', fontWeight: 600 }}>
+                    Unit Selling Price (PHP)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={restockSelling}
+                    onChange={(e) => setRestockSelling(e.target.value)}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.9rem', outline: 'none' }}
+                    placeholder="Optional price"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.82rem', marginBottom: '0.35rem', fontWeight: 600 }}>
+                    Batch / Heat Code
+                  </label>
+                  <input
+                    type="text"
+                    value={restockBatchCode}
+                    onChange={(e) => setRestockBatchCode(e.target.value)}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem', outline: 'none', fontFamily: 'JetBrains Mono, monospace' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.82rem', marginBottom: '0.35rem', fontWeight: 600 }}>
+                    PO / Reference #
+                  </label>
+                  <input
+                    type="text"
+                    value={restockRef}
+                    onChange={(e) => setRestockRef(e.target.value)}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.82rem', marginBottom: '0.35rem', fontWeight: 600 }}>
+                  Restock Notes / Supplier Detail
+                </label>
+                <textarea
+                  rows={2}
+                  value={restockNotes}
+                  onChange={(e) => setRestockNotes(e.target.value)}
+                  placeholder="Optional notes regarding supplier shipment, steel mill certs, or yard bay..."
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem', outline: 'none', resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setSelectedRestockBatch(null)}
+                  disabled={restockLoading}
+                  style={{ color: '#000000' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={restockLoading}
+                  style={{ background: '#059669', borderColor: '#059669', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                >
+                  <PackagePlus size={16} />
+                  {restockLoading ? 'Adding Stock...' : 'Confirm Restock'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

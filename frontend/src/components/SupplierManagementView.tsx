@@ -14,6 +14,10 @@ import {
   Download,
   Trash2,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import type { SupplierMaster, SupplierAttachment } from '../types/suppliers';
 import { fetchSuppliers, createSupplier } from '../services/api';
@@ -207,15 +211,27 @@ export function SupplierManagementView() {
       s.countryOfOrigin.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
+
+  const totalItems = filteredSuppliers.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedSuppliers = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredSuppliers.slice(start, start + pageSize);
+  }, [filteredSuppliers, safePage, pageSize]);
+
   return (
     <div className="view-container">
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h2 style={{ color: '#F8FAFC', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+          <h2 style={{ color: '#3a4c5eff', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
             Supplier Master Directory & Mill Certifications
           </h2>
-          <p style={{ color: '#94A3B8', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#000000', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
             Accredited global & domestic steel mills, automated codes (e.g. SUP-PHL-001), quality ratings, and MTC file compliance.
           </p>
         </div>
@@ -228,12 +244,15 @@ export function SupplierManagementView() {
       {/* SEARCH BAR & EXPORT */}
       <div className="controls-bar" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div className="search-box" style={{ maxWidth: '400px', flex: 1 }}>
-          <Search size={18} style={{ color: '#94A3B8' }} />
+          <Search size={18} style={{ color: '#000000' }} />
           <input
             type="text"
             placeholder="Search supplier name, code, or country..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </div>
 
@@ -256,10 +275,10 @@ export function SupplierManagementView() {
       </div>
 
       {/* SUPPLIER TABLE WITH WHITE BACKGROUND */}
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+            <tr style={{ background: '#F8FAFC', color: '#000000', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
               <th style={{ padding: '0.75rem 1rem' }}>Code & Supplier</th>
               <th style={{ padding: '0.75rem 1rem' }}>Country / TIN</th>
               <th style={{ padding: '0.75rem 1rem' }}>Quality Rating</th>
@@ -271,106 +290,194 @@ export function SupplierManagementView() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#000000' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                     <RefreshCw size={18} className="animate-spin" /> Loading suppliers from database...
                   </div>
                 </td>
               </tr>
-            ) : filteredSuppliers.length === 0 ? (
+            ) : pagedSuppliers.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#000000' }}>
                   No registered suppliers found in database. Click <strong>Add Supplier</strong> to create one.
                 </td>
               </tr>
             ) : (
-              filteredSuppliers.map((s) => (
-              <tr key={s.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.9rem', background: '#FFFFFF' }}>
-                <td style={{ padding: '0.85rem 1rem' }}>
-                  <div style={{ fontWeight: 700, color: '#0284C7', fontFamily: 'monospace' }}>{s.supplierCode}</div>
-                  <div style={{ fontWeight: 600, color: '#0F172A' }}>{s.companyName}</div>
-                </td>
+              pagedSuppliers.map((s) => (
+                <tr key={s.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#000000', fontSize: '0.9rem', background: '#FFFFFF' }}>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    <div style={{ fontWeight: 700, color: '#0284C7', fontFamily: 'monospace' }}>{s.supplierCode}</div>
+                    <div style={{ fontWeight: 600, color: '#000000' }}>{s.companyName}</div>
+                  </td>
 
-                <td style={{ padding: '0.85rem 1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#0F172A', fontWeight: 500 }}>
-                    <Globe size={14} style={{ color: '#0284C7' }} /> {s.countryOfOrigin}
-                  </div>
-                  <div style={{ color: '#64748B', fontSize: '0.75rem' }}>TIN: {s.tin}</div>
-                </td>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#000000', fontWeight: 500 }}>
+                      <Globe size={14} style={{ color: '#0284C7' }} /> {s.countryOfOrigin}
+                    </div>
+                    <div style={{ color: '#000000', fontSize: '0.75rem' }}>TIN: {s.tin}</div>
+                  </td>
 
-                <td style={{ padding: '0.85rem 1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        size={15}
-                        fill={star <= s.ratingScore ? '#F59E0B' : 'none'}
-                        color={star <= s.ratingScore ? '#F59E0B' : '#CBD5E1'}
-                      />
-                    ))}
-                    <span style={{ fontSize: '0.78rem', color: '#B45309', fontWeight: 700, marginLeft: '0.3rem' }}>
-                      {s.ratingScore}.0
-                    </span>
-                  </div>
-                </td>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.15rem' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={15}
+                          fill={star <= s.ratingScore ? '#F59E0B' : 'none'}
+                          color={star <= s.ratingScore ? '#F59E0B' : '#CBD5E1'}
+                        />
+                      ))}
+                      <span style={{ fontSize: '0.78rem', color: '#B45309', fontWeight: 700, marginLeft: '0.3rem' }}>
+                        {s.ratingScore}.0
+                      </span>
+                    </div>
+                  </td>
 
-                <td style={{ padding: '0.85rem 1rem', color: '#475569' }}>
-                  {s.paymentTermsDays} Days
-                </td>
+                  <td style={{ padding: '0.85rem 1rem', color: '#000000' }}>
+                    {s.paymentTermsDays} Days
+                  </td>
 
-                <td style={{ padding: '0.85rem 1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#0F172A', fontSize: '0.85rem' }}>
-                    <Paperclip size={14} style={{ color: '#64748B' }} />
-                    <span style={{ fontWeight: 600 }}>{s.attachments.length}</span> file(s)
-                  </div>
-                </td>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#000000', fontSize: '0.85rem' }}>
+                      <Paperclip size={14} style={{ color: '#000000' }} />
+                      <span style={{ fontWeight: 600 }}>{s.attachments.length}</span> file(s)
+                    </div>
+                  </td>
 
-                <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                  <button
-                    className="btn-secondary"
-                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
-                    onClick={() => setSelectedSupplierDetails(s)}
-                  >
-                    View Details & MTCs
-                  </button>
-                </td>
-              </tr>
-            )))}
+                  <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
+                    <button
+                      className="btn-secondary"
+                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
+                      onClick={() => setSelectedSupplierDetails(s)}
+                    >
+                      View Details & MTCs
+                    </button>
+                  </td>
+                </tr>
+              )))}
           </tbody>
         </table>
+
+        {/* TABLE PAGINATION BAR */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.75rem 1rem',
+          borderTop: '1px solid #E2E8F0',
+          background: '#F8FAFC',
+          fontSize: '0.82rem',
+          color: '#000000',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}>
+          <div>
+            Showing {totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1} to {Math.min(safePage * pageSize, totalItems)} of {totalItems} suppliers
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.5rem' }}>
+              <span>Rows:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: '0.2rem 0.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '0.8rem',
+                  background: '#FFFFFF',
+                  color: '#000000',
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage(1)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage <= 1 ? 0.5 : 1 }}
+              title="First page"
+            >
+              <ChevronsLeft size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage <= 1 ? 0.5 : 1 }}
+              title="Previous page"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span style={{ fontWeight: 600, color: '#000000', padding: '0 0.35rem' }}>
+              Page {safePage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage >= totalPages ? 0.5 : 1 }}
+              title="Next page"
+            >
+              <ChevronRight size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage >= totalPages ? 0.5 : 1 }}
+              title="Last page"
+            >
+              <ChevronsRight size={14} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* DETAILS & ATTACHMENTS MODAL WITH MTC UPLOAD */}
       {selectedSupplierDetails && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #334155', width: '92%', maxWidth: '640px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #334155', paddingBottom: '0.75rem' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '92%', maxWidth: '640px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.75rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#38BDF8' }}>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#000000' }}>
                   {selectedSupplierDetails.companyName}
                 </h3>
-                <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: '0.2rem' }}>
-                  Code: <strong style={{ color: '#F8FAFC', fontFamily: 'monospace' }}>{selectedSupplierDetails.supplierCode}</strong> • {selectedSupplierDetails.countryOfOrigin} • Terms: {selectedSupplierDetails.paymentTermsDays} Days
+                <div style={{ fontSize: '0.82rem', color: '#000000', marginTop: '0.2rem' }}>
+                  Code: <strong style={{ color: '#000000', fontFamily: 'monospace' }}>{selectedSupplierDetails.supplierCode}</strong> • {selectedSupplierDetails.countryOfOrigin} • Terms: {selectedSupplierDetails.paymentTermsDays} Days
                 </div>
               </div>
-              <button onClick={() => setSelectedSupplierDetails(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+              <button onClick={() => setSelectedSupplierDetails(null)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '0.25rem' }}>
                 <X size={20} />
               </button>
             </div>
 
             {/* QUALITY RATING BADGE */}
-            <div style={{ background: '#0F172A', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #334155', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>Supplier Quality Rating:</span>
+            <div style={{ background: '#FFFFFF', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #CBD5E1', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <span style={{ color: '#000000', fontSize: '0.85rem', fontWeight: 600 }}>Supplier Quality Rating:</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
                     size={16}
                     fill={star <= selectedSupplierDetails.ratingScore ? '#F59E0B' : 'none'}
-                    color={star <= selectedSupplierDetails.ratingScore ? '#F59E0B' : '#475569'}
+                    color={star <= selectedSupplierDetails.ratingScore ? '#F59E0B' : '#CBD5E1'}
                   />
                 ))}
-                <span style={{ color: '#F59E0B', fontWeight: 700, fontSize: '0.9rem', marginLeft: '0.35rem' }}>
+                <span style={{ color: '#B45309', fontWeight: 700, fontSize: '0.9rem', marginLeft: '0.35rem' }}>
                   {selectedSupplierDetails.ratingScore}.0 Stars
                 </span>
               </div>
@@ -378,16 +485,18 @@ export function SupplierManagementView() {
 
             {/* CONTACTS */}
             <div style={{ marginBottom: '1.25rem' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem', color: '#F8FAFC' }}>Primary Contacts:</div>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem', color: '#000000' }}>Primary Contacts:</div>
               {selectedSupplierDetails.contacts.length === 0 ? (
-                <div style={{ color: '#64748B', fontSize: '0.85rem', fontStyle: 'italic' }}>No contacts listed for this supplier.</div>
+                <div style={{ color: '#000000', fontSize: '0.85rem', fontStyle: 'italic', background: '#F8FAFC', padding: '0.75rem', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                  No contacts listed for this supplier.
+                </div>
               ) : (
                 selectedSupplierDetails.contacts.map((c) => (
-                  <div key={c.id} style={{ background: '#0F172A', padding: '0.75rem', borderRadius: '6px', border: '1px solid #334155', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
-                    <div style={{ fontWeight: 600, color: '#F8FAFC' }}>{c.contactPerson} ({c.designation})</div>
-                    <div style={{ color: '#94A3B8', display: 'flex', gap: '1rem', marginTop: '0.25rem', fontSize: '0.8rem' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Phone size={12} /> {c.phone}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Mail size={12} /> {c.email}</span>
+                  <div key={c.id} style={{ background: '#FFFFFF', padding: '0.75rem', borderRadius: '6px', border: '1px solid #CBD5E1', marginBottom: '0.5rem', fontSize: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    <div style={{ fontWeight: 600, color: '#000000' }}>{c.contactPerson} ({c.designation})</div>
+                    <div style={{ color: '#000000', display: 'flex', gap: '1rem', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Phone size={13} style={{ color: '#0284C7' }} /> {c.phone}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Mail size={13} style={{ color: '#0284C7' }} /> {c.email}</span>
                     </div>
                   </div>
                 ))
@@ -397,7 +506,7 @@ export function SupplierManagementView() {
             {/* ATTACHMENTS & MILL TEST CERTIFICATES */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#F8FAFC' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#000000' }}>
                   Mill Test Certificates (MTC / MTR) & Compliance Files:
                 </div>
 
@@ -430,17 +539,17 @@ export function SupplierManagementView() {
               </div>
 
               {selectedSupplierDetails.attachments.length === 0 ? (
-                <div style={{ background: '#0F172A', padding: '1.25rem', borderRadius: '6px', textAlign: 'center', color: '#64748B', fontSize: '0.85rem', border: '1px dashed #334155' }}>
+                <div style={{ background: '#F8FAFC', padding: '1.25rem', borderRadius: '6px', textAlign: 'center', color: '#000000', fontSize: '0.85rem', border: '1px dashed #CBD5E1' }}>
                   No compliance certificates uploaded for this supplier yet. Click "Upload MTC Certificate" to attach PDF inspection test sheets.
                 </div>
               ) : (
                 selectedSupplierDetails.attachments.map((a) => (
-                  <div key={a.id} style={{ background: '#0F172A', padding: '0.75rem', borderRadius: '6px', border: '1px solid #334155', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                  <div key={a.id} style={{ background: '#FFFFFF', padding: '0.75rem', borderRadius: '6px', border: '1px solid #CBD5E1', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <div>
-                      <div style={{ fontWeight: 600, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <FileCheck size={14} /> {a.fileName}
+                      <div style={{ fontWeight: 600, color: '#000000', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <FileCheck size={14} style={{ color: '#0284C7' }} /> {a.fileName}
                       </div>
-                      <div style={{ color: '#64748B', fontSize: '0.75rem' }}>Type: {a.fileType.replace(/_/g, ' ')} • Uploaded: {a.uploadDate}</div>
+                      <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '0.15rem' }}>Type: {a.fileType.replace(/_/g, ' ')} • Uploaded: {a.uploadDate}</div>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <a
@@ -467,7 +576,7 @@ export function SupplierManagementView() {
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid #334155', paddingTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
               <button className="btn-secondary" onClick={() => setSelectedSupplierDetails(null)}>
                 Close
               </button>
@@ -479,22 +588,22 @@ export function SupplierManagementView() {
       {/* ADD SUPPLIER MODAL WITH SEARCHABLE COUNTRY, AUTO-CODE & 1-5 STARS */}
       {isAddModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '92%', maxWidth: '540px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '92%', maxWidth: '540px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>Add Accredited Steel Supplier</h3>
-                <p style={{ margin: '0.2rem 0 0 0', color: '#64748B', fontSize: '0.8rem' }}>
+                <p style={{ margin: '0.2rem 0 0 0', color: '#000000', fontSize: '0.8rem' }}>
                   Select country of origin to automatically generate supplier code.
                 </p>
               </div>
-              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
+              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleAddSupplier}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   Mill / Supplier Company Name <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
@@ -503,13 +612,13 @@ export function SupplierManagementView() {
                   placeholder="e.g. Baosteel Group Corporation"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 
               {/* SEARCHABLE COUNTRY SELECT DROPDOWN */}
               <div style={{ marginBottom: '1rem', position: 'relative' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   Country of Origin (ISO-3) <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <button
@@ -519,7 +628,7 @@ export function SupplierManagementView() {
                     width: '100%',
                     background: '#FFFFFF',
                     border: '1px solid #CBD5E1',
-                    color: '#0F172A',
+                    color: '#000000',
                     padding: '0.6rem',
                     borderRadius: '6px',
                     display: 'flex',
@@ -533,7 +642,7 @@ export function SupplierManagementView() {
                     <span>{selectedCountry.flag}</span>
                     <strong style={{ color: '#0284C7' }}>{selectedCountry.code}</strong> — {selectedCountry.name}
                   </span>
-                  <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Change ▼</span>
+                  <span style={{ color: '#000000', fontSize: '0.75rem' }}>Change ▼</span>
                 </button>
 
                 {isCountryDropdownOpen && (
@@ -564,7 +673,7 @@ export function SupplierManagementView() {
                           width: '100%',
                           background: '#FFFFFF',
                           border: '1px solid #E2E8F0',
-                          color: '#0F172A',
+                          color: '#000000',
                           padding: '0.4rem 0.6rem',
                           borderRadius: '4px',
                           fontSize: '0.85rem',
@@ -602,7 +711,7 @@ export function SupplierManagementView() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <label style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600 }}>
+                    <label style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 600 }}>
                       Automated Supplier Code <span style={{ color: '#EF4444' }}>*</span>
                     </label>
                     <span style={{ color: '#059669', fontSize: '0.7rem', fontWeight: 600 }}>Auto-Generated</span>
@@ -613,18 +722,18 @@ export function SupplierManagementView() {
                     value={supplierCode}
                     onChange={(e) => setSupplierCode(e.target.value.toUpperCase())}
                     placeholder="e.g. SUP-PHL-001"
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px', fontFamily: 'monospace', fontWeight: 700 }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px', fontFamily: 'monospace', fontWeight: 700 }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Tax TIN #</label>
+                  <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Tax TIN #</label>
                   <input
                     type="text"
                     placeholder="e.g. 009-881-224-000"
                     value={tin}
                     onChange={(e) => setTin(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
@@ -632,18 +741,18 @@ export function SupplierManagementView() {
               {/* PAYMENT TERMS & 1-5 STAR QUALITY RATING */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Payment Terms (Days)</label>
+                  <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>Payment Terms (Days)</label>
                   <input
                     type="number"
                     value={termsDays}
                     onChange={(e) => setTermsDays(Number(e.target.value))}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
 
                 {/* INTERACTIVE 1-5 STAR QUALITY RATING */}
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
+                  <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
                     Quality Rating (1–5 Stars)
                   </label>
                   <div style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '0.45rem 0.6rem', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

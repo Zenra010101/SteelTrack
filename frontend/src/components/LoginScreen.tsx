@@ -136,17 +136,17 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
             >
               <Layers size={28} color="#FFFFFF" />
             </div>
-            <h1 style={{ fontSize: '1.65rem', fontWeight: 800, margin: 0, color: '#0F172A', letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: '1.65rem', fontWeight: 800, margin: 0, color: '#000000', letterSpacing: '-0.02em' }}>
               SteelTrack
             </h1>
-            <p style={{ fontSize: '0.85rem', color: '#64748B', marginTop: '0.25rem' }}>
+            <p style={{ fontSize: '0.85rem', color: '#000000', marginTop: '0.25rem' }}>
               Enterprise Steel Supply & POS Infrastructure
             </p>
           </div>
 
           <div className="login-heading" style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Sign In to Terminal</h2>
-            <p style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+            <p style={{ fontSize: '0.8rem', color: '#000000', marginTop: '0.25rem' }}>
               Enter your authorized credentials to access your branch workspace
             </p>
           </div>
@@ -173,7 +173,7 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
             <div className="form-group">
               <label>Work Email / Username</label>
               <div className="input-with-icon">
-                <User size={16} style={{ color: '#94A3B8' }} />
+                <User size={16} style={{ color: '#000000' }} />
                 <input
                   type="text"
                   value={username}
@@ -188,7 +188,7 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
             <div className="form-group">
               <label>Password</label>
               <div className="input-with-icon">
-                <KeyRound size={16} style={{ color: '#94A3B8' }} />
+                <KeyRound size={16} style={{ color: '#000000' }} />
                 <input
                   type="password"
                   value={password}
@@ -206,7 +206,7 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
             </button>
           </form>
 
-          <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: '#94A3B8' }}>
+          <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: '#000000' }}>
             SteelTrack v2.0 • Multi-Branch Role-Based Access Control
           </div>
         </div>

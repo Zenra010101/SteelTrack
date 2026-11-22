@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  Package,
   Plus,
   Search,
-  AlertTriangle,
   Tag,
   Edit2,
   X,
@@ -12,6 +10,10 @@ import {
   DollarSign,
   Boxes,
   FileDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import type { ProductItem, CreateProductDto } from '../types/product';
 import type { UserSession } from '../types/auth';
@@ -40,7 +42,10 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
   const [search, setSearch] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedGrade, setSelectedGrade] = useState<string>('');
-  const [lowStockOnly, setLowStockOnly] = useState<boolean>(false);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -78,7 +83,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
           search || undefined,
           selectedCategory || undefined,
           selectedGrade || undefined,
-          lowStockOnly
+          false
         ),
         fetchCategories(),
         fetchBranches(),
@@ -97,8 +102,9 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
   };
 
   useEffect(() => {
+    setCurrentPage(1);
     loadData();
-  }, [search, selectedCategory, selectedGrade, lowStockOnly]);
+  }, [search, selectedCategory, selectedGrade]);
 
   const handlePrintBarcodePdf = (p: ProductItem) => {
     const printWindow = window.open('', '_blank', 'width=700,height=800');
@@ -314,22 +320,25 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
 
   // Metrics
   const totalProducts = products.length;
-  const veryLowStockCount = products.filter((p) => p.stockQuantity > 0 && p.stockQuantity < 10).length;
-  const lowStockCount = products.filter((p) => p.stockQuantity >= 10 && (p.stockQuantity <= 20 || p.stockQuantity <= p.reorderLevel)).length;
   const totalStockUnits = products.reduce((acc, p) => acc + p.stockQuantity, 0);
   const totalAssetValuePHP = products.reduce((acc, p) => acc + p.stockQuantity * p.costPrice, 0);
+
+  // Pagination calculations
+  const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedProducts = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return products.slice(start, start + pageSize);
+  }, [products, safePage, pageSize]);
 
   return (
     <div className="view-container">
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Package size={24} color="#38BDF8" /> Products Master Catalog & Specifications
+          <h2 style={{ color: '#000000', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+            Products Master Catalog & Specifications
           </h2>
-          <p style={{ color: '#475569', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
-            Enterprise steel product catalog, dimension specifications, pricing formulas, and stock reorder thresholds.
-          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
@@ -365,50 +374,37 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
       {/* METRIC OVERVIEW CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div style={{ background: '#FFFFFF', padding: '1.1rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-          <div style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <div style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Boxes size={15} color="#0284C7" /> Catalog SKUs
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#000000ff', marginTop: '0.35rem' }}>
             {totalProducts}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.2rem' }}>
+          <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: '0.2rem' }}>
             Across {categories.length} active material categories
           </div>
         </div>
 
-        <div style={{ background: '#FFFFFF', padding: '1.1rem', borderRadius: '10px', border: veryLowStockCount > 0 ? '1px solid #FECACA' : lowStockCount > 0 ? '1px solid #FEF3C7' : '1px solid #E2E8F0' }}>
-          <div style={{ color: veryLowStockCount > 0 ? '#DC2626' : lowStockCount > 0 ? '#D97706' : '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <AlertTriangle size={15} color={veryLowStockCount > 0 ? '#DC2626' : lowStockCount > 0 ? '#D97706' : '#475569'} /> Stock Threshold Alerts
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: veryLowStockCount > 0 ? '#DC2626' : lowStockCount > 0 ? '#D97706' : '#0F172A', marginTop: '0.35rem' }}>
-            {veryLowStockCount + lowStockCount}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.2rem' }}>
-            {veryLowStockCount > 0 && <span style={{ color: '#DC2626', fontWeight: 700 }}>{veryLowStockCount} Very Low (&lt;10) • </span>}
-            {lowStockCount} Low (10–20)
-          </div>
-        </div>
-
         <div style={{ background: '#FFFFFF', padding: '1.1rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-          <div style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <div style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Layers size={15} color="#059669" /> Physical Units in Yard
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A', marginTop: '0.35rem' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#000000', marginTop: '0.35rem' }}>
             {totalStockUnits.toLocaleString()} units
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.2rem' }}>
+          <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: '0.2rem' }}>
             Total on-hand catalog stock
           </div>
         </div>
 
         <div style={{ background: '#FFFFFF', padding: '1.1rem', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-          <div style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <div style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <DollarSign size={15} color="#0284C7" /> Catalog Inventory Value
           </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0284C7', marginTop: '0.35rem', fontFamily: 'Outfit, sans-serif' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0284C7', marginTop: '0.35rem' }}>
             ₱{totalAssetValuePHP.toLocaleString()}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.2rem' }}>
+          <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: '0.2rem' }}>
             Total inventory asset cost basis
           </div>
         </div>
@@ -423,7 +419,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
             placeholder="Search by SKU, Product Name, Grade, Dimensions, or Barcode..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
+            style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
           />
         </div>
 
@@ -431,7 +427,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}
+            style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}
           >
             <option value="">All Categories</option>
             {categories.map((c) => (
@@ -444,7 +440,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
           <select
             value={selectedGrade}
             onChange={(e) => setSelectedGrade(e.target.value)}
-            style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}
+            style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}
           >
             <option value="">All Steel Grades</option>
             <option value="A36_Structural">A36 Structural</option>
@@ -453,25 +449,6 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
             <option value="SS316_Stainless">SS316 Stainless</option>
             <option value="AISI1045_Carbon">AISI 1045 Carbon</option>
           </select>
-
-          <button
-            onClick={() => setLowStockOnly(!lowStockOnly)}
-            style={{
-              background: lowStockOnly ? '#D97706' : '#F8FAFC',
-              color: lowStockOnly ? '#FFFFFF' : '#475569',
-              border: '1px solid #CBD5E1',
-              padding: '0.5rem 0.85rem',
-              borderRadius: '6px',
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              fontWeight: lowStockOnly ? 700 : 500,
-            }}
-          >
-            <AlertTriangle size={14} /> Low Stock Only
-          </button>
         </div>
       </div>
 
@@ -479,13 +456,10 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
       <div style={{ background: '#FFFFFF', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#000000', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               <th style={{ padding: '0.75rem 1rem' }}>SKU & Barcode</th>
               <th style={{ padding: '0.75rem 1rem' }}>Product Name & Category</th>
               <th style={{ padding: '0.75rem 1rem' }}>Grade & Specs</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Unit Selling Price</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Cost Price</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Stock / Reorder</th>
               <th style={{ padding: '0.75rem 1rem' }}>Status</th>
               <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
             </tr>
@@ -493,30 +467,26 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: '#000000' }}>
                   Loading Products Catalog...
                 </td>
               </tr>
-            ) : products.length === 0 ? (
+            ) : pagedProducts.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ padding: '3rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: '#000000' }}>
                   No catalog products found matching filter criteria.
                 </td>
               </tr>
             ) : (
-              products.map((p) => {
-                const isOutOfStock = p.stockQuantity <= 0;
-                const isVeryLowStock = !isOutOfStock && p.stockQuantity < 10;
-                const isLowStock = !isOutOfStock && !isVeryLowStock && (p.stockQuantity <= 20 || p.stockQuantity <= p.reorderLevel);
-
+              pagedProducts.map((p) => {
                 return (
                   <tr
                     key={p.id}
                     style={{
                       borderBottom: '1px solid #E2E8F0',
                       fontSize: '0.88rem',
-                      color: '#0F172A',
-                      background: isOutOfStock ? '#FEF2F2' : isVeryLowStock ? '#FFF1F2' : isLowStock ? '#FFFBEB' : '#FFFFFF',
+                      color: '#000000',
+                      background: '#FFFFFF',
                     }}
                   >
                     <td style={{ padding: '0.85rem 1rem' }}>
@@ -524,7 +494,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
                         {p.sku}
                       </div>
                       {p.barcode && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#000000', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                           <Tag size={11} /> {p.barcode}
                         </div>
                       )}
@@ -532,44 +502,18 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
 
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <div style={{ fontWeight: 600, color: '#0284C7', fontSize: '0.92rem' }}>{p.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#000000' }}>
                         {p.categoryName || 'General Steel'} • UOM: {p.unitOfMeasure}
                       </div>
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <span style={{ fontWeight: 600, color: '#475569' }}>
+                      <span style={{ fontWeight: 600, color: '#000000' }}>
                         {p.grade ? p.grade.replace(/_/g, ' ') : 'Standard'}
                       </span>
-                      <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#000000' }}>
                         {p.size || p.thickness || p.length ? `${p.size || ''} ${p.thickness ? `(${p.thickness})` : ''} ${p.length ? `• L: ${p.length}` : ''}` : 'Standard dimensions'}
                       </div>
-                    </td>
-
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#0F172A' }}>
-                      ₱{p.unitPrice.toLocaleString()}
-                    </td>
-
-                    <td style={{ padding: '0.85rem 1rem', color: '#475569' }}>
-                      ₱{p.costPrice.toLocaleString()}
-                    </td>
-
-                    <td style={{ padding: '0.85rem 1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span style={{ fontWeight: 800, fontSize: '0.95rem', color: isOutOfStock ? '#DC2626' : isVeryLowStock ? '#DC2626' : isLowStock ? '#D97706' : '#059669' }}>
-                          {p.stockQuantity}
-                        </span>
-                        <span style={{ color: '#64748B', fontSize: '0.75rem' }}>/ Min: {p.reorderLevel}</span>
-                      </div>
-                      {isOutOfStock ? (
-                        <span style={{ fontSize: '0.7rem', color: '#DC2626', fontWeight: 700, background: '#FEE2E2', padding: '0.1rem 0.35rem', borderRadius: 3 }}>Out of Stock</span>
-                      ) : isVeryLowStock ? (
-                        <span style={{ fontSize: '0.7rem', color: '#DC2626', fontWeight: 700, background: '#FEE2E2', padding: '0.1rem 0.35rem', borderRadius: 3 }}>Very Low (&lt;10)</span>
-                      ) : isLowStock ? (
-                        <span style={{ fontSize: '0.7rem', color: '#D97706', fontWeight: 700, background: '#FEF3C7', padding: '0.1rem 0.35rem', borderRadius: 3 }}>Low (10–20)</span>
-                      ) : (
-                        <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>Adequate Stock</span>
-                      )}
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem' }}>
@@ -578,7 +522,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
                           Active
                         </span>
                       ) : (
-                        <span style={{ background: '#F1F5F9', color: '#64748B', border: '1px solid #CBD5E1', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
+                        <span style={{ background: '#F1F5F9', color: '#000000', border: '1px solid #CBD5E1', padding: '0.2rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
                           Inactive
                         </span>
                       )}
@@ -640,17 +584,105 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
             )}
           </tbody>
         </table>
+
+        {/* TABLE PAGINATION BAR */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.75rem 1rem',
+          borderTop: '1px solid #E2E8F0',
+          background: '#F8FAFC',
+          fontSize: '0.82rem',
+          color: '#000000',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}>
+          <div>
+            Showing {totalProducts === 0 ? 0 : (safePage - 1) * pageSize + 1} to {Math.min(safePage * pageSize, totalProducts)} of {totalProducts} products
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.5rem' }}>
+              <span>Rows:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: '0.2rem 0.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '0.8rem',
+                  background: '#FFFFFF',
+                  color: '#000000',
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage(1)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage <= 1 ? 0.5 : 1 }}
+              title="First page"
+            >
+              <ChevronsLeft size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage <= 1 ? 0.5 : 1 }}
+              title="Previous page"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span style={{ fontWeight: 600, color: '#000000', padding: '0 0.35rem' }}>
+              Page {safePage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage >= totalPages ? 0.5 : 1 }}
+              title="Next page"
+            >
+              <ChevronRight size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage >= totalPages ? 0.5 : 1 }}
+              title="Last page"
+            >
+              <ChevronsRight size={14} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ADD PRODUCT MODAL */}
       {isAddModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '620px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '620px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Plus size={20} color="#38BDF8" /> Add New Steel Product to Catalog
               </h3>
-              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
+              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
@@ -658,35 +690,35 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
             <form onSubmit={handleCreateProduct}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>SKU Code</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>SKU Code</label>
                   <input
                     type="text"
                     required
                     value={sku}
                     onChange={(e) => setSku(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontFamily: 'JetBrains Mono' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Product Name</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Product Name</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. A36 Wide Flange Beam 200x200"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Category</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Category</label>
                   <select
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   >
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -696,11 +728,11 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Steel Grade</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Steel Grade</label>
                   <select
                     value={grade}
                     onChange={(e) => setGrade(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   >
                     <option value="A36_Structural">A36 Structural</option>
                     <option value="A572_HighStrength">A572 High Strength</option>
@@ -713,66 +745,66 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Size / Dimensions</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Size / Dimensions</label>
                   <input
                     type="text"
                     placeholder="e.g. 200mm x 200mm"
                     value={size}
                     onChange={(e) => setSize(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Thickness</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Thickness</label>
                   <input
                     type="text"
                     placeholder="e.g. 8mm / 12mm"
                     value={thickness}
                     onChange={(e) => setThickness(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Length</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Length</label>
                   <input
                     type="text"
                     placeholder="e.g. 6000mm"
                     value={length}
                     onChange={(e) => setLength(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Selling Price (PHP)</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Selling Price (PHP)</label>
                   <input
                     type="number"
                     step="0.01"
                     required
                     value={unitPrice}
                     onChange={(e) => setUnitPrice(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Cost Price (PHP)</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Cost Price (PHP)</label>
                   <input
                     type="number"
                     step="0.01"
                     required
                     value={costPrice}
                     onChange={(e) => setCostPrice(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Unit of Measure</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Unit of Measure</label>
                   <select
                     value={unitOfMeasure}
                     onChange={(e) => setUnitOfMeasure(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   >
                     <option value="pc">Piece (pc)</option>
                     <option value="bundle">Bundle</option>
@@ -784,23 +816,23 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Initial Physical Stock</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Initial Physical Stock</label>
                   <input
                     type="number"
                     required
                     value={stockQuantity}
                     onChange={(e) => setStockQuantity(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Reorder Safety Threshold</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Reorder Safety Threshold</label>
                   <input
                     type="number"
                     required
                     value={reorderLevel}
                     onChange={(e) => setReorderLevel(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
@@ -808,7 +840,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
               {/* BRANCH ASSIGNMENT OPTIONS */}
               <div style={{ background: '#F8FAFC', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label style={{ display: 'block', color: '#0F172A', fontSize: '0.8rem', fontWeight: 600 }}>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', fontWeight: 600 }}>
                     Branch Availability & Assignment <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <button
@@ -886,93 +918,93 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
       {/* EDIT PRODUCT MODAL */}
       {editingProduct && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '500px', padding: '1.5rem' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '500px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
                   Edit Product: {editingProduct.sku}
                 </h3>
-                <span style={{ fontSize: '0.75rem', color: '#475569' }}>{editingProduct.categoryName} • {editingProduct.grade}</span>
+                <span style={{ fontSize: '0.75rem', color: '#000000' }}>{editingProduct.categoryName} • {editingProduct.grade}</span>
               </div>
-              <button onClick={() => setEditingProduct(null)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
+              <button onClick={() => setEditingProduct(null)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSaveEdit}>
               <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Product Barcode</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '0.5rem 0.65rem', borderRadius: '6px', fontFamily: 'monospace', fontWeight: 700, color: '#0F172A', fontSize: '0.85rem' }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Product Barcode</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '0.5rem 0.65rem', borderRadius: '6px', fontFamily: 'monospace', fontWeight: 700, color: '#000000', fontSize: '0.85rem' }}>
                   <Tag size={15} style={{ color: '#0284C7' }} />
                   <span>{editingProduct.barcode || editingProduct.sku}</span>
                 </div>
               </div>
 
               <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Product Title</label>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Product Title</label>
                 <input
                   type="text"
                   required
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Selling Price (PHP)</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Selling Price (PHP)</label>
                   <input
                     type="number"
                     step="0.01"
                     required
                     value={editUnitPrice}
                     onChange={(e) => setEditUnitPrice(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Cost Price (PHP)</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Cost Price (PHP)</label>
                   <input
                     type="number"
                     step="0.01"
                     required
                     value={editCostPrice}
                     onChange={(e) => setEditCostPrice(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>On-Hand Stock</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>On-Hand Stock</label>
                   <input
                     type="number"
                     required
                     value={editStockQuantity}
                     onChange={(e) => setEditStockQuantity(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Reorder Safety Threshold</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Reorder Safety Threshold</label>
                   <input
                     type="number"
                     required
                     value={editReorderLevel}
                     onChange={(e) => setEditReorderLevel(e.target.value)}
-                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Catalog Active Status</label>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Catalog Active Status</label>
                 <select
                   value={editIsActive ? 'true' : 'false'}
                   onChange={(e) => setEditIsActive(e.target.value === 'true')}
-                  style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#F8FAFC', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px' }}
                 >
                   <option value="true">Active in Product Catalog</option>
                   <option value="false">Discontinued / Hidden</option>
@@ -995,25 +1027,25 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
       {/* BARCODE TAG & PRODUCT INFO MODAL */}
       {barcodeProduct && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '10px', width: '92%', maxWidth: '440px', padding: '1.75rem', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '10px', width: '92%', maxWidth: '440px', padding: '1.75rem', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
             <div style={{ borderBottom: '2px solid #0F172A', paddingBottom: '0.65rem', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#64748B', fontWeight: 700 }}>
+              <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#000000', fontWeight: 700 }}>
                 SteelTrack Enterprise • Industrial Product Tag
               </div>
-              <h3 style={{ margin: '0.25rem 0', fontSize: '1.35rem', fontWeight: 800, color: '#0F172A' }}>
+              <h3 style={{ margin: '0.25rem 0', fontSize: '1.35rem', fontWeight: 800, color: '#000000' }}>
                 {barcodeProduct.sku}
               </h3>
             </div>
 
             <div style={{ marginBottom: '1rem', fontSize: '0.88rem', textAlign: 'left', lineHeight: '1.6', background: '#F8FAFC', padding: '0.75rem 0.9rem', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-              <div><strong style={{ color: '#475569' }}>Product Name:</strong> <span style={{ fontWeight: 700 }}>{barcodeProduct.name}</span></div>
-              <div><strong style={{ color: '#475569' }}>Category:</strong> {barcodeProduct.categoryName || 'General Steel'}</div>
-              <div><strong style={{ color: '#475569' }}>Grade:</strong> {barcodeProduct.grade?.replace(/_/g, ' ')}</div>
-              <div><strong style={{ color: '#475569' }}>Dimensions:</strong> {barcodeProduct.size} {barcodeProduct.thickness ? `(${barcodeProduct.thickness})` : ''}</div>
-              <div><strong style={{ color: '#475569' }}>Unit Price:</strong> <span style={{ color: '#0284C7', fontWeight: 700 }}>₱{barcodeProduct.unitPrice.toLocaleString()} / {barcodeProduct.unitOfMeasure}</span></div>
+              <div><strong style={{ color: '#000000' }}>Product Name:</strong> <span style={{ fontWeight: 700 }}>{barcodeProduct.name}</span></div>
+              <div><strong style={{ color: '#000000' }}>Category:</strong> {barcodeProduct.categoryName || 'General Steel'}</div>
+              <div><strong style={{ color: '#000000' }}>Grade:</strong> {barcodeProduct.grade?.replace(/_/g, ' ')}</div>
+              <div><strong style={{ color: '#000000' }}>Dimensions:</strong> {barcodeProduct.size} {barcodeProduct.thickness ? `(${barcodeProduct.thickness})` : ''}</div>
+              <div><strong style={{ color: '#000000' }}>Unit Price:</strong> <span style={{ color: '#0284C7', fontWeight: 700 }}>₱{barcodeProduct.unitPrice.toLocaleString()} / {barcodeProduct.unitOfMeasure}</span></div>
               <div style={{ marginTop: '0.35rem', paddingTop: '0.35rem', borderTop: '1px solid #CBD5E1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <strong style={{ color: '#475569' }}>Barcode:</strong>
-                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0F172A', background: '#E2E8F0', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                <strong style={{ color: '#000000' }}>Barcode:</strong>
+                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#000000', background: '#E2E8F0', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
                   {barcodeProduct.barcode || barcodeProduct.sku || '480651200101'}
                 </span>
               </div>

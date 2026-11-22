@@ -13,6 +13,10 @@ import {
   RefreshCw,
   Printer,
   Cpu,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { getAuthHeaders, fetchRecommendations, type RbdssRecommendationItem } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
@@ -104,6 +108,26 @@ export function AuditLogView() {
   const [diffViewMode, setDiffViewMode] = useState<'table' | 'json'>('table');
   const [showOnlyChanges, setShowOnlyChanges] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  // Pagination States
+  const [auditPage, setAuditPage] = useState<number>(1);
+  const [auditPageSize, setAuditPageSize] = useState<number>(25);
+
+  const [rbdssPage, setRbdssPage] = useState<number>(1);
+  const [rbdssPageSize, setRbdssPageSize] = useState<number>(25);
+
+  const [diffPage, setDiffPage] = useState<number>(1);
+  const [diffPageSize, setDiffPageSize] = useState<number>(10);
+
+  // Reset pagination on filter or tab change
+  useEffect(() => {
+    setAuditPage(1);
+    setRbdssPage(1);
+  }, [activeTab, search, statusFilter]);
+
+  useEffect(() => {
+    setDiffPage(1);
+  }, [selectedLog, showOnlyChanges]);
 
   // Live Backend Database Synchronization
   const syncWithBackend = async () => {
@@ -233,16 +257,43 @@ export function AuditLogView() {
     return diffs;
   }, [selectedLog, showOnlyChanges]);
 
+  // Paginated Audit Logs (EntityMutation & SecurityAccess)
+  const totalAuditItems = filteredLogs.length;
+  const totalAuditPages = Math.max(1, Math.ceil(totalAuditItems / auditPageSize));
+  const safeAuditPage = Math.min(Math.max(1, auditPage), totalAuditPages);
+  const pagedLogs = useMemo(() => {
+    const start = (safeAuditPage - 1) * auditPageSize;
+    return filteredLogs.slice(start, start + auditPageSize);
+  }, [filteredLogs, safeAuditPage, auditPageSize]);
+
+  // Paginated RBDSS Decisions
+  const totalRbdssItems = filteredRbdssDecisions.length;
+  const totalRbdssPages = Math.max(1, Math.ceil(totalRbdssItems / rbdssPageSize));
+  const safeRbdssPage = Math.min(Math.max(1, rbdssPage), totalRbdssPages);
+  const pagedRbdssDecisions = useMemo(() => {
+    const start = (safeRbdssPage - 1) * rbdssPageSize;
+    return filteredRbdssDecisions.slice(start, start + rbdssPageSize);
+  }, [filteredRbdssDecisions, safeRbdssPage, rbdssPageSize]);
+
+  // Paginated State Diffs
+  const totalDiffItems = computedDiffs.length;
+  const totalDiffPages = Math.max(1, Math.ceil(totalDiffItems / diffPageSize));
+  const safeDiffPage = Math.min(Math.max(1, diffPage), totalDiffPages);
+  const pagedDiffs = useMemo(() => {
+    const start = (safeDiffPage - 1) * diffPageSize;
+    return computedDiffs.slice(start, start + diffPageSize);
+  }, [computedDiffs, safeDiffPage, diffPageSize]);
+
   return (
     <div className="view-container">
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
         <div>
-          <h2 style={{ color: '#F8FAFC', fontSize: '1.5rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <h2 style={{ color: '#000000', fontSize: '1.5rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <Database size={24} style={{ color: '#38BDF8' }} />
             Enterprise Audit Log & State Diff Engine
           </h2>
-          <p style={{ color: '#94A3B8', fontSize: '0.88rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#000000', fontSize: '0.88rem', margin: '0.25rem 0 0 0' }}>
             Immutable cryptographically verifiable audit trail of entity mutations, approvals, and security access telemetry.
           </p>
         </div>
@@ -288,7 +339,7 @@ export function AuditLogView() {
         >
           <FileCode size={16} />
           Entity Mutations & State Diffs
-          <span style={{ background: '#334155', color: '#F8FAFC', padding: '0.1rem 0.45rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+          <span style={{ background: '#E2E8F0', color: '#000000', padding: '0.1rem 0.45rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>
             {logs.filter((l) => l.category === 'EntityMutation').length}
           </span>
         </button>
@@ -297,7 +348,7 @@ export function AuditLogView() {
           onClick={() => setActiveTab('SecurityAccess')}
           style={{
             background: activeTab === 'SecurityAccess' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-            color: activeTab === 'SecurityAccess' ? '#34D399' : '#94A3B8',
+            color: activeTab === 'SecurityAccess' ? '#059669' : '#000000',
             border: activeTab === 'SecurityAccess' ? '1px solid #10B981' : '1px solid transparent',
             padding: '0.55rem 1rem',
             borderRadius: '6px',
@@ -312,7 +363,7 @@ export function AuditLogView() {
         >
           <Lock size={16} />
           Security & Access Logs
-          <span style={{ background: '#334155', color: '#F8FAFC', padding: '0.1rem 0.45rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+          <span style={{ background: '#E2E8F0', color: '#000000', padding: '0.1rem 0.45rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>
             {logs.filter((l) => l.category === 'SecurityAccess').length}
           </span>
         </button>
@@ -321,7 +372,7 @@ export function AuditLogView() {
           onClick={() => setActiveTab('RbdssDecisions')}
           style={{
             background: activeTab === 'RbdssDecisions' ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-            color: activeTab === 'RbdssDecisions' ? '#A78BFA' : '#94A3B8',
+            color: activeTab === 'RbdssDecisions' ? '#7C3AED' : '#000000',
             border: activeTab === 'RbdssDecisions' ? '1px solid #8B5CF6' : '1px solid transparent',
             padding: '0.55rem 1rem',
             borderRadius: '6px',
@@ -336,7 +387,7 @@ export function AuditLogView() {
         >
           <Cpu size={16} />
           RBDSS AI Decision Audits
-          <span style={{ background: '#334155', color: '#F8FAFC', padding: '0.1rem 0.45rem', borderRadius: '12px', fontSize: '0.75rem' }}>
+          <span style={{ background: '#E2E8F0', color: '#000000', padding: '0.1rem 0.45rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>
             {rbdssDecisions.length}
           </span>
         </button>
@@ -345,7 +396,7 @@ export function AuditLogView() {
       {/* FILTER & SEARCH BAR */}
       <div className="controls-bar" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem' }}>
         <div className="search-box" style={{ maxWidth: '450px', flex: 1 }}>
-          <Search size={18} style={{ color: '#94A3B8' }} />
+          <Search size={18} style={{ color: '#000000' }} />
           <input
             type="text"
             placeholder={
@@ -363,7 +414,7 @@ export function AuditLogView() {
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {activeTab !== 'RbdssDecisions' && (
             <>
-              <span style={{ color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600 }}>Status:</span>
+              <span style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 600 }}>Status:</span>
               {(['All', 'SUCCESS', 'WARNING', 'FAILED'] as const).map((st) => (
                 <button
                   key={st}
@@ -423,10 +474,10 @@ export function AuditLogView() {
 
       {/* AUDIT LOG TABLE */}
       {activeTab === 'RbdssDecisions' ? (
-        <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+              <tr style={{ background: '#F8FAFC', color: '#000000', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
                 <th style={{ padding: '0.75rem 1rem' }}>Product / SKU</th>
                 <th style={{ padding: '0.75rem 1rem' }}>Target Branch</th>
                 <th style={{ padding: '0.75rem 1rem' }}>Period</th>
@@ -440,21 +491,21 @@ export function AuditLogView() {
             <tbody>
               {filteredRbdssDecisions.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: '#000000' }}>
                     No RBDSS AI recommendation decisions found matching the search criteria.
                   </td>
                 </tr>
               ) : (
-                filteredRbdssDecisions.map((d, idx) => (
-                  <tr key={`${d.product_id}-${d.branch_id}-${idx}`} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.88rem', background: '#FFFFFF' }}>
+                pagedRbdssDecisions.map((d, idx) => (
+                  <tr key={`${d.product_id}-${d.branch_id}-${idx}`} style={{ borderBottom: '1px solid #E2E8F0', color: '#000000', fontSize: '0.88rem', background: '#FFFFFF' }}>
                     <td style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>
-                      <div style={{ color: '#0F172A' }}>{d.product_sku || d.product_id}</div>
-                      <div style={{ color: '#64748B', fontSize: '0.75rem' }}>{d.product_name || 'Standard Steel Spec'}</div>
+                      <div style={{ color: '#000000' }}>{d.product_sku || d.product_id}</div>
+                      <div style={{ color: '#000000', fontSize: '0.75rem' }}>{d.product_name || 'Standard Steel Spec'}</div>
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <span className="branch-tag highlight">{d.branch_name || d.branch_id}</span>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', color: '#475569', fontSize: '0.8rem' }}>
+                    <td style={{ padding: '0.85rem 1rem', color: '#000000', fontSize: '0.8rem' }}>
                       {d.period}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
@@ -484,9 +535,9 @@ export function AuditLogView() {
                     <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem' }}>
                       {d.transfer_quantity > 0 && <div>Transfer: <strong>{d.transfer_quantity} t</strong></div>}
                       {d.procurement_quantity > 0 && <div>Procure: <strong>{d.procurement_quantity} t</strong></div>}
-                      {d.transfer_quantity === 0 && d.procurement_quantity === 0 && <span style={{ color: '#94A3B8' }}>—</span>}
+                      {d.transfer_quantity === 0 && d.procurement_quantity === 0 && <span style={{ color: '#000000' }}>—</span>}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', color: '#475569', maxWidth: '300px' }}>
+                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.8rem', color: '#000000', maxWidth: '300px' }}>
                       {d.explanation || 'Calculated optimal inventory posture based on live demand and safety threshold.'}
                     </td>
                   </tr>
@@ -494,12 +545,100 @@ export function AuditLogView() {
               )}
             </tbody>
           </table>
+
+          {/* RBDSS PAGINATION BAR */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.75rem 1rem',
+            borderTop: '1px solid #E2E8F0',
+            background: '#F8FAFC',
+            fontSize: '0.82rem',
+            color: '#000000',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+          }}>
+            <div>
+              Showing {totalRbdssItems === 0 ? 0 : (safeRbdssPage - 1) * rbdssPageSize + 1} to {Math.min(safeRbdssPage * rbdssPageSize, totalRbdssItems)} of {totalRbdssItems} AI decisions
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.5rem' }}>
+                <span>Rows:</span>
+                <select
+                  value={rbdssPageSize}
+                  onChange={(e) => {
+                    setRbdssPageSize(Number(e.target.value));
+                    setRbdssPage(1);
+                  }}
+                  style={{
+                    padding: '0.2rem 0.4rem',
+                    borderRadius: '4px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '0.8rem',
+                    background: '#FFFFFF',
+                    color: '#000000',
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={safeRbdssPage <= 1}
+                onClick={() => setRbdssPage(1)}
+                style={{ padding: '0.3rem 0.5rem', opacity: safeRbdssPage <= 1 ? 0.5 : 1 }}
+                title="First page"
+              >
+                <ChevronsLeft size={14} />
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={safeRbdssPage <= 1}
+                onClick={() => setRbdssPage((p) => Math.max(1, p - 1))}
+                style={{ padding: '0.3rem 0.5rem', opacity: safeRbdssPage <= 1 ? 0.5 : 1 }}
+                title="Previous page"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span style={{ fontWeight: 600, color: '#000000', padding: '0 0.35rem' }}>
+                Page {safeRbdssPage} of {totalRbdssPages}
+              </span>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={safeRbdssPage >= totalRbdssPages}
+                onClick={() => setRbdssPage((p) => Math.min(totalRbdssPages, p + 1))}
+                style={{ padding: '0.3rem 0.5rem', opacity: safeRbdssPage >= totalRbdssPages ? 0.5 : 1 }}
+                title="Next page"
+              >
+                <ChevronRight size={14} />
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={safeRbdssPage >= totalRbdssPages}
+                onClick={() => setRbdssPage(totalRbdssPages)}
+                style={{ padding: '0.3rem 0.5rem', opacity: safeRbdssPage >= totalRbdssPages ? 0.5 : 1 }}
+                title="Last page"
+              >
+                <ChevronsRight size={14} />
+              </button>
+            </div>
+          </div>
         </div>
       ) : (
-        <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+            <tr style={{ background: '#F8FAFC', color: '#000000', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
               <th style={{ padding: '0.75rem 1rem' }}>Timestamp</th>
               <th style={{ padding: '0.75rem 1rem' }}>Operator / Identity</th>
               <th style={{ padding: '0.75rem 1rem' }}>{activeTab === 'EntityMutation' ? 'Branch & IP' : 'Origin IP & Device'}</th>
@@ -511,24 +650,24 @@ export function AuditLogView() {
           <tbody>
             {filteredLogs.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#000000' }}>
                   No audit records match the current filter criteria.
                 </td>
               </tr>
             ) : (
-              filteredLogs.map((l) => (
-                <tr key={l.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.9rem', background: '#FFFFFF' }}>
+              pagedLogs.map((l) => (
+                <tr key={l.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#000000', fontSize: '0.9rem', background: '#FFFFFF' }}>
                   {/* Timestamp */}
-                  <td style={{ padding: '0.85rem 1rem', color: '#475569', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '0.85rem 1rem', color: '#000000', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <Clock size={13} style={{ color: '#64748B' }} /> {new Date(l.timestamp).toLocaleString()}
+                      <Clock size={13} style={{ color: '#000000' }} /> {new Date(l.timestamp).toLocaleString()}
                     </div>
                   </td>
 
                   {/* Operator */}
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#0F172A' }}>{l.userName}</div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem' }}>
+                    <div style={{ fontWeight: 600, color: '#000000' }}>{l.userName}</div>
+                    <div style={{ color: '#000000', fontSize: '0.75rem' }}>
                       {l.userEmail ? l.userEmail : l.userRole}
                     </div>
                   </td>
@@ -538,12 +677,12 @@ export function AuditLogView() {
                     {activeTab === 'EntityMutation' ? (
                       <>
                         <span className="branch-tag highlight">{l.branch}</span>
-                        <div style={{ color: '#64748B', fontSize: '0.75rem', marginTop: '0.2rem' }}>{l.ipAddress}</div>
+                        <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '0.2rem' }}>{l.ipAddress}</div>
                       </>
                     ) : (
                       <>
-                        <div style={{ fontWeight: 600, color: '#0F172A', fontSize: '0.82rem' }}>{l.ipAddress}</div>
-                        <div style={{ color: '#64748B', fontSize: '0.72rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontWeight: 600, color: '#000000', fontSize: '0.82rem' }}>{l.ipAddress}</div>
+                        <div style={{ color: '#000000', fontSize: '0.72rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {l.userAgent || 'Web Client'}
                         </div>
                       </>
@@ -606,17 +745,17 @@ export function AuditLogView() {
                     {activeTab === 'EntityMutation' ? (
                       <>
                         <div style={{ fontWeight: 600, color: '#0284C7' }}>{l.entityName}</div>
-                        <div style={{ color: '#64748B', fontSize: '0.75rem' }}>ID: {l.entityId}</div>
+                        <div style={{ color: '#000000', fontSize: '0.75rem' }}>ID: {l.entityId}</div>
                         {l.details && (
-                          <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '0.2rem' }}>{l.details}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: '0.2rem' }}>{l.details}</div>
                         )}
                       </>
                     ) : (
                       <>
-                        <div style={{ fontSize: '0.85rem', color: '#1E293B', fontWeight: 500 }}>
+                        <div style={{ fontSize: '0.85rem', color: '#000000', fontWeight: 500 }}>
                           {l.details || 'Security event logged'}
                         </div>
-                        <div style={{ color: '#64748B', fontSize: '0.75rem' }}>Ref: {l.entityId}</div>
+                        <div style={{ color: '#000000', fontSize: '0.75rem' }}>Ref: {l.entityId}</div>
                       </>
                     )}
                   </td>
@@ -636,42 +775,130 @@ export function AuditLogView() {
             )}
           </tbody>
         </table>
+
+        {/* AUDIT LOG PAGINATION BAR */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.75rem 1rem',
+          borderTop: '1px solid #E2E8F0',
+          background: '#F8FAFC',
+          fontSize: '0.82rem',
+          color: '#000000',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}>
+          <div>
+            Showing {totalAuditItems === 0 ? 0 : (safeAuditPage - 1) * auditPageSize + 1} to {Math.min(safeAuditPage * auditPageSize, totalAuditItems)} of {totalAuditItems} audit records
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.5rem' }}>
+              <span>Rows:</span>
+              <select
+                value={auditPageSize}
+                onChange={(e) => {
+                  setAuditPageSize(Number(e.target.value));
+                  setAuditPage(1);
+                }}
+                style={{
+                  padding: '0.2rem 0.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '0.8rem',
+                  background: '#FFFFFF',
+                  color: '#000000',
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safeAuditPage <= 1}
+              onClick={() => setAuditPage(1)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safeAuditPage <= 1 ? 0.5 : 1 }}
+              title="First page"
+            >
+              <ChevronsLeft size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safeAuditPage <= 1}
+              onClick={() => setAuditPage((p) => Math.max(1, p - 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safeAuditPage <= 1 ? 0.5 : 1 }}
+              title="Previous page"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span style={{ fontWeight: 600, color: '#000000', padding: '0 0.35rem' }}>
+              Page {safeAuditPage} of {totalAuditPages}
+            </span>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safeAuditPage >= totalAuditPages}
+              onClick={() => setAuditPage((p) => Math.min(totalAuditPages, p + 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safeAuditPage >= totalAuditPages ? 0.5 : 1 }}
+              title="Next page"
+            >
+              <ChevronRight size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safeAuditPage >= totalAuditPages}
+              onClick={() => setAuditPage(totalAuditPages)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safeAuditPage >= totalAuditPages ? 0.5 : 1 }}
+              title="Last page"
+            >
+              <ChevronsRight size={14} />
+            </button>
+          </div>
+        </div>
       </div>
       )}
 
       {/* HUMAN-READABLE VISUAL DIFF INSPECTION MODAL */}
       {selectedLog && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #334155', width: '100%', maxWidth: '900px', padding: '1.5rem', maxHeight: '92vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '100%', maxWidth: '900px', padding: '1.5rem', maxHeight: '92vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', borderBottom: '1px solid #334155', paddingBottom: '0.85rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.85rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FileCode size={22} />
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#000000', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FileCode size={22} style={{ color: '#0284C7' }} />
                   Mutation Audit Trail: {selectedLog.entityName} ({selectedLog.entityId})
                 </h3>
-                <div style={{ fontSize: '0.82rem', color: '#94A3B8', marginTop: '0.3rem' }}>
+                <div style={{ fontSize: '0.82rem', color: '#000000', marginTop: '0.3rem' }}>
                   Mutated by <strong>{selectedLog.userName}</strong> ({selectedLog.userRole}) at{' '}
                   {new Date(selectedLog.timestamp).toLocaleString()} • IP: {selectedLog.ipAddress}
                 </div>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '0.25rem' }}
+                style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '0.25rem' }}
               >
                 <X size={22} />
               </button>
             </div>
 
             {/* View Controls & Filter */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', background: '#0F172A', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', background: '#F8FAFC', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
                   onClick={() => setDiffViewMode('table')}
                   style={{
-                    background: diffViewMode === 'table' ? '#0284C7' : 'transparent',
-                    color: '#F8FAFC',
-                    border: 'none',
+                    background: diffViewMode === 'table' ? '#0284C7' : '#FFFFFF',
+                    color: diffViewMode === 'table' ? '#FFFFFF' : '#000000',
+                    border: '1px solid #CBD5E1',
                     padding: '0.35rem 0.75rem',
                     borderRadius: '6px',
                     fontSize: '0.8rem',
@@ -684,9 +911,9 @@ export function AuditLogView() {
                 <button
                   onClick={() => setDiffViewMode('json')}
                   style={{
-                    background: diffViewMode === 'json' ? '#0284C7' : 'transparent',
-                    color: '#F8FAFC',
-                    border: 'none',
+                    background: diffViewMode === 'json' ? '#0284C7' : '#FFFFFF',
+                    color: diffViewMode === 'json' ? '#FFFFFF' : '#000000',
+                    border: '1px solid #CBD5E1',
                     padding: '0.35rem 0.75rem',
                     borderRadius: '6px',
                     fontSize: '0.8rem',
@@ -699,7 +926,7 @@ export function AuditLogView() {
               </div>
 
               {diffViewMode === 'table' && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.82rem', color: '#CBD5E1', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.82rem', color: '#000000', cursor: 'pointer', fontWeight: 500 }}>
                   <input
                     type="checkbox"
                     checked={showOnlyChanges}
@@ -712,29 +939,29 @@ export function AuditLogView() {
 
             {/* DIFF PRESENTATION */}
             {diffViewMode === 'table' ? (
-              <div style={{ background: '#0F172A', borderRadius: '8px', border: '1px solid #334155', overflow: 'hidden' }}>
+              <div style={{ background: '#FFFFFF', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                   <thead>
-                    <tr style={{ background: '#F8FAFC', color: '#94A3B8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #334155' }}>
-                      <th style={{ padding: '0.65rem 1rem' }}>Field Name</th>
-                      <th style={{ padding: '0.65rem 1rem' }}>Previous Value (Before)</th>
-                      <th style={{ padding: '0.65rem 1rem' }}>New Mutated Value (After)</th>
-                      <th style={{ padding: '0.65rem 1rem', textAlign: 'center' }}>Change Type</th>
+                    <tr style={{ background: '#F8FAFC', color: '#000000', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+                      <th style={{ padding: '0.65rem 1rem', color: '#000000' }}>Field Name</th>
+                      <th style={{ padding: '0.65rem 1rem', color: '#000000' }}>Previous Value (Before)</th>
+                      <th style={{ padding: '0.65rem 1rem', color: '#000000' }}>New Mutated Value (After)</th>
+                      <th style={{ padding: '0.65rem 1rem', textAlign: 'center', color: '#000000' }}>Change Type</th>
                     </tr>
                   </thead>
                   <tbody>
                     {computedDiffs.length === 0 ? (
                       <tr>
-                        <td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>
+                        <td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: '#000000' }}>
                           No modified fields found between before and after states.
                         </td>
                       </tr>
                     ) : (
-                      computedDiffs.map((d, idx) => (
+                      pagedDiffs.map((d, idx) => (
                         <tr
                           key={idx}
                           style={{
-                            borderBottom: '1px solid #1E293B',
+                            borderBottom: '1px solid #E2E8F0',
                             background:
                               d.diffType === 'ADDED'
                                 ? 'rgba(16, 185, 129, 0.08)'
@@ -746,17 +973,17 @@ export function AuditLogView() {
                           }}
                         >
                           {/* Field Name */}
-                          <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#F1F5F9' }}>
+                          <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#000000' }}>
                             {d.fieldName}
                           </td>
 
                           {/* Previous Value */}
-                          <td style={{ padding: '0.75rem 1rem', color: d.diffType === 'MODIFIED' || d.diffType === 'REMOVED' ? '#FCA5A5' : '#94A3B8', fontFamily: 'monospace' }}>
+                          <td style={{ padding: '0.75rem 1rem', color: d.diffType === 'MODIFIED' || d.diffType === 'REMOVED' ? '#DC2626' : '#000000', fontFamily: 'monospace' }}>
                             {d.oldValue}
                           </td>
 
                           {/* New Value */}
-                          <td style={{ padding: '0.75rem 1rem', color: d.diffType === 'MODIFIED' || d.diffType === 'ADDED' ? '#6EE7B7' : '#94A3B8', fontWeight: d.diffType !== 'UNCHANGED' ? 600 : 400, fontFamily: 'monospace' }}>
+                          <td style={{ padding: '0.75rem 1rem', color: d.diffType === 'MODIFIED' || d.diffType === 'ADDED' ? '#059669' : '#000000', fontWeight: d.diffType !== 'UNCHANGED' ? 600 : 400, fontFamily: 'monospace' }}>
                             {d.newValue}
                           </td>
 
@@ -766,20 +993,29 @@ export function AuditLogView() {
                               style={{
                                 background:
                                   d.diffType === 'ADDED'
-                                    ? '#065F46'
+                                    ? '#ECFDF5'
                                     : d.diffType === 'MODIFIED'
-                                    ? '#78350F'
+                                    ? '#FFFBEB'
                                     : d.diffType === 'REMOVED'
-                                    ? '#7F1D1D'
-                                    : '#334155',
+                                    ? '#FEF2F2'
+                                    : '#F1F5F9',
                                 color:
                                   d.diffType === 'ADDED'
-                                    ? '#6EE7B7'
+                                    ? '#047857'
+                                    : d.diffType === 'MODIFIED'
+                                    ? '#B45309'
+                                    : d.diffType === 'REMOVED'
+                                    ? '#DC2626'
+                                    : '#000000',
+                                border: `1px solid ${
+                                  d.diffType === 'ADDED'
+                                    ? '#A7F3D0'
                                     : d.diffType === 'MODIFIED'
                                     ? '#FDE68A'
                                     : d.diffType === 'REMOVED'
-                                    ? '#FCA5A5'
-                                    : '#94A3B8',
+                                    ? '#FECACA'
+                                    : '#CBD5E1'
+                                }`,
                                 padding: '0.2rem 0.5rem',
                                 borderRadius: '4px',
                                 fontSize: '0.72rem',
@@ -794,24 +1030,112 @@ export function AuditLogView() {
                     )}
                   </tbody>
                 </table>
+
+                {/* DIFF PAGINATION BAR */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.6rem 0.85rem',
+                  borderTop: '1px solid #E2E8F0',
+                  background: '#F8FAFC',
+                  fontSize: '0.8rem',
+                  color: '#000000',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem',
+                }}>
+                  <div>
+                    Showing {totalDiffItems === 0 ? 0 : (safeDiffPage - 1) * diffPageSize + 1} to {Math.min(safeDiffPage * diffPageSize, totalDiffItems)} of {totalDiffItems} fields
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.4rem' }}>
+                      <span style={{ color: '#000000' }}>Rows:</span>
+                      <select
+                        value={diffPageSize}
+                        onChange={(e) => {
+                          setDiffPageSize(Number(e.target.value));
+                          setDiffPage(1);
+                        }}
+                        style={{
+                          padding: '0.15rem 0.35rem',
+                          borderRadius: '4px',
+                          border: '1px solid #CBD5E1',
+                          fontSize: '0.78rem',
+                          background: '#FFFFFF',
+                          color: '#000000',
+                        }}
+                      >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={safeDiffPage <= 1}
+                      onClick={() => setDiffPage(1)}
+                      style={{ padding: '0.2rem 0.45rem', opacity: safeDiffPage <= 1 ? 0.5 : 1 }}
+                      title="First page"
+                    >
+                      <ChevronsLeft size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={safeDiffPage <= 1}
+                      onClick={() => setDiffPage((p) => Math.max(1, p - 1))}
+                      style={{ padding: '0.2rem 0.45rem', opacity: safeDiffPage <= 1 ? 0.5 : 1 }}
+                      title="Previous page"
+                    >
+                      <ChevronLeft size={13} />
+                    </button>
+                    <span style={{ fontWeight: 600, color: '#000000', padding: '0 0.25rem' }}>
+                      Page {safeDiffPage} of {totalDiffPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={safeDiffPage >= totalDiffPages}
+                      onClick={() => setDiffPage((p) => Math.min(totalDiffPages, p + 1))}
+                      style={{ padding: '0.2rem 0.45rem', opacity: safeDiffPage >= totalDiffPages ? 0.5 : 1 }}
+                      title="Next page"
+                    >
+                      <ChevronRight size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={safeDiffPage >= totalDiffPages}
+                      onClick={() => setDiffPage(totalDiffPages)}
+                      style={{ padding: '0.2rem 0.45rem', opacity: safeDiffPage >= totalDiffPages ? 0.5 : 1 }}
+                      title="Last page"
+                    >
+                      <ChevronsRight size={13} />
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               /* RAW JSON CODE VIEW */
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div>
-                  <div style={{ background: '#7F1D1D', color: '#FCA5A5', padding: '0.4rem 0.75rem', borderRadius: '6px 6px 0 0', fontWeight: 700, fontSize: '0.8rem' }}>
+                  <div style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', padding: '0.4rem 0.75rem', borderRadius: '6px 6px 0 0', fontWeight: 700, fontSize: '0.8rem' }}>
                     PREVIOUS STATE (BEFORE)
                   </div>
-                  <pre style={{ background: '#0F172A', color: '#CBD5E1', padding: '1rem', borderRadius: '0 0 6px 6px', border: '1px solid #334155', borderTop: 'none', fontSize: '0.8rem', overflowX: 'auto', margin: 0, maxHeight: '350px' }}>
+                  <pre style={{ background: '#F8FAFC', color: '#000000', padding: '1rem', borderRadius: '0 0 6px 6px', border: '1px solid #CBD5E1', borderTop: 'none', fontSize: '0.8rem', overflowX: 'auto', margin: 0, maxHeight: '350px' }}>
                     {selectedLog.beforeStateJson}
                   </pre>
                 </div>
 
                 <div>
-                  <div style={{ background: '#065F46', color: '#6EE7B7', padding: '0.4rem 0.75rem', borderRadius: '6px 6px 0 0', fontWeight: 700, fontSize: '0.8rem' }}>
+                  <div style={{ background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '0.4rem 0.75rem', borderRadius: '6px 6px 0 0', fontWeight: 700, fontSize: '0.8rem' }}>
                     NEW MUTATED STATE (AFTER)
                   </div>
-                  <pre style={{ background: '#0F172A', color: '#CBD5E1', padding: '1rem', borderRadius: '0 0 6px 6px', border: '1px solid #334155', borderTop: 'none', fontSize: '0.8rem', overflowX: 'auto', margin: 0, maxHeight: '350px' }}>
+                  <pre style={{ background: '#F8FAFC', color: '#000000', padding: '1rem', borderRadius: '0 0 6px 6px', border: '1px solid #CBD5E1', borderTop: 'none', fontSize: '0.8rem', overflowX: 'auto', margin: 0, maxHeight: '350px' }}>
                     {selectedLog.afterStateJson}
                   </pre>
                 </div>
@@ -819,9 +1143,9 @@ export function AuditLogView() {
             )}
 
             {/* Footer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem' }}>
-              <div style={{ color: '#64748B', fontSize: '0.78rem' }}>
-                Event Log ID: <span style={{ fontFamily: 'monospace' }}>{selectedLog.id}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+              <div style={{ color: '#000000', fontSize: '0.78rem' }}>
+                Event Log ID: <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{selectedLog.id}</span>
               </div>
               <button className="btn-secondary" onClick={() => setSelectedLog(null)}>
                 Close Diff Viewer

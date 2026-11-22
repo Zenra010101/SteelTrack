@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir -r requirements-ml.txt
 
 COPY ml/ ./ml/
 COPY models/ ./models/
-COPY CSV_for_LSTM/ ./CSV_for_LSTM/
 
 EXPOSE 8000
 

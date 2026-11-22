@@ -69,7 +69,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
               {branch} Branch Sales History & Receipt Journal
             </h3>
-            <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '0.82rem', color: '#000000', marginTop: '0.2rem' }}>
               Cashier: <strong>{cashierName}</strong> • Real-time counter sales telemetry
             </div>
           </div>
@@ -106,7 +106,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
       <div className="controls-bar" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: '280px' }}>
           <div className="pos-search-bar" style={{ flex: 1 }}>
-            <Search size={16} style={{ color: '#94A3B8' }} />
+            <Search size={16} style={{ color: '#000000' }} />
             <input
               type="text"
               value={searchQuery}
@@ -124,7 +124,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
               border: '1px solid #CBD5E1',
               fontSize: '0.85rem',
               background: 'white',
-              color: '#334155',
+              color: '#000000',
             }}
           >
             <option value="All">All Payment Types</option>
@@ -138,7 +138,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div style={{ fontSize: '0.85rem', color: '#64748B', display: 'flex', alignItems: 'center' }}>
+          <div style={{ fontSize: '0.85rem', color: '#000000', display: 'flex', alignItems: 'center' }}>
             Showing <strong>{filteredTransactions.length}</strong> of {transactions.length} receipts
           </div>
           <TableExportButtons
@@ -176,13 +176,13 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#94A3B8' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#000000' }}>
                   Loading sales journal...
                 </td>
               </tr>
             ) : filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', color: '#94A3B8', padding: '2.5rem' }}>
+                <td colSpan={8} style={{ textAlign: 'center', color: '#000000', padding: '2.5rem' }}>
                   No transaction records found matching your query for {branch} Branch.
                 </td>
               </tr>
@@ -192,16 +192,16 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: 700, color: '#0284C7' }}>
                     {tx.invoiceNumber}
                   </td>
-                  <td style={{ color: '#475569', fontSize: '0.85rem' }}>
+                  <td style={{ color: '#000000', fontSize: '0.85rem' }}>
                     {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td style={{ fontWeight: 600 }}>{tx.customerName}</td>
                   <td style={{ fontSize: '0.85rem' }}>{tx.items?.length || 1} line item(s)</td>
-                  <td style={{ fontWeight: 600, color: '#334155' }}>{tx.totalTonnage.toFixed(2)} Tons</td>
+                  <td style={{ fontWeight: 600, color: '#000000' }}>{tx.totalTonnage.toFixed(2)} Tons</td>
                   <td>
                     <span className="badge badge-available">{tx.paymentMethod}</span>
                   </td>
-                  <td style={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', color: '#0F172A' }}>
+                  <td style={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', color: '#000000' }}>
                     ₱{(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0).toLocaleString()}
                   </td>
                   <td style={{ textAlign: 'right' }}>
@@ -251,16 +251,16 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
             }}
           >
             <div className="receipt-header" style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.01em' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#000000', letterSpacing: '-0.01em' }}>
                 STEELTRACK PHILIPPINES
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: 2 }}>
+              <div style={{ fontSize: '0.8rem', color: '#000000', marginTop: 2 }}>
                 {branch} Commercial Retail Hub
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+              <div style={{ fontSize: '0.75rem', color: '#000000' }}>
                 TIN: 004-982-120-000 • VAT Registered
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+              <div style={{ fontSize: '0.75rem', color: '#000000' }}>
                 Industrial Highway, {branch} City
               </div>
               <div
@@ -278,7 +278,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
               </div>
             </div>
 
-            <div className="receipt-meta" style={{ fontSize: '0.8rem', color: '#334155', lineHeight: 1.45, marginBottom: '0.75rem' }}>
+            <div className="receipt-meta" style={{ fontSize: '0.8rem', color: '#000000', lineHeight: 1.45, marginBottom: '0.75rem' }}>
               <div><strong>Invoice #:</strong> {activeReceipt.invoiceNumber}</div>
               <div><strong>Date:</strong> {new Date(activeReceipt.createdAt).toLocaleString()}</div>
               <div><strong>Cashier:</strong> {cashierName}</div>
@@ -310,14 +310,14 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
                       }}
                     >
                       <div className="item-name" style={{ maxWidth: '65%' }}>
-                        <div style={{ fontWeight: 700, color: '#0F172A' }}>{displayName}</div>
-                        <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{displayDims}</div>
+                        <div style={{ fontWeight: 700, color: '#000000' }}>{displayName}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#000000' }}>{displayDims}</div>
                       </div>
                       <div className="item-calc" style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#000000' }}>
                           {qty}T @ ₱{price.toLocaleString()}
                         </div>
-                        <div style={{ fontWeight: 700, color: '#0F172A' }}>
+                        <div style={{ fontWeight: 700, color: '#000000' }}>
                           ₱{lineTotal.toLocaleString()}
                         </div>
                       </div>
@@ -325,7 +325,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
                   );
                 })
               ) : (
-                <div style={{ padding: '0.75rem', textAlign: 'center', color: '#64748B', fontSize: '0.8rem', background: '#F8FAFC', borderRadius: 4 }}>
+                <div style={{ padding: '0.75rem', textAlign: 'center', color: '#000000', fontSize: '0.8rem', background: '#F8FAFC', borderRadius: 4 }}>
                   Standard Sales Invoice Allocation
                 </div>
               )}
@@ -334,9 +334,9 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
             <div className="receipt-divider" style={{ borderTop: '1px dashed #CBD5E1', margin: '0.75rem 0' }} />
 
             <div className="receipt-totals" style={{ fontSize: '0.82rem', lineHeight: 1.5 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000' }}>
                 <span>Payment Method:</span>
-                <span style={{ fontWeight: 600, color: '#0F172A' }}>{activeReceipt.paymentMethod}</span>
+                <span style={{ fontWeight: 600, color: '#000000' }}>{activeReceipt.paymentMethod}</span>
               </div>
               <div
                 style={{
@@ -344,7 +344,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
                   justifyContent: 'space-between',
                   fontSize: '1rem',
                   fontWeight: 800,
-                  color: '#0F172A',
+                  color: '#000000',
                   borderTop: '1px solid #0F172A',
                   borderBottom: '1px solid #0F172A',
                   padding: '0.4rem 0',
@@ -356,7 +356,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
               </div>
             </div>
 
-            <div className="receipt-footer" style={{ textAlign: 'center', fontSize: '0.75rem', color: '#64748B', marginTop: '1rem' }}>
+            <div className="receipt-footer" style={{ textAlign: 'center', fontSize: '0.75rem', color: '#000000', marginTop: '1rem' }}>
               <div>*** DUPLICATE / REPRINT RECORD ***</div>
               <div>Thank you for your valued enterprise partnership!</div>
             </div>

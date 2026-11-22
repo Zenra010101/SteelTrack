@@ -19,10 +19,10 @@
   --border-strong: #CBD5E1;
   --border-focus: #0284C7;
 
-  /* Typography Colors (High Contrast on White) */
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #94A3B8;
+  /* Typography Colors (Pure Black Globally) */
+  --text-primary: #000000;
+  --text-secondary: #000000;
+  --text-muted: #000000;
   --text-inverse: #FFFFFF;
 
   /* Brand & Status Accents */
@@ -62,17 +62,35 @@
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--bg-canvas);
-  color: var(--text-primary);
+  color: #000000;
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, .brand-font {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.brand-font {
   font-family: 'Outfit', sans-serif;
-  color: var(--text-primary);
+  color: #000000;
   letter-spacing: -0.015em;
+}
+
+/* Universal Global Black Typography Baseline */
+p, label, th, td, dt, dd,
+.metric-label, .metric-value,
+.breadcrumb-title, .breadcrumb-sub,
+.user-fullname, .brand-name, .brand-tagline,
+.sidebar-nav-item, .nav-section-title,
+.table-container th, .table-container td,
+table th, table td,
+input, select, textarea {
+  color: #000000;
 }
 
 /* Custom Scrollbars */
@@ -80,13 +98,16 @@ h1, h2, h3, h4, .brand-font {
   width: 7px;
   height: 7px;
 }
+
 ::-webkit-scrollbar-track {
   background: #F1F5F9;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
@@ -595,6 +616,7 @@ table .btn-primary:hover,
   color: #059669;
   border: 1px solid #059669;
 }
+
 .btn-table-success:hover {
   background: #059669 !important;
   color: #FFFFFF !important;
@@ -606,6 +628,7 @@ table .btn-primary:hover,
   color: #DC2626;
   border: 1px solid #DC2626;
 }
+
 .btn-table-danger:hover {
   background: #DC2626 !important;
   color: #FFFFFF !important;
@@ -617,6 +640,7 @@ table .btn-primary:hover,
   color: #0284C7;
   border: 1px solid #0284C7;
 }
+
 .btn-table-info:hover {
   background: #0284C7 !important;
   color: #FFFFFF !important;
@@ -628,6 +652,7 @@ table .btn-primary:hover,
   color: #D97706;
   border: 1px solid #D97706;
 }
+
 .btn-table-warning:hover {
   background: #D97706 !important;
   color: #FFFFFF !important;
@@ -714,7 +739,8 @@ textarea {
   transition: all 0.15s ease;
 }
 
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
   border-color: var(--border-focus);
   box-shadow: var(--shadow-glow);
 }
@@ -751,13 +777,9 @@ input:focus, textarea:focus {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.metric-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
+
 
 .metric-label {
   font-size: 0.8rem;
@@ -1122,10 +1144,25 @@ tbody td {
   color: #0F172A;
 }
 
-.card-grade-badge.structural { background: #E0F2FE; color: #0369A1; }
-.card-grade-badge.stainless { background: #F3E8FF; color: #6B21A8; }
-.card-grade-badge.carbon { background: #FEF3C7; color: #92400E; }
-.card-grade-badge.highstrength { background: #DCFCE7; color: #166534; }
+.card-grade-badge.structural {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+
+.card-grade-badge.stainless {
+  background: #F3E8FF;
+  color: #6B21A8;
+}
+
+.card-grade-badge.carbon {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.card-grade-badge.highstrength {
+  background: #DCFCE7;
+  color: #166534;
+}
 
 .card-heat-no {
   font-family: 'JetBrains Mono', monospace;
@@ -1540,7 +1577,7 @@ div[style*="position: fixed"] input[type="search"],
 div[style*="position: fixed"] textarea,
 div[style*="position: fixed"] select {
   background-color: #FFFFFF !important;
-  color: #0F172A !important;
+  color: #000000 !important;
   border-color: #CBD5E1 !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
 }
@@ -1567,7 +1604,7 @@ div[style*="position: fixed"] input:focus,
 div[style*="position: fixed"] textarea:focus,
 div[style*="position: fixed"] select:focus {
   background-color: #FFFFFF !important;
-  color: #0F172A !important;
+  color: #000000 !important;
   border-color: #0284C7 !important;
   outline: none !important;
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
@@ -1580,7 +1617,7 @@ div[style*="position: fixed"] select:focus {
   border-radius: var(--radius-sm);
   padding: 1.5rem;
   font-family: 'JetBrains Mono', monospace;
-  color: #1E293B;
+  color: #000000;
   font-size: 0.8rem;
   line-height: 1.4;
   box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.02);
@@ -1595,12 +1632,12 @@ div[style*="position: fixed"] select:focus {
   font-family: 'Outfit', sans-serif;
   font-size: 1.25rem;
   font-weight: 800;
-  color: #0F172A;
+  color: #000000;
 }
 
 .receipt-sub {
   font-size: 0.75rem;
-  color: #64748B;
+  color: #000000;
 }
 
 .receipt-divider {
@@ -1616,13 +1653,13 @@ div[style*="position: fixed"] select:focus {
 
 .receipt-row.bold {
   font-weight: 700;
-  color: #0F172A;
+  color: #000000;
 }
 
 .receipt-row.total {
   font-size: 1rem;
   font-weight: 800;
-  color: #0F172A;
+  color: #000000;
   margin-top: 0.5rem;
 }
 
@@ -1635,7 +1672,7 @@ div[style*="position: fixed"] select:focus {
 .receipt-items-table th {
   text-align: left;
   font-size: 0.7rem;
-  color: #64748B;
+  color: #000000;
   border-bottom: 1px solid #E2E8F0;
   padding-bottom: 0.35rem;
 }
@@ -1643,6 +1680,7 @@ div[style*="position: fixed"] select:focus {
 .receipt-items-table td {
   padding: 0.35rem 0;
   font-size: 0.75rem;
+  color: #000000;
 }
 
 .receipt-barcode {
@@ -1650,13 +1688,13 @@ div[style*="position: fixed"] select:focus {
   margin: 1rem 0 0.5rem;
   letter-spacing: 0.35em;
   font-size: 1.2rem;
-  color: #475569;
+  color: #000000;
 }
 
 .receipt-footer-msg {
   text-align: center;
   font-size: 0.72rem;
-  color: #94A3B8;
+  color: #000000;
   margin-top: 0.5rem;
 }
 
@@ -1926,7 +1964,8 @@ div[style*="position: fixed"] select:focus {
    AI FORECAST & ANALYTICS VIEWS
    ========================================================================== */
 
-.forecast-container, .analytics-container {
+.forecast-container,
+.analytics-container {
   margin-bottom: 2rem;
 }
 
@@ -2093,6 +2132,7 @@ div[style*="position: fixed"] select:focus {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -2103,6 +2143,7 @@ div[style*="position: fixed"] select:focus {
 }
 
 @media print {
+
   .no-print,
   .sidebar-container,
   .header-topbar,
@@ -2163,7 +2204,7 @@ div[style*="position: fixed"] select:focus {
   border-radius: 6px;
   border: 1px solid #CBD5E1;
   background-color: #FFFFFF;
-  color: #1E293B;
+  color: #000000;
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }

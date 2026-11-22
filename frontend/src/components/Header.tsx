@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Server, Layers, RefreshCw } from 'lucide-react';
+import { Layers, RefreshCw } from 'lucide-react';
 import type { UserSession } from '../types/auth';
 
 interface HeaderProps {
@@ -59,18 +59,12 @@ export function Header({
             <RefreshCw size={13} className={isRefreshing ? 'spin-icon' : ''} />
             <span>{isRefreshing ? 'Syncing...' : 'Sync Now'}</span>
             {lastRefreshedAt && (
-              <span style={{ color: '#64748B', fontSize: '0.72rem', marginLeft: '0.2rem' }}>
+              <span style={{ color: '#000000', fontSize: '0.72rem', marginLeft: '0.2rem' }}>
                 ({lastRefreshedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })})
               </span>
             )}
           </button>
         )}
-
-        <div className="status-pill">
-          <div className="dot" />
-          <Server size={14} />
-          Active Database
-        </div>
       </div>
     </header>
   );

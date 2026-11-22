@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Plus,
   Search,
@@ -8,6 +8,10 @@ import {
   Edit3,
   Building2,
   Filter,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { CustomerMaster } from '../types/suppliers';
@@ -125,15 +129,27 @@ export function CustomerManagementView() {
     return true;
   });
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
+
+  const totalItems = filteredCustomers.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedCustomers = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredCustomers.slice(start, start + pageSize);
+  }, [filteredCustomers, safePage, pageSize]);
+
   return (
     <div className="view-container">
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h2 style={{ color: '#F8FAFC', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+          <h2 style={{ color: '#000000', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
             Customer Master Directory & Credit Control
           </h2>
-          <p style={{ color: '#94A3B8', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#000000', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
             Manage corporate client accounts, adjust owner-authorized credit limits, and control active/blocked standing.
           </p>
         </div>
@@ -146,20 +162,31 @@ export function CustomerManagementView() {
       {/* FILTER & SEARCH CONTROLS */}
       <div className="controls-bar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', gap: '1rem' }}>
         <div className="search-box" style={{ maxWidth: '420px', flex: 1 }}>
-          <Search size={18} style={{ color: '#94A3B8' }} />
+          <Search size={18} style={{ color: '#000000' }} />
           <input
             type="text"
             placeholder="Search customer code, company, contact, or TIN..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{ color: '#000000' }}
           />
         </div>
 
         <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94A3B8', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#000000', fontSize: '0.85rem', fontWeight: 600 }}>
             <Filter size={16} /> Status:
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{ color: '#000000' }}
+          >
             <option value="All">All Customer Accounts</option>
             <option value="Active">Active Accounts</option>
             <option value="On Hold">On Hold / Disabled</option>
@@ -186,48 +213,48 @@ export function CustomerManagementView() {
       </div>
 
       {/* CUSTOMER TABLE WITH WHITE BACKGROUND */}
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
-              <th style={{ padding: '0.75rem 1rem' }}>Customer Code & Name</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Primary Contact & TIN</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Assigned Branch</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Authorized Credit Limit</th>
-              <th style={{ padding: '0.75rem 1rem' }}>Account Status</th>
-              <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Actions</th>
+            <tr style={{ background: '#F8FAFC', color: '#000000', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+              <th style={{ padding: '0.75rem 1rem', color: '#000000' }}>Customer Code & Name</th>
+              <th style={{ padding: '0.75rem 1rem', color: '#000000' }}>Primary Contact & TIN</th>
+              <th style={{ padding: '0.75rem 1rem', color: '#000000' }}>Assigned Branch</th>
+              <th style={{ padding: '0.75rem 1rem', color: '#000000' }}>Authorized Credit Limit</th>
+              <th style={{ padding: '0.75rem 1rem', color: '#000000' }}>Account Status</th>
+              <th style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#000000' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   Loading Customer Directory...
                 </td>
               </tr>
-            ) : filteredCustomers.length === 0 ? (
+            ) : pagedCustomers.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   No customer records found matching filter.
                 </td>
               </tr>
             ) : (
-              filteredCustomers.map((c) => (
-                <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.9rem', background: '#FFFFFF' }}>
+              pagedCustomers.map((c) => (
+                <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#000000', fontSize: '0.9rem', background: '#FFFFFF' }}>
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <div style={{ fontWeight: 700, color: '#0284C7', fontFamily: 'monospace' }}>{c.customerCode}</div>
-                    <div style={{ color: '#0F172A', fontWeight: 600 }}>{c.customerName}</div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Building2 size={12} /> {c.companyName}
+                    <div style={{ color: '#000000', fontWeight: 600 }}>{c.customerName}</div>
+                    <div style={{ color: '#000000', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Building2 size={12} style={{ color: '#000000' }} /> {c.companyName}
                     </div>
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#334155' }}>{c.contactPerson}</div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                      <span><Phone size={12} /> {c.contactPhone}</span>
+                    <div style={{ fontWeight: 600, color: '#000000' }}>{c.contactPerson}</div>
+                    <div style={{ color: '#000000', fontSize: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                      <span><Phone size={12} style={{ color: '#0284C7' }} /> {c.contactPhone}</span>
                     </div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem' }}>TIN: {c.tin}</div>
+                    <div style={{ color: '#000000', fontSize: '0.75rem' }}>TIN: {c.tin}</div>
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
@@ -238,7 +265,7 @@ export function CustomerManagementView() {
                     <div style={{ fontWeight: 700, color: '#059669', fontSize: '0.95rem' }}>
                       ₱{c.creditLimitPHP.toLocaleString()}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#000000' }}>
                       Terms: {c.termsDays} Days
                     </div>
                   </td>
@@ -259,20 +286,20 @@ export function CustomerManagementView() {
                           c.status === 'Active'
                             ? '#ECFDF5'
                             : c.status === 'Blocked'
-                            ? '#FEF2F2'
-                            : '#FFFBEB',
+                              ? '#FEF2F2'
+                              : '#FFFBEB',
                         color:
                           c.status === 'Active'
                             ? '#047857'
                             : c.status === 'Blocked'
-                            ? '#DC2626'
-                            : '#D97706',
+                              ? '#DC2626'
+                              : '#D97706',
                         borderColor:
                           c.status === 'Active'
                             ? '#A7F3D0'
                             : c.status === 'Blocked'
-                            ? '#FECACA'
-                            : '#FDE68A',
+                              ? '#FECACA'
+                              : '#FDE68A',
                       }}
                     >
                       <option value="Active">● Active Account</option>
@@ -297,37 +324,125 @@ export function CustomerManagementView() {
             )}
           </tbody>
         </table>
+
+        {/* TABLE PAGINATION BAR */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.75rem 1rem',
+          borderTop: '1px solid #E2E8F0',
+          background: '#F8FAFC',
+          fontSize: '0.82rem',
+          color: '#000000',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}>
+          <div>
+            Showing {totalItems === 0 ? 0 : (safePage - 1) * pageSize + 1} to {Math.min(safePage * pageSize, totalItems)} of {totalItems} customers
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginRight: '0.5rem' }}>
+              <span style={{ color: '#000000' }}>Rows:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                style={{
+                  padding: '0.2rem 0.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '0.8rem',
+                  background: '#FFFFFF',
+                  color: '#000000',
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage(1)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage <= 1 ? 0.5 : 1 }}
+              title="First page"
+            >
+              <ChevronsLeft size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage <= 1 ? 0.5 : 1 }}
+              title="Previous page"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span style={{ fontWeight: 600, color: '#000000', padding: '0 0.35rem' }}>
+              Page {safePage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage >= totalPages ? 0.5 : 1 }}
+              title="Next page"
+            >
+              <ChevronRight size={14} />
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              style={{ padding: '0.3rem 0.5rem', opacity: safePage >= totalPages ? 0.5 : 1 }}
+              title="Last page"
+            >
+              <ChevronsRight size={14} />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* OWNER EDIT CREDIT LIMIT MODAL */}
       {editingCreditCustomer && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '90%', maxWidth: '480px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.75rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#38BDF8' }}>
-                  <CreditCard size={18} /> Adjust Customer Credit Limit
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#000000' }}>
+                  <CreditCard size={18} style={{ color: '#0284C7' }} /> Adjust Customer Credit Limit
                 </h3>
-                <p style={{ margin: '0.2rem 0 0 0', color: '#94A3B8', fontSize: '0.8rem' }}>
+                <p style={{ margin: '0.2rem 0 0 0', color: '#000000', fontSize: '0.8rem' }}>
                   Owner authorization required for corporate credit facility modification.
                 </p>
               </div>
-              <button onClick={() => setEditingCreditCustomer(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+              <button onClick={() => setEditingCreditCustomer(null)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '0.25rem' }}>
                 <X size={20} />
               </button>
             </div>
 
-            <div style={{ background: '#0F172A', padding: '0.85rem', borderRadius: '6px', border: '1px solid #334155', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
-              <div style={{ color: '#F8FAFC', fontWeight: 600 }}>{editingCreditCustomer.customerName}</div>
-              <div style={{ color: '#64748B', fontSize: '0.75rem' }}>Code: {editingCreditCustomer.customerCode} • Branch: {editingCreditCustomer.assignedBranch}</div>
-              <div style={{ marginTop: '0.35rem', color: '#94A3B8' }}>
-                Current Limit: <strong style={{ color: '#34D399' }}>₱{editingCreditCustomer.creditLimitPHP.toLocaleString()}</strong>
+            <div style={{ background: '#FFFFFF', padding: '0.85rem', borderRadius: '6px', border: '1px solid #CBD5E1', marginBottom: '1.25rem', fontSize: '0.85rem', color: '#000000', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ color: '#000000', fontWeight: 600 }}>{editingCreditCustomer.customerName}</div>
+              <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '0.15rem' }}>Code: {editingCreditCustomer.customerCode} • Branch: {editingCreditCustomer.assignedBranch}</div>
+              <div style={{ marginTop: '0.35rem', color: '#000000' }}>
+                Current Limit: <strong style={{ color: '#059669' }}>₱{editingCreditCustomer.creditLimitPHP.toLocaleString()}</strong>
               </div>
             </div>
 
             <form onSubmit={handleSaveCreditLimit}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   New Approved Credit Limit (PHP) <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
@@ -336,12 +451,12 @@ export function CustomerManagementView() {
                   required
                   value={newCreditLimitPHP}
                   onChange={(e) => setNewCreditLimitPHP(e.target.value)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #0284C7', color: '#0F172A', padding: '0.6rem', borderRadius: '6px', fontSize: '1.05rem', fontWeight: 700, fontFamily: 'monospace' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #0284C7', color: '#000000', padding: '0.6rem', borderRadius: '6px', fontSize: '1.05rem', fontWeight: 700, fontFamily: 'monospace' }}
                 />
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   Executive Justification / Reason Note
                 </label>
                 <textarea
@@ -349,11 +464,11 @@ export function CustomerManagementView() {
                   value={creditJustification}
                   onChange={(e) => setCreditJustification(e.target.value)}
                   placeholder="e.g. Board resolution approval, audited financial statement verification..."
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
                 <button type="button" className="btn-secondary" onClick={() => setEditingCreditCustomer(null)}>
                   Cancel
                 </button>
@@ -368,18 +483,18 @@ export function CustomerManagementView() {
 
       {/* REGISTER CUSTOMER MODAL */}
       {isAddModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '92%', maxWidth: '540px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>Register Corporate Customer Account</h3>
-              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '92%', maxWidth: '540px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#000000' }}>Register Corporate Customer Account</h3>
+              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer', padding: '0.25rem' }}>
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleRegisterCustomer}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>
                   Customer / Trade Name <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
@@ -388,84 +503,84 @@ export function CustomerManagementView() {
                   placeholder="e.g. Mindanao Steelworks Corp."
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Registered Company Name</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Registered Company Name</label>
                   <input
                     type="text"
                     placeholder="e.g. Mindanao Steelworks Corporation"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Tax TIN Number</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Tax TIN Number</label>
                   <input
                     type="text"
                     placeholder="241-890-112-000"
                     value={tin}
                     onChange={(e) => setTin(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Business Address</label>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Business Address</label>
                 <input
                   type="text"
                   placeholder="e.g. Panacan Industrial Estate, Davao City"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Primary Contact Person</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Primary Contact Person</label>
                   <input
                     type="text"
                     placeholder="e.g. Engr. Roberto Dela Cruz"
                     value={contactPerson}
                     onChange={(e) => setContactPerson(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Contact Phone</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Contact Phone</label>
                   <input
                     type="text"
                     placeholder="+63 82 291 4000"
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Initial Credit Limit (PHP)</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Initial Credit Limit (PHP)</label>
                   <input
                     type="number"
                     step="10000"
                     value={creditLimit}
                     onChange={(e) => setCreditLimit(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Assigned Branch</label>
+                  <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem', fontWeight: 600 }}>Assigned Branch</label>
                   <select
                     value={branch}
                     onChange={(e) => setBranch(e.target.value as BranchLocation)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem', borderRadius: '6px' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                   >
                     <option value={BranchLocation.Davao}>Davao Branch</option>
                     <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
@@ -475,7 +590,7 @@ export function CustomerManagementView() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
                 <button type="button" className="btn-secondary" onClick={() => setIsAddModalOpen(false)}>
                   Cancel
                 </button>

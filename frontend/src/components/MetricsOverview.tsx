@@ -24,7 +24,7 @@ export function MetricsOverview({ stats }: MetricsOverviewProps) {
           <div className="metric-label">Gross Tonnage</div>
           <div className="metric-value">
             {stats?.totalTonnage ?? 0}{' '}
-            <span style={{ fontSize: '1rem', color: '#64748B', fontWeight: 500 }}>Tons</span>
+            <span style={{ fontSize: '1rem', color: '#000000', fontWeight: 500 }}>Tons</span>
           </div>
           <div className="metric-sub">Total physical steel mass</div>
         </div>

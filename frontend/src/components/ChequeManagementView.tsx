@@ -84,10 +84,10 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h2 style={{ color: '#F8FAFC', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+          <h2 style={{ color: '#000000', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
             Post-Dated Cheque (PDC) Management
           </h2>
-          <p style={{ color: '#94A3B8', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#000000', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
             Track customer cheque maturities, record bank deposits, and handle returned/bounced cheques.
           </p>
         </div>
@@ -119,7 +119,7 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
 
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="search-box" style={{ maxWidth: '320px' }}>
-            <Search size={18} style={{ color: '#94A3B8' }} />
+            <Search size={18} style={{ color: '#000000' }} />
             <input
               type="text"
               placeholder="Search cheque #, customer, bank, or invoice..."
@@ -146,10 +146,10 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
       </div>
 
       {/* CHEQUE REGISTER TABLE WITH WHITE BACKGROUND & WHITE BUTTONS */}
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+            <tr style={{ background: '#F8FAFC', color: '#000000', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
               <th style={{ padding: '0.75rem 1rem' }}>Cheque # & Bank</th>
               <th style={{ padding: '0.75rem 1rem' }}>Customer & Invoice</th>
               <th style={{ padding: '0.75rem 1rem' }}>Amount (PHP)</th>
@@ -161,43 +161,43 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   Loading Cheque Register...
                 </td>
               </tr>
             ) : filteredCheques.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   No cheques found matching current filter.
                 </td>
               </tr>
             ) : (
               filteredCheques.map((c) => (
-                <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.9rem', background: '#FFFFFF' }}>
+                <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#000000', fontSize: '0.9rem', background: '#FFFFFF' }}>
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <div style={{ fontWeight: 700, color: '#000000', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <CreditCard size={14} style={{ color: '#0284C7' }} /> {c.chequeNumber}
                     </div>
-                    <div style={{ color: '#475569', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <div style={{ color: '#000000', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       <Building size={12} /> {c.bankName}
                     </div>
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#0F172A' }}>{c.customerName}</div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem' }}>Ref Invoice: {c.invoiceNumber}</div>
+                    <div style={{ fontWeight: 600, color: '#000000' }}>{c.customerName}</div>
+                    <div style={{ color: '#000000', fontSize: '0.75rem' }}>Ref Invoice: {c.invoiceNumber}</div>
                   </td>
 
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#0F172A' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#000000' }}>
                     ₱{c.amountPHP.toLocaleString()}
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#334155' }}>
-                      <Clock size={14} style={{ color: '#64748B' }} /> {c.maturityDate}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#000000' }}>
+                      <Clock size={14} style={{ color: '#000000' }} /> {c.maturityDate}
                     </div>
                     {c.depositedDate && (
-                      <div style={{ fontSize: '0.7rem', color: '#64748B' }}>Deposited: {c.depositedDate}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#000000' }}>Deposited: {c.depositedDate}</div>
                     )}
                   </td>
 
@@ -278,26 +278,26 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
               <h3 style={{ margin: 0, color: '#EF4444', fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <ShieldAlert size={20} /> Flag Bounced Cheque
               </h3>
-              <button onClick={() => setSelectedChequeForBounce(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+              <button onClick={() => setSelectedChequeForBounce(null)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
-            <div style={{ background: '#0F172A', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem', border: '1px solid #334155', fontSize: '0.85rem' }}>
-              <div style={{ color: '#F8FAFC', fontWeight: 600 }}>Cheque #{selectedChequeForBounce.chequeNumber}</div>
-              <div style={{ color: '#94A3B8' }}>Customer: {selectedChequeForBounce.customerName}</div>
-              <div style={{ color: '#38BDF8', fontWeight: 700 }}>Amount: ₱{selectedChequeForBounce.amountPHP.toLocaleString()}</div>
+            <div style={{ background: '#FFFFFF', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem', border: '1px solid #CBD5E1', fontSize: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ color: '#000000', fontWeight: 600 }}>Cheque #{selectedChequeForBounce.chequeNumber}</div>
+              <div style={{ color: '#000000' }}>Customer: {selectedChequeForBounce.customerName}</div>
+              <div style={{ color: '#0284C7', fontWeight: 700 }}>Amount: ₱{selectedChequeForBounce.amountPHP.toLocaleString()}</div>
             </div>
 
             <form onSubmit={handleConfirmBounce}>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
                   Bank Return Reason
                 </label>
                 <select
                   value={bounceReason}
                   onChange={(e) => setBounceReason(e.target.value)}
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#F8FAFC', padding: '0.6rem', borderRadius: '6px' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px' }}
                 >
                   <option value="Drawn Against Insufficient Funds (DAIF)">Drawn Against Insufficient Funds (DAIF)</option>
                   <option value="Drawn Against Uncollected Deposits (DAUD)">Drawn Against Uncollected Deposits (DAUD)</option>
@@ -327,17 +327,17 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
       {/* BOUNCED CHEQUE FORMAL LEGAL NOTICE MODAL */}
       {noticeCheque && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', width: '90%', maxWidth: '650px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', width: '90%', maxWidth: '650px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ borderBottom: '2px solid #0F172A', paddingBottom: '0.75rem', marginBottom: '1.25rem', textAlign: 'center' }}>
               <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, textTransform: 'uppercase', color: '#991B1B' }}>
                 NOTICE OF DISHONORED CHEQUE
               </h2>
-              <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.8rem', color: '#000000', marginTop: '0.25rem' }}>
                 Under BP 22 (Bouncing Checks Law) / Civil Code Obligations
               </div>
             </div>
 
-            <div style={{ fontSize: '0.85rem', lineHeight: '1.5', color: '#1E293B', marginBottom: '1.5rem' }}>
+            <div style={{ fontSize: '0.85rem', lineHeight: '1.5', color: '#000000', marginBottom: '1.5rem' }}>
               <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
               <p><strong>To:</strong> {noticeCheque.customerName}</p>
               <p>
@@ -355,11 +355,11 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
 
             {/* FORMAL LETTER FOOTER AND SIGNATURES */}
             <div style={{ borderTop: '1px solid #CBD5E1', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '1.5rem' }}>
-              <div style={{ fontSize: '0.8rem', color: '#64748B' }}>
+              <div style={{ fontSize: '0.8rem', color: '#000000' }}>
                 <div>Authorized Signatory & Legal Officer:</div>
                 <div style={{ borderBottom: '1px solid #0F172A', width: '220px', height: '2rem', marginTop: '0.5rem' }}></div>
-                <div style={{ fontWeight: 700, marginTop: '0.35rem', color: '#0F172A' }}>SteelTrack Credit & Legal Recovery Counsel</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Regional Commercial Branch Office</div>
+                <div style={{ fontWeight: 700, marginTop: '0.35rem', color: '#000000' }}>SteelTrack Credit & Legal Recovery Counsel</div>
+                <div style={{ fontSize: '0.75rem', color: '#000000' }}>Regional Commercial Branch Office</div>
               </div>
 
               {/* ACTION BUTTONS (EXCLUDED WHEN PRINTING) */}
@@ -368,7 +368,7 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
                   type="button"
                   className="btn-secondary no-print"
                   onClick={() => setNoticeCheque(null)}
-                  style={{ background: '#E2E8F0', border: 'none', color: '#0F172A', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                  style={{ background: '#E2E8F0', border: 'none', color: '#000000', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
                 >
                   Close
                 </button>

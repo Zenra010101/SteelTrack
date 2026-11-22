@@ -251,10 +251,10 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h2 style={{ color: '#F8FAFC', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+          <h2 style={{ color: '#000000', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
             Goods Return Slips (GRS) & Product Exchanges
           </h2>
-          <p style={{ color: '#94A3B8', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#000000', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
             Process customer returns with automated Heat Number lookup, defect inspection, and owner approvals.
           </p>
         </div>
@@ -267,7 +267,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
       {/* FILTER BAR */}
       <div className="controls-bar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', gap: '1rem' }}>
         <div className="search-box" style={{ maxWidth: '400px', flex: 1 }}>
-          <Search size={18} style={{ color: '#94A3B8' }} />
+          <Search size={18} style={{ color: '#000000' }} />
           <input
             type="text"
             placeholder="Search GRS #, invoice #, customer, or heat #..."
@@ -277,7 +277,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
         </div>
 
         <div className="filter-group" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94A3B8', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#000000', fontSize: '0.85rem' }}>
             <Filter size={16} /> Status:
           </div>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
@@ -306,10 +306,10 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
       </div>
 
       {/* TABLE WITH WHITE BACKGROUND */}
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #94A3B8', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', border: '1px solid #94A3B8', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #94A3B8' }}>
+            <tr style={{ background: '#F8FAFC', color: '#000000', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #94A3B8' }}>
               <th style={{ padding: '0.75rem 1rem' }}>GRS # & Invoice</th>
               <th style={{ padding: '0.75rem 1rem' }}>Customer & Branch</th>
               <th style={{ padding: '0.75rem 1rem' }}>Returned Items</th>
@@ -321,27 +321,27 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   Loading Return Slips...
                 </td>
               </tr>
             ) : filteredReturns.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   No Goods Return Slips found matching filter.
                 </td>
               </tr>
             ) : (
               filteredReturns.map((r) => (
-                <tr key={r.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.9rem', background: '#FFFFFF' }}>
+                <tr key={r.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#000000', fontSize: '0.9rem', background: '#FFFFFF' }}>
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <div style={{ fontWeight: 700, color: '#0284C7' }}>{r.grsNumber}</div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem' }}>Ref Invoice: {r.invoiceNumber}</div>
+                    <div style={{ color: '#000000', fontSize: '0.75rem' }}>Ref Invoice: {r.invoiceNumber}</div>
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#0F172A' }}>{r.customerName}</div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <div style={{ fontWeight: 600, color: '#000000' }}>{r.customerName}</div>
+                    <div style={{ color: '#000000', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       <Building2 size={12} /> Branch: {r.branch}
                     </div>
                   </td>
@@ -349,12 +349,12 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                   <td style={{ padding: '0.85rem 1rem' }}>
                     {r.items.map((i) => (
                       <div key={i.id} style={{ fontSize: '0.8rem', marginBottom: '0.2rem' }}>
-                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{i.heatNumber}</span> ({i.quantityReturnedTons} Tons - {i.reason.replace(/_/g, ' ')})
+                        <span style={{ fontWeight: 600, color: '#000000' }}>{i.heatNumber}</span> ({i.quantityReturnedTons} Tons - {i.reason.replace(/_/g, ' ')})
                       </div>
                     ))}
                   </td>
 
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#0F172A' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#000000' }}>
                     ₱{r.totalReturnAmount.toLocaleString()}
                   </td>
 
@@ -439,17 +439,17 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                   <RotateCcw size={22} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, color: '#0F172A', fontSize: '1.25rem', fontWeight: 700 }}>
+                  <h3 style={{ margin: 0, color: '#000000', fontSize: '1.25rem', fontWeight: 700 }}>
                     Issue Goods Return Slip (GRS)
                   </h3>
-                  <p style={{ margin: '0.2rem 0 0 0', color: '#64748B', fontSize: '0.82rem' }}>
+                  <p style={{ margin: '0.2rem 0 0 0', color: '#000000', fontSize: '0.82rem' }}>
                     Lookup Heat Number to auto-fill purchase history, customer specs, and maximum return limits.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', color: '#64748B', cursor: 'pointer', padding: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', color: '#000000', cursor: 'pointer', padding: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <X size={18} />
               </button>
@@ -481,7 +481,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                     placeholder="Enter or paste Heat # (e.g. HT-2026-8841)..."
                     value={heatNumber}
                     onChange={(e) => handleHeatLookup(e.target.value)}
-                    style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem 0.85rem', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}
+                    style={{ flex: 1, background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem 0.85rem', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, fontFamily: 'JetBrains Mono, monospace' }}
                   />
                   <button
                     type="button"
@@ -495,7 +495,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
 
                 {/* QUICK SUGGESTION CHIPS */}
                 <div style={{ marginTop: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                  <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Quick sample heats:</span>
+                  <span style={{ color: '#000000', fontSize: '0.75rem' }}>Quick sample heats:</span>
                   {COMMON_HEAT_SUGGESTIONS.map((h) => (
                     <button
                       key={h}
@@ -518,7 +518,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
               {/* AUTO-FILLED SALES METADATA */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1.15rem' }}>
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>
+                  <label style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>
                     Original Sales Invoice # <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -527,11 +527,11 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                     value={invoiceNumber}
                     onChange={(e) => setInvoiceNumber(e.target.value)}
                     placeholder="e.g. INV-2026-0041"
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.875rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.875rem' }}
                   />
                 </div>
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>
+                  <label style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>
                     Customer / Buyer Name <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -540,58 +540,58 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="e.g. Mindanao Steelworks Corp."
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.875rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem 0.8rem', borderRadius: '8px', fontSize: '0.875rem' }}
                   />
                 </div>
               </div>
 
               {/* PRODUCT SPECIFICATIONS & PRICE BASIS */}
               <div style={{ background: '#F8FAFC', padding: '1.1rem', borderRadius: '10px', border: '1px solid #E2E8F0', marginBottom: '1.15rem' }}>
-                <div style={{ color: '#0F172A', fontSize: '0.82rem', fontWeight: 700, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ color: '#000000', fontSize: '0.82rem', fontWeight: 700, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Product Specifications & Price Basis
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   <div>
-                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Steel Grade</label>
+                    <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Steel Grade</label>
                     <input
                       type="text"
                       required
                       value={grade}
                       onChange={(e) => setGrade(e.target.value)}
                       placeholder="e.g. A36_Structural"
-                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                     />
                   </div>
                   <div>
-                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Batch Dimensions</label>
+                    <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Batch Dimensions</label>
                     <input
                       type="text"
                       required
                       value={dimensions}
                       onChange={(e) => setDimensions(e.target.value)}
                       placeholder="e.g. 12mm x 1500mm x 6000mm"
-                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   <div>
-                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Original Purchased Qty</label>
+                    <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Original Purchased Qty</label>
                     <div style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0284C7', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600 }}>
                       {purchasedQtyTons > 0 ? `${purchasedQtyTons} Tons (${purchasedQtyPieces ?? 'N/A'} Pieces)` : 'Not specified'}
                     </div>
                   </div>
                   <div>
-                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Unit Price (PHP / Ton)</label>
+                    <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Unit Price (PHP / Ton)</label>
                     <input
                       type="number"
                       required
                       value={unitPrice}
                       onChange={(e) => setUnitPrice(e.target.value)}
                       placeholder="85000"
-                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
@@ -600,7 +600,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                      <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600 }}>
+                      <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600 }}>
                         Return Quantity (Tons) <span style={{ color: '#EF4444' }}>*</span>
                       </label>
                       {maxReturnableTons > 0 && (
@@ -618,7 +618,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                         width: '100%',
                         background: '#FFFFFF',
                         border: qtyError ? '1px solid #EF4444' : '1px solid #CBD5E1',
-                        color: '#0F172A',
+                        color: '#000000',
                         padding: '0.55rem 0.75rem',
                         borderRadius: '6px',
                         fontSize: '0.9rem',
@@ -634,7 +634,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                   </div>
 
                   <div>
-                    <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Calculated Total Credit</label>
+                    <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Calculated Total Credit</label>
                     <div style={{ width: '100%', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#059669', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
                       ₱{calculatedCreditTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
@@ -644,18 +644,18 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
 
               {/* REASON FOR RETURN & INSPECTION NOTES */}
               <div style={{ background: '#F8FAFC', padding: '1.1rem', borderRadius: '10px', border: '1px solid #E2E8F0', marginBottom: '1.25rem' }}>
-                <div style={{ color: '#0F172A', fontSize: '0.82rem', fontWeight: 700, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ color: '#000000', fontSize: '0.82rem', fontWeight: 700, marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Material Inspection & Return Justification
                 </div>
 
                 <div style={{ marginBottom: '0.75rem' }}>
-                  <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                  <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
                     Reason for Return
                   </label>
                   <select
                     value={reason}
                     onChange={(e) => setReason(e.target.value as ReturnReason)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                   >
                     <option value="Quality_Defect_Rust">Quality Defect / Surface Rust / Lamination</option>
                     <option value="Damaged_In_Transit">Damaged in Transit / Crushed Bundles</option>
@@ -666,7 +666,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                 </div>
 
                 <div style={{ marginBottom: '0.75rem' }}>
-                  <label style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                  <label style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
                     Inspection Notes & Quality Condition
                   </label>
                   <textarea
@@ -674,7 +674,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Detail physical inspection findings, defect photos reference, or receiver remarks..."
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem 0.75rem', borderRadius: '6px', fontSize: '0.85rem' }}
                   />
                 </div>
 
@@ -686,7 +686,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                     onChange={(e) => setRestockEligible(e.target.checked)}
                     style={{ accentColor: '#0284C7', cursor: 'pointer' }}
                   />
-                  <label htmlFor="restockChk" style={{ color: '#334155', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}>
+                  <label htmlFor="restockChk" style={{ color: '#000000', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500 }}>
                     Material is in reusable condition — Eligible for Yard Restock upon Approval
                   </label>
                 </div>
@@ -711,15 +711,15 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #FCA5A5', width: '90%', maxWidth: '480px', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, color: '#F8FAFC', fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <h3 style={{ margin: 0, color: '#000000', fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <Ban size={18} style={{ color: '#EF4444' }} /> Reject Return Slip #{rejectingSlip.grsNumber}
               </h3>
-              <button onClick={() => setRejectingSlip(null)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+              <button onClick={() => setRejectingSlip(null)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
 
-            <div style={{ background: '#0F172A', padding: '0.85rem', borderRadius: '6px', border: '1px solid #334155', marginBottom: '1rem', fontSize: '0.85rem' }}>
+            <div style={{ background: '#FFFFFF', padding: '0.85rem', borderRadius: '6px', border: '1px solid #CBD5E1', marginBottom: '1rem', fontSize: '0.85rem', color: '#000000', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div><strong>Customer:</strong> {rejectingSlip.customerName}</div>
               <div><strong>Ref Invoice:</strong> {rejectingSlip.invoiceNumber}</div>
               <div><strong>Return Value:</strong> ₱{rejectingSlip.totalReturnAmount.toLocaleString()}</div>
@@ -727,7 +727,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
 
             <form onSubmit={handleConfirmReject}>
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.85rem', marginBottom: '0.35rem', fontWeight: 600 }}>
                   Reason for Rejection <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <textarea
@@ -736,7 +736,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="Specify why the return request is denied (e.g. buyer alteration, elapsed warranty, non-compliant return)..."
-                  style={{ width: '100%', background: '#0F172A', border: '1px solid #475569', color: '#242222ff', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.6rem', borderRadius: '6px', fontSize: '0.85rem' }}
                 />
               </div>
 
@@ -756,19 +756,19 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
       {/* CREDIT NOTE PRINTABLE MODAL (EXCLUDING BUTTONS WHEN PRINTING) */}
       {creditNoteModalSlip && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', width: '90%', maxWidth: '700px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', width: '90%', maxWidth: '700px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #0F172A', paddingBottom: '1rem', marginBottom: '1.25rem' }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>STEELTRACK ENTERPRISE</h2>
-                <div style={{ fontSize: '0.85rem', color: '#475569' }}>Industrial Steel Logistics & Distribution</div>
-                <div style={{ fontSize: '0.85rem', color: '#475569' }}>Branch: {creditNoteModalSlip.branch} Operations</div>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>Industrial Steel Logistics & Distribution</div>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>Branch: {creditNoteModalSlip.branch} Operations</div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#0284C7' }}>OFFICIAL CREDIT NOTE</h3>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0F172A', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#000000', marginTop: '0.2rem' }}>
                   {creditNoteModalSlip.creditNoteNumber || `CN-${creditNoteModalSlip.grsNumber}`}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#475569' }}>
+                <div style={{ fontSize: '0.8rem', color: '#000000' }}>
                   Date: {creditNoteModalSlip.approvedAt ? new Date(creditNoteModalSlip.approvedAt).toLocaleDateString('en-PH') : new Date().toLocaleDateString('en-PH')}
                 </div>
               </div>
@@ -789,7 +789,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
 
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #94A3B8', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
               <thead>
-                <tr style={{ background: '#E2E8F0', color: '#334155' }}>
+                <tr style={{ background: '#E2E8F0', color: '#000000' }}>
                   <th style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'left' }}>Heat #</th>
                   <th style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'left' }}>Grade & Dimensions</th>
                   <th style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'center' }}>Tons</th>
@@ -816,15 +816,15 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
               Total Credit Allowed: ₱{creditNoteModalSlip.totalReturnAmount.toLocaleString()}
             </div>
 
-            <div style={{ borderTop: '1px solid #94A3B8', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', textAlign: 'center', fontSize: '0.8rem', color: '#64748B' }}>
+            <div style={{ borderTop: '1px solid #94A3B8', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', textAlign: 'center', fontSize: '0.8rem', color: '#000000' }}>
               <div>
                 <div style={{ borderBottom: '1px solid #0F172A', height: '2rem', marginBottom: '0.35rem' }}></div>
-                <div style={{ fontWeight: 700, color: '#0F172A' }}>{creditNoteModalSlip.approvedBy || 'Branch Controller'}</div>
+                <div style={{ fontWeight: 700, color: '#000000' }}>{creditNoteModalSlip.approvedBy || 'Branch Controller'}</div>
                 <div>Authorized Executive Signatory</div>
               </div>
               <div>
                 <div style={{ borderBottom: '1px solid #0F172A', height: '2rem', marginBottom: '0.35rem' }}></div>
-                <div style={{ fontWeight: 700, color: '#0F172A' }}>{creditNoteModalSlip.customerName}</div>
+                <div style={{ fontWeight: 700, color: '#000000' }}>{creditNoteModalSlip.customerName}</div>
                 <div>Customer Conforme / Acknowledged</div>
               </div>
             </div>
@@ -835,7 +835,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                 type="button"
                 className="btn-secondary no-print"
                 onClick={() => setCreditNoteModalSlip(null)}
-                style={{ background: '#E2E8F0', border: 'none', color: '#0F172A', padding: '0.55rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ background: '#E2E8F0', border: 'none', color: '#000000', padding: '0.55rem 1.25rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Close
               </button>

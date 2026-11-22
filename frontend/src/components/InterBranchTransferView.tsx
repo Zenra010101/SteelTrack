@@ -252,7 +252,7 @@ export function InterBranchTransferView({
     switch (status) {
       case 'Pending':
         return (
-          <span style={{ background: '#E2E8F0', color: '#475569', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+          <span style={{ background: '#E2E8F0', color: '#000000', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
             <Clock size={12} /> Pending Approval
           </span>
         );
@@ -282,7 +282,7 @@ export function InterBranchTransferView({
         );
       default:
         return (
-          <span style={{ background: '#F1F5F9', color: '#475569', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>
+          <span style={{ background: '#F1F5F9', color: '#000000', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>
             {status}
           </span>
         );
@@ -294,10 +294,10 @@ export function InterBranchTransferView({
       {/* HEADER BAR */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h2 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+          <h2 style={{ color: '#000000', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
             Inter-Branch Stock Transfer System
           </h2>
-          <p style={{ color: '#64748B', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
+          <p style={{ color: '#000000', fontSize: '0.9rem', margin: '0.25rem 0 0 0' }}>
             Coordinate and track logistics transfer routes across your enterprise's branches.
           </p>
         </div>
@@ -331,10 +331,10 @@ export function InterBranchTransferView({
       )}
 
       {/* TRANSFERS TABLE WITH WHITE BACKGROUND */}
-      <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#F8FAFC', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
+            <tr style={{ background: '#F8FAFC', color: '#000000', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD5E1' }}>
               <th style={{ padding: '0.75rem 1rem' }}>Transfer #</th>
               <th style={{ padding: '0.75rem 1rem' }}>Logistics Route</th>
               <th style={{ padding: '0.75rem 1rem' }}>Steel Batch & Spec</th>
@@ -347,19 +347,19 @@ export function InterBranchTransferView({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   Loading stock transfer manifests...
                 </td>
               </tr>
             ) : transfers.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
+                <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#000000' }}>
                   No active stock transfers found for this branch.
                 </td>
               </tr>
             ) : (
               transfers.map((tr) => (
-                <tr key={tr.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#0F172A', fontSize: '0.9rem', background: '#FFFFFF' }}>
+                <tr key={tr.id} style={{ borderBottom: '1px solid #E2E8F0', color: '#000000', fontSize: '0.9rem', background: '#FFFFFF' }}>
                   <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontWeight: 700, color: '#0284C7' }}>
                     {tr.transferNumber || (tr.id.length > 12 ? `${tr.id.slice(0, 8)}...` : tr.id)}
                   </td>
@@ -373,16 +373,16 @@ export function InterBranchTransferView({
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ fontWeight: 600, color: '#0F172A' }}>{tr.heatNumber}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{tr.grade}</div>
+                    <div style={{ fontWeight: 600, color: '#000000' }}>{tr.heatNumber}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#000000' }}>{tr.grade}</div>
                   </td>
 
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#0F172A' }}>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#000000' }}>
                     {tr.weightInTons} Tons
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ fontSize: '0.85rem', color: '#475569' }}>{tr.requestedBy}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#000000' }}>{tr.requestedBy}</div>
                     {tr.approvedBy && (
                       <div style={{ fontSize: '0.72rem', color: '#059669' }}>Approved by: {tr.approvedBy}</div>
                     )}
@@ -444,18 +444,18 @@ export function InterBranchTransferView({
       {/* MODERNIZED TRANSFER REQUEST MODAL */}
       {isModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#FFFFFF', color: '#0F172A', borderRadius: '12px', border: '1px solid #CBD5E1', width: '92%', maxWidth: '580px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '12px', border: '1px solid #CBD5E1', width: '92%', maxWidth: '580px', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             {/* MODAL HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Truck size={20} /> Request Inter-Branch Transfer
                 </h3>
-                <p style={{ margin: '0.2rem 0 0 0', color: '#475569', fontSize: '0.8rem' }}>
+                <p style={{ margin: '0.2rem 0 0 0', color: '#000000', fontSize: '0.8rem' }}>
                   Establish an authenticated dispatch manifest between regional facilities.
                 </p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer' }}>
+              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: '#000000', cursor: 'pointer' }}>
                 <X size={20} />
               </button>
             </div>
@@ -463,19 +463,19 @@ export function InterBranchTransferView({
             <form onSubmit={handleCreateTransfer}>
               {/* ROUTE CONFIGURATION CARD */}
               <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '8px', border: '1px solid #E2E8F0', marginBottom: '1rem' }}>
-                <div style={{ color: '#0F172A', fontSize: '0.82rem', fontWeight: 700, marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ color: '#000000', fontSize: '0.82rem', fontWeight: 700, marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Logistics Transfer Route
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0.5rem', alignItems: 'center' }}>
                   <div>
-                    <label style={{ color: '#475569', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>
+                    <label style={{ color: '#000000', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>
                       Origin Branch (Sending) <span style={{ color: '#DC2626' }}>*</span>
                     </label>
                     <select
                       value={sourceBranch}
                       onChange={(e) => handleSourceBranchChange(e.target.value as BranchLocation)}
-                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600 }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600 }}
                     >
                       {OFFICIAL_TRANSFER_BRANCHES.map((b) => (
                         <option key={b.code} value={b.code}>
@@ -495,13 +495,13 @@ export function InterBranchTransferView({
                   </button>
 
                   <div>
-                    <label style={{ color: '#475569', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>
+                    <label style={{ color: '#000000', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>
                       Destination Branch (Receiving) <span style={{ color: '#DC2626' }}>*</span>
                     </label>
                     <select
                       value={destinationBranch}
                       onChange={(e) => setDestinationBranch(e.target.value as BranchLocation)}
-                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600 }}
+                      style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600 }}
                     >
                       {OFFICIAL_TRANSFER_BRANCHES.map((b) => (
                         <option key={b.code} value={b.code}>
@@ -522,7 +522,7 @@ export function InterBranchTransferView({
               {/* PRODUCT SELECTION & SENDER BRANCH AVAILABILITY */}
               <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '8px', border: '1px solid #E2E8F0', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-                  <div style={{ color: '#0F172A', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ color: '#000000', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Material & Product Selection
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#0369A1', fontWeight: 600 }}>
@@ -531,7 +531,7 @@ export function InterBranchTransferView({
                 </div>
 
                 <div style={{ marginBottom: '0.75rem' }}>
-                  <label style={{ color: '#475569', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>
+                  <label style={{ color: '#000000', fontSize: '0.75rem', display: 'block', marginBottom: '0.25rem' }}>
                     Select Product from {branchLabelFor(sourceBranch)} Inventory <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <select
@@ -542,7 +542,7 @@ export function InterBranchTransferView({
                       const avail = Number(sel?.stockQuantity ?? sel?.currentStock ?? 1);
                       setTransferWeight(String(Math.min(5, Math.max(1, avail))));
                     }}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem' }}
                   >
                     {products.length === 0 ? (
                       <option value="">No products available at {branchLabelFor(sourceBranch)}</option>
@@ -562,15 +562,15 @@ export function InterBranchTransferView({
                 {activeProduct && (
                   <div style={{ background: '#FFFFFF', padding: '0.75rem 0.9rem', borderRadius: '6px', border: '1px solid #E2E8F0', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', fontSize: '0.78rem', marginBottom: '0.75rem' }}>
                     <div>
-                      <span style={{ color: '#475569' }}>SKU / Heat #: </span>
+                      <span style={{ color: '#000000' }}>SKU / Heat #: </span>
                       <strong style={{ color: '#0369A1' }}>{activeProduct.sku || '—'}</strong>
                     </div>
                     <div>
-                      <span style={{ color: '#475569' }}>Specs / Dimensions: </span>
-                      <strong style={{ color: '#0F172A' }}>{activeProduct.dimensions || activeProduct.size || 'Standard'}</strong>
+                      <span style={{ color: '#000000' }}>Specs / Dimensions: </span>
+                      <strong style={{ color: '#000000' }}>{activeProduct.dimensions || activeProduct.size || 'Standard'}</strong>
                     </div>
                     <div>
-                      <span style={{ color: '#475569' }}>Current Branch Stock: </span>
+                      <span style={{ color: '#000000' }}>Current Branch Stock: </span>
                       <strong style={{ color: (activeProduct.stockQuantity ?? activeProduct.currentStock ?? 0) > 0 ? '#059669' : '#DC2626' }}>
                         {activeProduct.stockQuantity ?? activeProduct.currentStock ?? 0} units
                       </strong>
@@ -582,7 +582,7 @@ export function InterBranchTransferView({
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', alignItems: 'flex-end' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                      <label style={{ color: '#475569', fontSize: '0.8rem' }}>
+                      <label style={{ color: '#000000', fontSize: '0.8rem' }}>
                         Transfer Weight / Quantity (Units/Tons) <span style={{ color: '#DC2626' }}>*</span>
                       </label>
                       {activeProduct && (
@@ -600,7 +600,7 @@ export function InterBranchTransferView({
                         width: '100%',
                         background: '#FFFFFF',
                         border: formError ? '1px solid #DC2626' : '1px solid #CBD5E1',
-                        color: '#0F172A',
+                        color: '#000000',
                         padding: '0.55rem',
                         borderRadius: '6px',
                         fontFamily: 'monospace',
@@ -630,7 +630,7 @@ export function InterBranchTransferView({
               {/* DYNAMIC MULTI-ITEM TRANSFER MANIFEST */}
               <div style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '8px', border: '1px solid #E2E8F0', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <div style={{ color: '#0F172A', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ color: '#000000', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Transfer Manifest List ({manifest.length} Product{manifest.length === 1 ? '' : 's'})
                   </div>
                   {manifest.length > 0 && (
@@ -641,14 +641,14 @@ export function InterBranchTransferView({
                 </div>
 
                 {manifest.length === 0 ? (
-                  <div style={{ padding: '1rem', textAlign: 'center', color: '#64748B', fontSize: '0.8rem', background: '#FFFFFF', borderRadius: 6, border: '1px dashed #CBD5E1' }}>
+                  <div style={{ padding: '1rem', textAlign: 'center', color: '#000000', fontSize: '0.8rem', background: '#FFFFFF', borderRadius: 6, border: '1px dashed #CBD5E1' }}>
                     No products added to manifest yet. Select a product above and click "<strong>+ Add to Transfer List</strong>" to build a multi-item dispatch request.
                   </div>
                 ) : (
                   <div style={{ overflowX: 'auto', background: '#FFFFFF', borderRadius: 6, border: '1px solid #E2E8F0' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
                       <thead>
-                        <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1', color: '#475569', textAlign: 'left' }}>
+                        <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1', color: '#000000', textAlign: 'left' }}>
                           <th style={{ padding: '0.5rem 0.6rem' }}>Product / SKU</th>
                           <th style={{ padding: '0.5rem 0.6rem' }}>Grade & Specs</th>
                           <th style={{ padding: '0.5rem 0.6rem', textAlign: 'center' }}>Sender Stock</th>
@@ -660,10 +660,10 @@ export function InterBranchTransferView({
                         {manifest.map((m) => (
                           <tr key={m.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                             <td style={{ padding: '0.5rem 0.6rem' }}>
-                              <strong style={{ color: '#0F172A' }}>{m.product.productName || m.product.sku}</strong>
-                              <div style={{ fontSize: '0.7rem', color: '#64748B' }}>{m.product.sku}</div>
+                              <strong style={{ color: '#000000' }}>{m.product.productName || m.product.sku}</strong>
+                              <div style={{ fontSize: '0.7rem', color: '#000000' }}>{m.product.sku}</div>
                             </td>
-                            <td style={{ padding: '0.5rem 0.6rem', color: '#475569' }}>
+                            <td style={{ padding: '0.5rem 0.6rem', color: '#000000' }}>
                               {m.product.grade?.replace(/_/g, ' ')} · {m.product.dimensions || 'Standard'}
                             </td>
                             <td style={{ padding: '0.5rem 0.6rem', textAlign: 'center' }}>
@@ -695,13 +695,13 @@ export function InterBranchTransferView({
               {/* URGENCY & PURPOSE */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                 <div>
-                  <label style={{ color: '#475569', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>
+                  <label style={{ color: '#000000', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>
                     Transfer Urgency Tier
                   </label>
                   <select
                     value={urgency}
                     onChange={(e) => setUrgency(e.target.value)}
-                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                    style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem' }}
                   >
                     <option value="Regular Rebalancing">Regular Rebalancing</option>
                     <option value="Urgent Customer Demand">Urgent Customer Demand</option>
@@ -712,7 +712,7 @@ export function InterBranchTransferView({
 
               {/* PURPOSE / REMARKS */}
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', color: '#475569', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                <label style={{ display: 'block', color: '#000000', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
                   Transfer Remarks / Trucking Waybill Notes
                 </label>
                 <textarea
@@ -720,7 +720,7 @@ export function InterBranchTransferView({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Carrier / plate number, receiving dock notes, or order requisition ref..."
-                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#0F172A', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem' }}
+                  style={{ width: '100%', background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#000000', padding: '0.55rem', borderRadius: '6px', fontSize: '0.85rem' }}
                 />
               </div>
 
