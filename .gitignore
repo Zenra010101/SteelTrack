@@ -46,3 +46,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Markdown documentation (ignore all .md except README.md)
+*.md
+!README.md
+!readme.md
+!**/README.md
+!**/readme.md
+memory/
+
+
