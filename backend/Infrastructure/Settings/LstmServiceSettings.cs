@@ -9,7 +9,7 @@ public class LstmServiceSettings
     public const string SectionName = "Lstm";
 
     public string BaseUrl { get; set; } = "http://localhost:8000";
-    public string ApiKey { get; set; } = "dev-api-key-change-me";
+    public string ApiKey { get; set; } = "st_live_lstm_dAnBjPTeD6YZCoQdm5UX5RpZVDBqRSRLrctKzG8z-bQ";
     public int LookbackMonths { get; set; } = 24;
     public int HorizonMonths { get; set; } = 3;
     public string ModelVersion { get; set; } = "v0.2.0-csv-20261102T133101Z";

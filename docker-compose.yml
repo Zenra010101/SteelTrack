@@ -29,7 +29,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_dev_password_2026}@postgres:5432/${POSTGRES_DB:-SteelTrackDb}
       MODEL_DIR: /app/models
-      LSTM_API_KEY: ${LSTM_API_KEY:-dev-api-key-change-me}
+      LSTM_API_KEY: ${LSTM_API_KEY:-st_live_lstm_dAnBjPTeD6YZCoQdm5UX5RpZVDBqRSRLrctKzG8z-bQ}
       LSTM_LOOKBACK_MONTHS: ${LSTM_LOOKBACK_MONTHS:-24}
       LSTM_HORIZON_MONTHS: ${LSTM_HORIZON_MONTHS:-3}
       LSTM_MIN_HISTORY_MONTHS: ${LSTM_MIN_HISTORY_MONTHS:-2}
@@ -69,7 +69,7 @@ services:
       Jwt__Audience: SteelTrack
       Jwt__ExpirationHours: 12
       Lstm__BaseUrl: http://steeltrack-lstm:8000
-      Lstm__ApiKey: ${LSTM_API_KEY:-dev-api-key-change-me}
+      Lstm__ApiKey: ${LSTM_API_KEY:-st_live_lstm_dAnBjPTeD6YZCoQdm5UX5RpZVDBqRSRLrctKzG8z-bQ}
       Lstm__LookbackMonths: 24
       Lstm__HorizonMonths: 3
     ports:

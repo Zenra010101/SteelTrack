@@ -19,7 +19,7 @@ from ml.predictor import KerasPredictor
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("KerasLstmServer")
 
-API_KEY = os.getenv("LSTM_API_KEY", "dev-api-key-change-me")
+API_KEY = os.getenv("LSTM_API_KEY", "st_live_lstm_dAnBjPTeD6YZCoQdm5UX5RpZVDBqRSRLrctKzG8z-bQ")
 
 
 # --- Schemas ----------------------------------------------------------------
