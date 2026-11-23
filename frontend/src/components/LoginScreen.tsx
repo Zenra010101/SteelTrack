@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layers, User, KeyRound, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { Layers, Mail, KeyRound, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 import { UserRole, BranchLocation, type UserSession } from '../types/auth';
 
 interface LoginScreenProps {
@@ -21,7 +21,7 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
 
     const trimmedUser = username.trim();
     if (!trimmedUser) {
-      setErrorMessage('Please enter your work username or email.');
+      setErrorMessage('Please enter your work email.');
       return;
     }
 
@@ -171,16 +171,17 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
-              <label>Work Email / Username</label>
+              <label>Work Email</label>
               <div className="input-with-icon">
-                <User size={16} style={{ color: '#000000' }} />
+                <Mail size={16} style={{ color: '#000000' }} />
                 <input
-                  type="text"
+                  type="email"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. manager.davao@steeltrack.com"
-                  autoComplete="username"
+                  placeholder="e.g JuanDelaCruz@steeltrack.com"
+                  autoComplete="email"
                   required
+                  style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent' }}
                 />
               </div>
             </div>
@@ -196,6 +197,7 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
                   placeholder="Enter password"
                   autoComplete="current-password"
                   required
+                  style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent' }}
                 />
               </div>
             </div>

@@ -1884,13 +1884,17 @@ div[style*="position: fixed"] select:focus {
   box-shadow: var(--shadow-glow);
 }
 
-.input-with-icon input {
-  border: none;
-  background: transparent;
-  padding: 0;
+.input-with-icon input,
+.input-with-icon input:focus,
+.input-with-icon input:active,
+.input-with-icon input:focus-visible {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
   font-size: 0.875rem;
   color: var(--text-primary);
-  outline: none;
+  outline: none !important;
+  box-shadow: none !important;
   width: 100%;
 }
 
