@@ -2,7 +2,30 @@
 # Domain: steeltrackerp.com
 
 steeltrackerp.com, www.steeltrackerp.com {
-    reverse_proxy vite-preview:5173
+    # Proxy all backend API requests to the .NET API
+    handle /api/* {
+        reverse_proxy steeltrack-api:5000
+    }
+
+    # Proxy SignalR real-time websocket connections to the .NET API
+    handle /hubs/* {
+        reverse_proxy steeltrack-api:5000
+    }
+
+    # Health check endpoints
+    handle /health {
+        reverse_proxy steeltrack-api:5000
+    }
+
+    # Swagger documentation
+    handle /swagger* {
+        reverse_proxy steeltrack-api:5000
+    }
+
+    # Proxy all other requests to the Vite React frontend
+    handle {
+        reverse_proxy vite-preview:5173
+    }
 }
 
 api.steeltrackerp.com {
