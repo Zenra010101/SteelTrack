@@ -278,12 +278,16 @@ Save and exit (`Ctrl + O`, `Enter`, `Ctrl + X`).
 ## 9. Launch the Application on DigitalOcean
 
 ### Step 9.1: Configure Server Firewall
+Run these commands **right inside your server terminal** (this configures Ubuntu's built-in `ufw` firewall):
 ```bash
-ufw allow 22/tcp    # SSH
-ufw allow 80/tcp    # HTTP (Let's Encrypt validation)
-ufw allow 443/tcp   # HTTPS
-ufw enable -y
+ufw allow 22/tcp    # Keeps your SSH terminal connection open
+ufw allow 80/tcp    # Allows HTTP (for Let's Encrypt SSL certificate issuance)
+ufw allow 443/tcp   # Allows HTTPS (for secure web traffic)
+ufw --force enable  # Activates the firewall
 ```
+
+> [!NOTE]
+> You do **not** need to configure anything in the DigitalOcean web dashboard under "Firewalls". Running these 4 commands in your terminal sets up Ubuntu's built-in firewall directly on the server!
 
 ### Step 9.2: Build & Start All Containers
 In `/var/www/SteelTrack`, run:

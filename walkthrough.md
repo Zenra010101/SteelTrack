@@ -281,7 +281,7 @@ Allow HTTP, HTTPS, and SSH through the Ubuntu firewall:
 ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
-ufw enable -y
+ufw --force enable
 ```
 
 Build and launch the full stack in detached mode:

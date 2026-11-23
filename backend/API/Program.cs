@@ -171,12 +171,25 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
 
-// Configure CORS for Frontend Development
+// Configure CORS for Frontend Development and Production Domain
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000")
+        policy.WithOrigins(
+                  "http://localhost:5173",
+                  "http://127.0.0.1:5173",
+                  "http://localhost:3000",
+                  "http://127.0.0.1:3000",
+                  "https://steeltrackerp.com",
+                  "https://www.steeltrackerp.com",
+                  "http://steeltrackerp.com",
+                  "http://www.steeltrackerp.com"
+              )
+              .SetIsOriginAllowed(origin =>
+                  origin.EndsWith("steeltrackerp.com", StringComparison.OrdinalIgnoreCase) ||
+                  origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) ||
+                  origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase))
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
