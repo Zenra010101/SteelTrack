@@ -89,7 +89,7 @@ services:
     container_name: steeltrack-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://steeltrack-api:5000
+      VITE_API_URL: ${VITE_API_URL:-https://api.steeltrackerp.com}
     ports:
       - "5173:5173"
     depends_on:
@@ -97,9 +97,30 @@ services:
     networks:
       - steeltrack-net
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: steeltrack-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - vite-preview
+      - steeltrack-api
+    networks:
+      - steeltrack-net
+
 volumes:
   postgres_data:
   lstm_models:
+  caddy_data:
+  caddy_config:
 
 networks:
   steeltrack-net:

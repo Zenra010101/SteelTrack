@@ -1,0 +1,15 @@
+# SteelTrack Production Caddy Configuration
+# Domain: steeltrackerp.com
+
+steeltrackerp.com, www.steeltrackerp.com {
+    reverse_proxy vite-preview:5173
+}
+
+api.steeltrackerp.com {
+    reverse_proxy steeltrack-api:5000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up X-Forwarded-For {remote}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
