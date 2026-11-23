@@ -27,16 +27,16 @@
   </ItemGroup>
 
 
-  <!-- Include Frontend files in Visual Studio Solution Explorer -->
-  <ItemGroup>
+  <!-- Include Frontend files in Visual Studio Solution Explorer if present -->
+  <ItemGroup Condition="Exists('$(SpaRoot)')">
     <Content Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**;$(SpaRoot)dist\**">
       <Link>frontend\%(RecursiveDir)%(FileName)%(Extension)</Link>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 
-  <!-- Build & Bundle Frontend into wwwroot during publish -->
-  <Target Name="PublishFrontend" AfterTargets="ComputeFilesToPublish">
+  <!-- Build & Bundle Frontend into wwwroot during publish only if frontend directory exists and not explicitly disabled -->
+  <Target Name="PublishFrontend" AfterTargets="ComputeFilesToPublish" Condition="Exists('$(SpaRoot)') and '$(PublishFrontend)' != 'false'">
     <Message Importance="high" Text="Building frontend Vite production bundle for deployment..." />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" ContinueOnError="true" />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />

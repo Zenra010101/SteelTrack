@@ -13,7 +13,7 @@ RUN dotnet restore "API/SteelTrack.Api.csproj"
 # Copy full source and publish
 COPY . .
 WORKDIR "/src/API"
-RUN dotnet publish "SteelTrack.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "SteelTrack.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false /p:PublishFrontend=false
 
 # Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
