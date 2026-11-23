@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layers, Mail, KeyRound, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { Layers, Mail, KeyRound, ArrowRight, Sparkles, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { UserRole, BranchLocation, type UserSession } from '../types/auth';
 
 interface LoginScreenProps {
@@ -11,6 +11,7 @@ interface LoginScreenProps {
 export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [redirectNotice, setRedirectNotice] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -189,9 +190,9 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
             <div className="form-group">
               <label>Password</label>
               <div className="input-with-icon">
-                <KeyRound size={16} style={{ color: '#000000' }} />
+                <KeyRound size={16} style={{ color: '#000000', flexShrink: 0 }} />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
@@ -199,6 +200,25 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
                   required
                   style={{ border: 'none', outline: 'none', boxShadow: 'none', background: 'transparent' }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '0 4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#6B7280',
+                    outline: 'none',
+                  }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 
