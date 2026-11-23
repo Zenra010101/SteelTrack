@@ -27,7 +27,7 @@ services:
     container_name: steeltrack-lstm
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_dev_password_2026}@postgres:5432/${POSTGRES_DB:-SteelTrackDb}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_dev_password_2026}@postgres:5432/${POSTGRES_DB:-SteelTrackDb}}
       MODEL_DIR: /app/models
       LSTM_API_KEY: ${LSTM_API_KEY:-st_live_lstm_dAnBjPTeD6YZCoQdm5UX5RpZVDBqRSRLrctKzG8z-bQ}
       LSTM_LOOKBACK_MONTHS: ${LSTM_LOOKBACK_MONTHS:-24}
@@ -62,8 +62,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:5000
-      ConnectionStrings__DefaultConnection: Server=postgres;Port=5432;Database=${POSTGRES_DB:-SteelTrackDb};User Id=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres_dev_password_2026};Ssl Mode=Prefer;Trust Server Certificate=true;
-      ConnectionStrings__PostgreSQLConnection: Server=postgres;Port=5432;Database=${POSTGRES_DB:-SteelTrackDb};User Id=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres_dev_password_2026};Ssl Mode=Prefer;Trust Server Certificate=true;
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection:-Server=postgres;Port=5432;Database=${POSTGRES_DB:-SteelTrackDb};User Id=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres_dev_password_2026};Ssl Mode=Prefer;Trust Server Certificate=true;}
+      ConnectionStrings__PostgreSQLConnection: ${ConnectionStrings__PostgreSQLConnection:-Server=postgres;Port=5432;Database=${POSTGRES_DB:-SteelTrackDb};User Id=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres_dev_password_2026};Ssl Mode=Prefer;Trust Server Certificate=true;}
       Jwt__Secret: ${JWT_SECRET:-SteelTrack_Enterprise_Super_Secret_Key_2026_Secure_JWT_Key_XYZ123!}
       Jwt__Issuer: SteelTrack
       Jwt__Audience: SteelTrack
