@@ -26,6 +26,7 @@ import {
   lookupHeatNumberForReturn,
 } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
+import { formatPHP } from '../utils/currency';
 
 interface GoodsReturnViewProps {
   currentBranch?: BranchLocation;
@@ -355,7 +356,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#000000' }}>
-                    ₱{r.totalReturnAmount.toLocaleString()}
+                    {formatPHP(r.totalReturnAmount)}
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
@@ -722,7 +723,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
             <div style={{ background: '#FFFFFF', padding: '0.85rem', borderRadius: '6px', border: '1px solid #CBD5E1', marginBottom: '1rem', fontSize: '0.85rem', color: '#000000', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div><strong>Customer:</strong> {rejectingSlip.customerName}</div>
               <div><strong>Ref Invoice:</strong> {rejectingSlip.invoiceNumber}</div>
-              <div><strong>Return Value:</strong> ₱{rejectingSlip.totalReturnAmount.toLocaleString()}</div>
+              <div><strong>Return Value:</strong> {formatPHP(rejectingSlip.totalReturnAmount)}</div>
             </div>
 
             <form onSubmit={handleConfirmReject}>
@@ -803,9 +804,9 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
                     <td style={{ padding: '0.55rem', border: '1px solid #94A3B8', fontWeight: 600 }}>{i.heatNumber}</td>
                     <td style={{ padding: '0.55rem', border: '1px solid #94A3B8' }}>{i.grade} ({i.dimensions})</td>
                     <td style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'center' }}>{i.quantityReturnedTons}</td>
-                    <td style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'right' }}>₱{i.unitPricePerTonPHP.toLocaleString()}</td>
+                    <td style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'right' }}>{formatPHP(i.unitPricePerTonPHP)}</td>
                     <td style={{ padding: '0.55rem', border: '1px solid #94A3B8', textAlign: 'right', fontWeight: 700, color: '#059669' }}>
-                      ₱{i.subtotalPHP.toLocaleString()}
+                      {formatPHP(i.subtotalPHP)}
                     </td>
                   </tr>
                 ))}
@@ -813,7 +814,7 @@ export function GoodsReturnView({ currentBranch, currentUserName }: GoodsReturnV
             </table>
 
             <div style={{ textAlign: 'right', fontSize: '1.25rem', fontWeight: 800, color: '#059669', marginBottom: '1.5rem' }}>
-              Total Credit Allowed: ₱{creditNoteModalSlip.totalReturnAmount.toLocaleString()}
+              Total Credit Allowed: {formatPHP(creditNoteModalSlip.totalReturnAmount)}
             </div>
 
             <div style={{ borderTop: '1px solid #94A3B8', paddingTop: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', textAlign: 'center', fontSize: '0.8rem', color: '#000000' }}>

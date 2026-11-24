@@ -403,7 +403,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
             <DollarSign size={15} color="#0284C7" /> Catalog Inventory Value
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0284C7', marginTop: '0.35rem' }}>
-            ₱{totalAssetValuePHP.toLocaleString()}
+            {formatPHP(totalAssetValuePHP)}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: '0.2rem' }}>
             Total inventory asset cost basis

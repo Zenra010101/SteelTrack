@@ -13,6 +13,7 @@ import { BranchLocation } from '../types/auth';
 import type { SaleChequeItem, ChequeStatusType } from '../types/receivables';
 import { fetchCheques, updateChequeStatus } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
+import { formatPHP } from '../utils/currency';
 
 interface ChequeManagementViewProps {
   currentBranch?: BranchLocation;
@@ -137,7 +138,7 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
               c.bankName,
               c.customerName,
               c.invoiceNumber,
-              `₱${c.amountPHP.toLocaleString()}`,
+              formatPHP(c.amountPHP),
               new Date(c.maturityDate).toLocaleDateString(),
               c.status,
             ])}
@@ -189,7 +190,7 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#000000' }}>
-                    ₱{c.amountPHP.toLocaleString()}
+                    {formatPHP(c.amountPHP)}
                   </td>
 
                   <td style={{ padding: '0.85rem 1rem' }}>
@@ -286,7 +287,7 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
             <div style={{ background: '#FFFFFF', padding: '0.85rem', borderRadius: '6px', marginBottom: '1rem', border: '1px solid #CBD5E1', fontSize: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div style={{ color: '#000000', fontWeight: 600 }}>Cheque #{selectedChequeForBounce.chequeNumber}</div>
               <div style={{ color: '#000000' }}>Customer: {selectedChequeForBounce.customerName}</div>
-              <div style={{ color: '#0284C7', fontWeight: 700 }}>Amount: ₱{selectedChequeForBounce.amountPHP.toLocaleString()}</div>
+              <div style={{ color: '#0284C7', fontWeight: 700 }}>Amount: {formatPHP(selectedChequeForBounce.amountPHP)}</div>
             </div>
 
             <form onSubmit={handleConfirmBounce}>
@@ -343,7 +344,7 @@ export function ChequeManagementView({ currentBranch }: ChequeManagementViewProp
               <p>
                 Please be advised that your <strong>{noticeCheque.bankName}</strong> Cheque No.{' '}
                 <strong>{noticeCheque.chequeNumber}</strong> dated <strong>{noticeCheque.maturityDate}</strong> in the amount of{' '}
-                <strong>₱{noticeCheque.amountPHP.toLocaleString()}</strong> drawn in favor of SteelTrack Enterprise has been returned by our depository bank marked:
+                <strong>{formatPHP(noticeCheque.amountPHP)}</strong> drawn in favor of SteelTrack Enterprise has been returned by our depository bank marked:
               </p>
               <div style={{ background: '#FEF2F2', borderLeft: '4px solid #DC2626', padding: '0.75rem', fontWeight: 700, color: '#991B1B', margin: '1rem 0' }}>
                 "{noticeCheque.bounceReason || 'Drawn Against Insufficient Funds'}"

@@ -433,7 +433,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
         systemTotalPHP={totalSalesPHP}
         onClose={() => setIsEodModalOpen(false)}
         onSubmitVerification={({ actualCashPHP, variancePHP, notes }) => {
-          alert(`EOD Verification Submitted for ${branch} Counter!\nActual Cash: ₱${actualCashPHP.toLocaleString()}\nVariance: ₱${variancePHP.toLocaleString()}\nNotes: ${notes || 'None'}`);
+          alert(`EOD Verification Submitted for ${branch} Counter!\nActual Cash: ${formatPHP(actualCashPHP)}\nVariance: ${formatPHP(variancePHP)}\nNotes: ${notes || 'None'}`);
           setIsEodModalOpen(false);
         }}
       />

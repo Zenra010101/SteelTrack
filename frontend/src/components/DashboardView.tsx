@@ -729,7 +729,7 @@ export function DashboardView({
                       <div key={t.method} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
                         <span style={{ fontWeight: 600, color: '#000000' }}>{t.method} ({t.count}):</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontWeight: 700, color: '#000000' }}>₱{t.revenue.toLocaleString()}</span>
+                          <span style={{ fontWeight: 700, color: '#000000' }}>{formatPHP(t.revenue)}</span>
                           <span style={{ fontSize: '0.72rem', background: '#F1F5F9', color: '#000000', padding: '0.1rem 0.35rem', borderRadius: 4 }}>
                             {t.share.toFixed(1)}%
                           </span>

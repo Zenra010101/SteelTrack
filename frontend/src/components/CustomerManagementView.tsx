@@ -22,6 +22,7 @@ import {
   updateCustomerStatus,
 } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
+import { formatPHP } from '../utils/currency';
 
 export function CustomerManagementView() {
   const [customers, setCustomers] = useState<CustomerMaster[]>([]);
@@ -205,7 +206,7 @@ export function CustomerManagementView() {
               c.contactPerson,
               c.contactPhone,
               c.assignedBranch,
-              `₱${c.creditLimitPHP.toLocaleString()}`,
+              formatPHP(c.creditLimitPHP),
               c.status,
             ])}
           />
@@ -263,7 +264,7 @@ export function CustomerManagementView() {
 
                   <td style={{ padding: '0.85rem 1rem' }}>
                     <div style={{ fontWeight: 700, color: '#059669', fontSize: '0.95rem' }}>
-                      ₱{c.creditLimitPHP.toLocaleString()}
+                      {formatPHP(c.creditLimitPHP)}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#000000' }}>
                       Terms: {c.termsDays} Days
@@ -436,7 +437,7 @@ export function CustomerManagementView() {
               <div style={{ color: '#000000', fontWeight: 600 }}>{editingCreditCustomer.customerName}</div>
               <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '0.15rem' }}>Code: {editingCreditCustomer.customerCode} • Branch: {editingCreditCustomer.assignedBranch}</div>
               <div style={{ marginTop: '0.35rem', color: '#000000' }}>
-                Current Limit: <strong style={{ color: '#059669' }}>₱{editingCreditCustomer.creditLimitPHP.toLocaleString()}</strong>
+                Current Limit: <strong style={{ color: '#059669' }}>{formatPHP(editingCreditCustomer.creditLimitPHP)}</strong>
               </div>
             </div>
 

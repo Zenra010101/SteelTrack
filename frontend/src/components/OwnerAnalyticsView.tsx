@@ -4,6 +4,7 @@ import { BranchLocation } from '../types/auth';
 import { fetchInventory, fetchPosTransactions, fetchBranches, fetchDashboardMetrics } from '../services/api';
 import { isDateInTimeframe, type RevenueTimeframe } from './DashboardView';
 import { TableExportButtons } from './TableExportButtons';
+import { formatPHP } from '../utils/currency';
 
 export function OwnerAnalyticsView() {
   const [loading, setLoading] = useState(true);
@@ -168,7 +169,7 @@ export function OwnerAnalyticsView() {
         <div className="metric-card">
           <div>
             <div className="metric-label">Period Network Revenue ({timeframe})</div>
-            <div className="metric-value">₱{totalRevenue.toLocaleString()}</div>
+            <div className="metric-value">{formatPHP(totalRevenue)}</div>
             <div className="metric-sub">Live POS and commercial transaction settlement</div>
           </div>
           <div className="metric-icon-box green">
@@ -206,7 +207,7 @@ export function OwnerAnalyticsView() {
               `${b.tonnage.toFixed(1)} Tons`,
               `${b.percentage}%`,
               `${b.activeBatches} Batches`,
-              `₱${b.revenuePHP.toLocaleString()}`,
+              formatPHP(b.revenuePHP),
               b.salesCount,
             ])}
           />
@@ -239,7 +240,7 @@ export function OwnerAnalyticsView() {
                     </div>
                   </td>
                   <td>{branch.activeBatches} Batches</td>
-                  <td style={{ fontWeight: 600 }}>₱{branch.revenuePHP.toLocaleString()}</td>
+                  <td style={{ fontWeight: 600 }}>{formatPHP(branch.revenuePHP)}</td>
                   <td>{branch.salesCount}</td>
                   <td>
                     <span className="badge badge-success">Operational</span>
