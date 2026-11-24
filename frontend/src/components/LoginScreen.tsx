@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Layers, Mail, KeyRound, ArrowRight, Sparkles, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { UserRole, BranchLocation, type UserSession } from '../types/auth';
+import loginHeroImg from '../assets/login-hero.jpg';
 
 interface LoginScreenProps {
   onLogin: (session: UserSession) => void;
@@ -117,30 +118,38 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
   };
 
   return (
-    <div className="login-wrapper">
-      <div className="login-container single-card">
-        <div className="login-form-pane">
+    <div className="login-split-page">
+      {/* Left Column: Visual Steel Image */}
+      <div className="login-split-image-pane">
+        <img
+          src={loginHeroImg}
+          alt="SteelTrack Industrial Products"
+          className="login-split-hero-img"
+        />
+        <div className="login-split-image-overlay">
+          <div className="login-split-badge">
+            <Layers size={14} color="#FFFFFF" />
+            <span>Enterprise Terminal</span>
+          </div>
+          <h2 className="login-split-hero-heading">
+            Next-Generation Steel Supply & POS Infrastructure
+          </h2>
+          <p className="login-split-hero-subtext">
+            Real-time multi-branch inventory, AI-driven demand forecasting, and automated supply telemetry.
+          </p>
+        </div>
+      </div>
+
+      {/* Right Column: Clean Login Form */}
+      <div className="login-split-form-pane">
+        <div className="login-split-form-content">
           {/* Brand Header */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.75rem' }}>
-            <div
-              style={{
-                width: 52,
-                height: 52,
-                background: 'linear-gradient(135deg, #0284C7, #0369A1)',
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 16px -4px rgba(2, 132, 199, 0.35)',
-                marginBottom: '1rem',
-              }}
-            >
+          <div className="login-brand-header">
+            <div className="login-brand-icon">
               <Layers size={28} color="#FFFFFF" />
             </div>
-            <h1 style={{ fontSize: '1.65rem', fontWeight: 800, margin: 0, color: '#000000', letterSpacing: '-0.02em' }}>
-              SteelTrack
-            </h1>
-            <p style={{ fontSize: '0.85rem', color: '#000000', marginTop: '0.25rem' }}>
+            <h1 className="login-brand-title">SteelTrack</h1>
+            <p className="login-brand-subtitle">
               Enterprise Steel Supply & POS Infrastructure
             </p>
           </div>
@@ -152,8 +161,6 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
               <span>{redirectNotice}</span>
             </div>
           )}
-
-
 
           {errorMessage && (
             <div className="login-auto-notice" style={{ background: '#FEF2F2', borderColor: '#FECACA', color: '#B91C1C', marginBottom: '1rem' }}>
@@ -221,7 +228,7 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
             </button>
           </form>
 
-          <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.75rem', color: '#000000' }}>
+          <div style={{ marginTop: '1.75rem', textAlign: 'center', fontSize: '0.75rem', color: '#64748B' }}>
             SteelTrack v2.0 • Multi-Branch Role-Based Access Control
           </div>
         </div>
