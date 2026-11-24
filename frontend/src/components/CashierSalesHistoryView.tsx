@@ -223,26 +223,26 @@ export function CashierSalesHistoryView({
             rows={filteredTransactions.map((tx) =>
               effectiveBranch === 'All'
                 ? [
-                    tx.invoiceNumber,
-                    tx.branch || 'Davao',
-                    new Date(tx.createdAt).toLocaleString(),
-                    tx.customerName,
-                    tx.items?.length || 1,
-                    `${tx.totalTonnage.toFixed(2)} Tons`,
-                    tx.paymentMethod,
-                    formatPHP(tx.taxPHP || 0),
-                    formatPHP(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0),
-                  ]
+                  tx.invoiceNumber,
+                  tx.branch || 'Davao',
+                  new Date(tx.createdAt).toLocaleString(),
+                  tx.customerName,
+                  tx.items?.length || 1,
+                  `${tx.totalTonnage.toFixed(2)} Tons`,
+                  tx.paymentMethod,
+                  formatPHP(tx.taxPHP || 0),
+                  formatPHP(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0),
+                ]
                 : [
-                    tx.invoiceNumber,
-                    new Date(tx.createdAt).toLocaleString(),
-                    tx.customerName,
-                    tx.items?.length || 1,
-                    `${tx.totalTonnage.toFixed(2)} Tons`,
-                    tx.paymentMethod,
-                    formatPHP(tx.taxPHP || 0),
-                    formatPHP(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0),
-                  ]
+                  tx.invoiceNumber,
+                  new Date(tx.createdAt).toLocaleString(),
+                  tx.customerName,
+                  tx.items?.length || 1,
+                  `${tx.totalTonnage.toFixed(2)} Tons`,
+                  tx.paymentMethod,
+                  formatPHP(tx.taxPHP || 0),
+                  formatPHP(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0),
+                ]
             )}
           />
         </div>
