@@ -145,13 +145,6 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
             </p>
           </div>
 
-          <div className="login-heading" style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Sign In to Terminal</h2>
-            <p style={{ fontSize: '0.8rem', color: '#000000', marginTop: '0.25rem' }}>
-              Enter your authorized credentials to access your branch workspace
-            </p>
-          </div>
-
           {/* Feedback & Notices */}
           {redirectNotice && (
             <div className="login-auto-notice" style={{ background: '#ECFDF5', borderColor: '#A7F3D0', color: '#065F46', marginBottom: '1rem' }}>
