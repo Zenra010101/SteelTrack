@@ -524,6 +524,19 @@ public class SaleService : ISaleService
 
         var sales = await _saleRepository.GetSalesAsync(fromUtc, toUtc, filterUserId, cancellationToken);
 
+        var isExecutiveOwner = string.Equals(role, RoleNames.Owner, StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+        if (!isExecutiveOwner)
+        {
+            var currentUser = await _context.Users.Include(u => u.Branch).AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            if (currentUser?.Branch != null)
+            {
+                branch = currentUser.Branch.Name;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(branch) && !string.Equals(branch, "All", StringComparison.OrdinalIgnoreCase))
         {
             var cleanBranch = branch.Trim().ToLower();

@@ -431,7 +431,12 @@ export function App() {
       case 'pos':
         return `Point of Sale (POS) Terminal — ${userSession.branch} Branch`;
       case 'sales-history':
-        return `Sales History & Receipt Journal — ${userSession.branch} Branch`;
+        if (userSession.role === UserRole.Owner) {
+          return selectedBranch === 'All'
+            ? 'Sales History & Receipt Journal — All Regional Branches'
+            : `Sales History & Receipt Journal — ${selectedBranch} Branch`;
+        }
+        return `Sales History & Receipt Journal — ${userSession.branch || 'Branch'} Branch`;
       case 'analytics':
         return 'Cross-Branch Financial & Inventory Analytics';
       case 'approvals':
@@ -483,11 +488,14 @@ export function App() {
             />
           )}
 
-          {/* TAB: SALES HISTORY (CASHIER ONLY) */}
+          {/* TAB: SALES HISTORY (OWNER, BRANCH MANAGER, CASHIER) */}
           {activeTab === 'sales-history' && (
             <CashierSalesHistoryView
-              branch={userSession.branch || BranchLocation.Davao}
+              branch={userSession.role === UserRole.Owner ? (selectedBranch as any) : (userSession.branch || BranchLocation.Davao)}
               cashierName={userSession.name}
+              userRole={userSession.role}
+              selectedBranch={selectedBranch}
+              onSelectBranch={handleSelectBranch}
             />
           )}
 

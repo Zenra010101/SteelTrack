@@ -166,6 +166,15 @@ export function Sidebar({
             </button>
 
             <button
+              className={`sidebar-nav-item ${activeTab === 'sales-history' ? 'active' : ''}`}
+              onClick={() => onSelectTab('sales-history')}
+              title="Enterprise Sales History & Receipts"
+            >
+              <Receipt size={18} />
+              {!isCollapsed && <span>Sales History</span>}
+            </button>
+
+            <button
               className={`sidebar-nav-item ${activeTab === 'suppliers' ? 'active' : ''}`}
               onClick={() => onSelectTab('suppliers')}
               title="Suppliers & Certifications"
@@ -275,6 +284,15 @@ export function Sidebar({
             >
               <CreditCard size={18} />
               {!isCollapsed && <span>Cheques & PDC</span>}
+            </button>
+
+            <button
+              className={`sidebar-nav-item ${activeTab === 'sales-history' ? 'active' : ''}`}
+              onClick={() => onSelectTab('sales-history')}
+              title={`${userSession.branch} Branch Sales History`}
+            >
+              <Receipt size={18} />
+              {!isCollapsed && <span>Sales History</span>}
             </button>
 
             <button

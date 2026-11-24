@@ -805,10 +805,17 @@ export async function fetchPosTransactions(branch?: BranchLocation | 'All' | str
           ? s.items.reduce((acc: number, it: any) => acc + (Number(it.weightInTons || it.quantity || 1)), 0)
           : Number(s.totalTonnage || 1.0);
 
+        const rawBranch = s.branch || (branch && branch !== 'All' ? branch : undefined) || 'Davao';
+        let txBranch: BranchLocation = BranchLocation.Davao;
+        if (/cebu/i.test(rawBranch)) txBranch = BranchLocation.Cebu;
+        else if (/mandaue/i.test(rawBranch)) txBranch = BranchLocation.Mandaue;
+        else if (/cagayan/i.test(rawBranch)) txBranch = BranchLocation.Cagayan;
+        else if (/davao/i.test(rawBranch)) txBranch = BranchLocation.Davao;
+
         return {
           id: s.id,
           invoiceNumber: s.saleNumber || `INV-${s.id?.slice(0, 8)}`,
-          branch: ((s.branch || (branch && branch !== 'All' ? branch : undefined) || BranchLocation.Davao) as BranchLocation),
+          branch: txBranch,
           cashierName: s.cashierName || s.userName || 'Cashier Terminal',
           customerName: s.customerName || 'Walk-in Client',
           customerTin: s.customerTin,

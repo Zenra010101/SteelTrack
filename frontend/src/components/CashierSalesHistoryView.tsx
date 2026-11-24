@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Receipt, Printer, Search, Calculator, Download } from 'lucide-react';
-import { BranchLocation } from '../types/auth';
+import { BranchLocation, UserRole } from '../types/auth';
 import type { PosTransaction } from '../types/pos';
 import { fetchPosTransactions } from '../services/api';
 import { SalesReportVerificationModal } from './SalesReportVerificationModal';
@@ -9,11 +9,39 @@ import { printReceiptPdf } from '../utils/tableExport';
 import { formatPHP } from '../utils/currency';
 
 interface CashierSalesHistoryViewProps {
-  branch: BranchLocation;
+  branch?: BranchLocation | 'All';
   cashierName: string;
+  userRole?: UserRole;
+  selectedBranch?: string;
+  onSelectBranch?: (branch: string) => void;
 }
 
-export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHistoryViewProps) {
+export function CashierSalesHistoryView({
+  branch = BranchLocation.Davao,
+  cashierName,
+  userRole = UserRole.Cashier,
+  selectedBranch,
+  onSelectBranch,
+}: CashierSalesHistoryViewProps) {
+  const isOwner = userRole === UserRole.Owner;
+  const isCashier = userRole === UserRole.Cashier;
+  const isBranchManager = userRole === UserRole.BranchManager;
+
+  // For Owner: can switch between 'All' and each individual branch.
+  // For Branch Manager / Cashier: strictly scoped to their own branch.
+  const [localOwnerBranch, setLocalOwnerBranch] = useState<string>(selectedBranch || 'All');
+
+  const effectiveBranch = isOwner
+    ? (selectedBranch !== undefined ? selectedBranch : localOwnerBranch)
+    : (branch || BranchLocation.Davao);
+
+  const handleBranchChange = (newBranch: string) => {
+    setLocalOwnerBranch(newBranch);
+    if (onSelectBranch) {
+      onSelectBranch(newBranch);
+    }
+  };
+
   const [transactions, setTransactions] = useState<PosTransaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -24,14 +52,14 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const txList = await fetchPosTransactions(branch);
+      const txList = await fetchPosTransactions(effectiveBranch === 'All' ? undefined : effectiveBranch);
       setTransactions(txList);
     } catch (err) {
       console.error('Failed loading sales history:', err);
     } finally {
       setLoading(false);
     }
-  }, [branch]);
+  }, [effectiveBranch]);
 
   useEffect(() => {
     loadData();
@@ -42,21 +70,26 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
     return transactions.filter((tx) => {
       const matchesSearch =
         tx.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tx.customerName.toLowerCase().includes(searchQuery.toLowerCase());
+        tx.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (tx.branch && tx.branch.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesPayment = paymentFilter === 'All' || tx.paymentMethod === paymentFilter;
-      return matchesSearch && matchesPayment;
+      const matchesBranch =
+        effectiveBranch === 'All' ||
+        !tx.branch ||
+        tx.branch.toLowerCase().includes(effectiveBranch.toLowerCase()) ||
+        effectiveBranch.toLowerCase().includes(tx.branch.toLowerCase());
+      return matchesSearch && matchesPayment && matchesBranch;
     });
-  }, [transactions, searchQuery, paymentFilter]);
+  }, [transactions, searchQuery, paymentFilter, effectiveBranch]);
 
-  // Aggregate Metrics
+  // Aggregate Metrics calculated over active filtered scope
   const totalSalesPHP = useMemo(() => {
-    return transactions.reduce((acc, tx) => acc + (tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0), 0);
-  }, [transactions]);
+    return filteredTransactions.reduce((acc, tx) => acc + (tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0), 0);
+  }, [filteredTransactions]);
 
   const totalTonnageSold = useMemo(() => {
-    return transactions.reduce((acc, tx) => acc + tx.totalTonnage, 0);
-  }, [transactions]);
-
+    return filteredTransactions.reduce((acc, tx) => acc + tx.totalTonnage, 0);
+  }, [filteredTransactions]);
 
   return (
     <div className="pos-container" style={{ padding: '0 0.5rem' }}>
@@ -68,17 +101,27 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
           </div>
           <div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
-              {branch} Branch Sales History & Receipt Journal
+              {isOwner
+                ? (effectiveBranch === 'All' ? 'Enterprise Sales History & BIR Receipt Journal' : `${effectiveBranch} Branch Sales History & Receipt Journal`)
+                : `${effectiveBranch} Branch Sales History & Receipt Journal`}
             </h3>
             <div style={{ fontSize: '0.82rem', color: '#000000', marginTop: '0.2rem' }}>
-              Cashier: <strong>{cashierName}</strong> • Real-time counter sales telemetry
+              {isOwner ? (
+                <>Executive Scope: <strong>{effectiveBranch === 'All' ? 'All 4 Regional Branches' : `${effectiveBranch} Facility`}</strong> • Multi-branch revenue audit & telemetry</>
+              ) : isBranchManager ? (
+                <>Branch Facility: <strong>{effectiveBranch} Branch</strong> • Regional sales ledger & receipts journal</>
+              ) : (
+                <>Cashier: <strong>{cashierName}</strong> • Real-time counter sales telemetry</>
+              )}
             </div>
           </div>
         </div>
 
         <div className="pos-shift-metrics">
           <div className="pos-mini-stat">
-            <span className="label">Total Shift Sales</span>
+            <span className="label">
+              {isOwner ? 'Total Gross Sales' : isBranchManager ? 'Branch Gross Sales' : 'Total Shift Sales'}
+            </span>
             <span className="val green">{formatPHP(totalSalesPHP)}</span>
           </div>
 
@@ -89,32 +132,59 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
 
           <div className="pos-mini-stat">
             <span className="label">Receipts Recorded</span>
-            <span className="val">{transactions.length}</span>
+            <span className="val">{filteredTransactions.length}</span>
           </div>
 
-          <button
-            className="btn-primary"
-            onClick={() => setIsEodModalOpen(true)}
-            title="Perform End-of-Day Drawer Reconciliation"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.55rem 1rem' }}
-          >
-            <Calculator size={16} /> EOD Balancing
-          </button>
+          {isCashier && (
+            <button
+              className="btn-primary"
+              onClick={() => setIsEodModalOpen(true)}
+              title="Perform End-of-Day Drawer Reconciliation"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.55rem 1rem' }}
+            >
+              <Calculator size={16} /> EOD Balancing
+            </button>
+          )}
         </div>
       </div>
 
       {/* Filter and Search Bar */}
       <div className="controls-bar" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: '280px' }}>
-          <div className="pos-search-bar" style={{ flex: 1 }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flex: 1, minWidth: '280px', flexWrap: 'wrap' }}>
+          <div className="pos-search-bar" style={{ flex: 1, minWidth: '200px' }}>
             <Search size={16} style={{ color: '#000000' }} />
             <input
               type="text"
+              placeholder="Search invoice #, customer name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: '100%' }}
             />
           </div>
+
+          {/* Owner Multi-Branch Filter Selector */}
+          {isOwner && (
+            <select
+              value={effectiveBranch}
+              onChange={(e) => handleBranchChange(e.target.value)}
+              style={{
+                padding: '0.45rem 0.85rem',
+                borderRadius: '6px',
+                border: '1px solid #CBD5E1',
+                fontSize: '0.85rem',
+                background: 'white',
+                color: '#000000',
+                fontWeight: 600,
+              }}
+              title="Filter sales by branch facility"
+            >
+              <option value="All">All Branches (Global)</option>
+              <option value={BranchLocation.Davao}>Davao Branch</option>
+              <option value={BranchLocation.Cagayan}>Cagayan Branch</option>
+              <option value={BranchLocation.Cebu}>Cebu Branch</option>
+              <option value={BranchLocation.Mandaue}>Mandaue Branch</option>
+            </select>
+          )}
 
           <select
             value={paymentFilter}
@@ -143,19 +213,37 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
             Showing <strong>{filteredTransactions.length}</strong> of {transactions.length} receipts
           </div>
           <TableExportButtons
-            filename={`${branch}_Sales_History`}
-            title={`${branch} Branch Sales History & Receipt Journal`}
-            headers={['Invoice #', 'Date & Time', 'Customer Name', 'Items Count', 'Total Tonnage', 'Payment Method', 'VAT (12%)', 'Total Amount (PHP)']}
-            rows={filteredTransactions.map((tx) => [
-              tx.invoiceNumber,
-              new Date(tx.createdAt).toLocaleString(),
-              tx.customerName,
-              tx.items?.length || 1,
-              `${tx.totalTonnage.toFixed(2)} Tons`,
-              tx.paymentMethod,
-              formatPHP(tx.taxPHP || 0),
-              formatPHP(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0),
-            ])}
+            filename={`${effectiveBranch === 'All' ? 'Enterprise' : effectiveBranch}_Sales_History`}
+            title={`${effectiveBranch === 'All' ? 'Enterprise Regional' : effectiveBranch} Branch Sales History & Receipt Journal`}
+            headers={
+              effectiveBranch === 'All'
+                ? ['Invoice #', 'Branch', 'Date & Time', 'Customer Name', 'Items Count', 'Total Tonnage', 'Payment Method', 'VAT (12%)', 'Total Amount (PHP)']
+                : ['Invoice #', 'Date & Time', 'Customer Name', 'Items Count', 'Total Tonnage', 'Payment Method', 'VAT (12%)', 'Total Amount (PHP)']
+            }
+            rows={filteredTransactions.map((tx) =>
+              effectiveBranch === 'All'
+                ? [
+                    tx.invoiceNumber,
+                    tx.branch || 'Davao',
+                    new Date(tx.createdAt).toLocaleString(),
+                    tx.customerName,
+                    tx.items?.length || 1,
+                    `${tx.totalTonnage.toFixed(2)} Tons`,
+                    tx.paymentMethod,
+                    formatPHP(tx.taxPHP || 0),
+                    formatPHP(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0),
+                  ]
+                : [
+                    tx.invoiceNumber,
+                    new Date(tx.createdAt).toLocaleString(),
+                    tx.customerName,
+                    tx.items?.length || 1,
+                    `${tx.totalTonnage.toFixed(2)} Tons`,
+                    tx.paymentMethod,
+                    formatPHP(tx.taxPHP || 0),
+                    formatPHP(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0),
+                  ]
+            )}
           />
         </div>
       </div>
@@ -166,6 +254,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
           <thead>
             <tr>
               <th>Invoice #</th>
+              {effectiveBranch === 'All' && <th>Branch</th>}
               <th>Time</th>
               <th>Customer</th>
               <th>Items Sold</th>
@@ -179,14 +268,14 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: '#000000' }}>
+                <td colSpan={effectiveBranch === 'All' ? 10 : 9} style={{ textAlign: 'center', padding: '2rem', color: '#000000' }}>
                   Loading sales journal...
                 </td>
               </tr>
             ) : filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', color: '#000000', padding: '2.5rem' }}>
-                  No transaction records found matching your query for {branch} Branch.
+                <td colSpan={effectiveBranch === 'All' ? 10 : 9} style={{ textAlign: 'center', color: '#000000', padding: '2.5rem' }}>
+                  No transaction records found matching your query {effectiveBranch === 'All' ? 'across all branches' : `for ${effectiveBranch} Branch`}.
                 </td>
               </tr>
             ) : (
@@ -195,6 +284,13 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: 700, color: '#0284C7' }}>
                     {tx.invoiceNumber}
                   </td>
+                  {effectiveBranch === 'All' && (
+                    <td>
+                      <span className="badge badge-branch" style={{ fontWeight: 600 }}>
+                        {tx.branch || 'Davao'}
+                      </span>
+                    </td>
+                  )}
                   <td style={{ color: '#000000', fontSize: '0.85rem' }}>
                     {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </td>
@@ -261,13 +357,13 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
                 STEELTRACK PHILIPPINES
               </div>
               <div style={{ fontSize: '0.8rem', color: '#000000', marginTop: 2 }}>
-                {branch} Commercial Retail Hub
+                {activeReceipt.branch || effectiveBranch || 'Main'} Commercial Retail Hub
               </div>
               <div style={{ fontSize: '0.75rem', color: '#000000' }}>
                 TIN: 004-982-120-000 • VAT Registered
               </div>
               <div style={{ fontSize: '0.75rem', color: '#000000' }}>
-                Industrial Highway, {branch} City
+                Industrial Highway, {activeReceipt.branch || effectiveBranch || 'Main'} City
               </div>
               <div
                 style={{
@@ -286,8 +382,9 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
 
             <div className="receipt-meta" style={{ fontSize: '0.8rem', color: '#000000', lineHeight: 1.45, marginBottom: '0.75rem' }}>
               <div><strong>Invoice #:</strong> {activeReceipt.invoiceNumber}</div>
+              <div><strong>Branch:</strong> {activeReceipt.branch || effectiveBranch || 'Main'}</div>
               <div><strong>Date:</strong> {new Date(activeReceipt.createdAt).toLocaleString()}</div>
-              <div><strong>Cashier:</strong> {cashierName}</div>
+              <div><strong>Cashier:</strong> {activeReceipt.cashierName || cashierName}</div>
               <div><strong>Customer:</strong> {activeReceipt.customerName || 'Walk-in Client'}</div>
               {activeReceipt.customerTin && <div><strong>TIN:</strong> {activeReceipt.customerTin}</div>}
             </div>
@@ -425,18 +522,20 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
         </div>
       )}
 
-      {/* END-OF-DAY BALANCING MODAL */}
-      <SalesReportVerificationModal
-        isOpen={isEodModalOpen}
-        branch={branch}
-        cashierName={cashierName}
-        systemTotalPHP={totalSalesPHP}
-        onClose={() => setIsEodModalOpen(false)}
-        onSubmitVerification={({ actualCashPHP, variancePHP, notes }) => {
-          alert(`EOD Verification Submitted for ${branch} Counter!\nActual Cash: ${formatPHP(actualCashPHP)}\nVariance: ${formatPHP(variancePHP)}\nNotes: ${notes || 'None'}`);
-          setIsEodModalOpen(false);
-        }}
-      />
+      {/* END-OF-DAY BALANCING MODAL - STRICTLY CASHIER ONLY */}
+      {isCashier && (
+        <SalesReportVerificationModal
+          isOpen={isEodModalOpen}
+          branch={(effectiveBranch === 'All' ? BranchLocation.Davao : effectiveBranch) as BranchLocation}
+          cashierName={cashierName}
+          systemTotalPHP={totalSalesPHP}
+          onClose={() => setIsEodModalOpen(false)}
+          onSubmitVerification={({ actualCashPHP, variancePHP, notes }) => {
+            alert(`EOD Verification Submitted for ${effectiveBranch} Counter!\nActual Cash: ${formatPHP(actualCashPHP)}\nVariance: ${formatPHP(variancePHP)}\nNotes: ${notes || 'None'}`);
+            setIsEodModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
