@@ -26,6 +26,7 @@ import {
   type CategoryItem,
 } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
+import { formatPHP } from '../utils/currency';
 
 interface ProductsManagementViewProps {
   userSession?: UserSession;
@@ -226,7 +227,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
             <div class="meta-row"><span class="label">Category:</span><span class="value">${p.categoryName || 'General Steel'}</span></div>
             <div class="meta-row"><span class="label">Grade:</span><span class="value">${p.grade?.replace(/_/g, ' ') || 'SS304'}</span></div>
             <div class="meta-row"><span class="label">Specs / Size:</span><span class="value">${p.size || 'Standard'} ${p.thickness ? `(${p.thickness})` : ''}</span></div>
-            <div class="meta-row"><span class="label">Unit Price:</span><span class="value">PHP ${p.unitPrice.toLocaleString()} / ${p.unitOfMeasure}</span></div>
+            <div class="meta-row"><span class="label">Unit Price:</span><span class="value">${formatPHP(p.unitPrice)} / ${p.unitOfMeasure}</span></div>
             <div class="meta-row"><span class="label">Barcode No:</span><span class="value">${barcodeVal}</span></div>
           </div>
           <div class="barcode-box">
@@ -353,8 +354,8 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
               p.categoryName || 'General',
               p.grade || 'Standard',
               p.size || p.thickness || p.length || 'Standard',
-              `₱${p.unitPrice.toLocaleString()}`,
-              `₱${p.costPrice.toLocaleString()}`,
+              formatPHP(p.unitPrice),
+              formatPHP(p.costPrice),
               p.stockQuantity,
               p.reorderLevel,
               p.isActive ? 'Active' : 'Inactive',
@@ -1042,7 +1043,7 @@ export function ProductsManagementView({ userSession: _userSession }: ProductsMa
               <div><strong style={{ color: '#000000' }}>Category:</strong> {barcodeProduct.categoryName || 'General Steel'}</div>
               <div><strong style={{ color: '#000000' }}>Grade:</strong> {barcodeProduct.grade?.replace(/_/g, ' ')}</div>
               <div><strong style={{ color: '#000000' }}>Dimensions:</strong> {barcodeProduct.size} {barcodeProduct.thickness ? `(${barcodeProduct.thickness})` : ''}</div>
-              <div><strong style={{ color: '#000000' }}>Unit Price:</strong> <span style={{ color: '#0284C7', fontWeight: 700 }}>₱{barcodeProduct.unitPrice.toLocaleString()} / {barcodeProduct.unitOfMeasure}</span></div>
+              <div><strong style={{ color: '#000000' }}>Unit Price:</strong> <span style={{ color: '#0284C7', fontWeight: 700 }}>{formatPHP(barcodeProduct.unitPrice)} / {barcodeProduct.unitOfMeasure}</span></div>
               <div style={{ marginTop: '0.35rem', paddingTop: '0.35rem', borderTop: '1px solid #CBD5E1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <strong style={{ color: '#000000' }}>Barcode:</strong>
                 <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#000000', background: '#E2E8F0', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>

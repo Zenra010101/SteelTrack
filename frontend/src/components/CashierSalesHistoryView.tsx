@@ -6,6 +6,7 @@ import { fetchPosTransactions } from '../services/api';
 import { SalesReportVerificationModal } from './SalesReportVerificationModal';
 import { TableExportButtons } from './TableExportButtons';
 import { printReceiptPdf } from '../utils/tableExport';
+import { formatPHP } from '../utils/currency';
 
 interface CashierSalesHistoryViewProps {
   branch: BranchLocation;
@@ -78,7 +79,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
         <div className="pos-shift-metrics">
           <div className="pos-mini-stat">
             <span className="label">Total Shift Sales</span>
-            <span className="val green">₱{totalSalesPHP.toLocaleString()}</span>
+            <span className="val green">{formatPHP(totalSalesPHP)}</span>
           </div>
 
           <div className="pos-mini-stat">
@@ -144,7 +145,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
           <TableExportButtons
             filename={`${branch}_Sales_History`}
             title={`${branch} Branch Sales History & Receipt Journal`}
-            headers={['Invoice #', 'Date & Time', 'Customer Name', 'Items Count', 'Total Tonnage', 'Payment Method', 'Total Amount (PHP)']}
+            headers={['Invoice #', 'Date & Time', 'Customer Name', 'Items Count', 'Total Tonnage', 'Payment Method', 'VAT (12%)', 'Total Amount (PHP)']}
             rows={filteredTransactions.map((tx) => [
               tx.invoiceNumber,
               new Date(tx.createdAt).toLocaleString(),
@@ -152,7 +153,8 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
               tx.items?.length || 1,
               `${tx.totalTonnage.toFixed(2)} Tons`,
               tx.paymentMethod,
-              `₱${(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0).toLocaleString()}`,
+              formatPHP(tx.taxPHP || 0),
+              formatPHP(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0),
             ])}
           />
         </div>
@@ -169,6 +171,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
               <th>Items Sold</th>
               <th>Total Weight</th>
               <th>Payment Method</th>
+              <th>VAT (12%)</th>
               <th>Total (PHP)</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
@@ -176,13 +179,13 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#000000' }}>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: '#000000' }}>
                   Loading sales journal...
                 </td>
               </tr>
             ) : filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', color: '#000000', padding: '2.5rem' }}>
+                <td colSpan={9} style={{ textAlign: 'center', color: '#000000', padding: '2.5rem' }}>
                   No transaction records found matching your query for {branch} Branch.
                 </td>
               </tr>
@@ -201,8 +204,11 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
                   <td>
                     <span className="badge badge-available">{tx.paymentMethod}</span>
                   </td>
+                  <td style={{ fontWeight: 600, color: '#000000' }}>
+                    {formatPHP(tx.taxPHP || 0)}
+                  </td>
                   <td style={{ fontWeight: 700, fontFamily: 'Outfit, sans-serif', color: '#000000' }}>
-                    ₱{(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0).toLocaleString()}
+                    {formatPHP(tx.totalAmountPHP ?? tx.totalAmountUSD ?? 0)}
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <button
@@ -315,10 +321,10 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
                       </div>
                       <div className="item-calc" style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '0.72rem', color: '#000000' }}>
-                          {qty}T @ ₱{price.toLocaleString()}
+                          {qty}T @ {formatPHP(price)}
                         </div>
                         <div style={{ fontWeight: 700, color: '#000000' }}>
-                          ₱{lineTotal.toLocaleString()}
+                          {formatPHP(lineTotal)}
                         </div>
                       </div>
                     </div>
@@ -333,7 +339,21 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
 
             <div className="receipt-divider" style={{ borderTop: '1px dashed #CBD5E1', margin: '0.75rem 0' }} />
 
-            <div className="receipt-totals" style={{ fontSize: '0.82rem', lineHeight: 1.5 }}>
+            <div className="receipt-totals" style={{ fontSize: '0.82rem', lineHeight: 1.6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000' }}>
+                <span>Subtotal Amount:</span>
+                <span>{formatPHP(activeReceipt.subtotalPHP ?? activeReceipt.totalAmountPHP ?? 0)}</span>
+              </div>
+              {Number(activeReceipt.discountPHP || 0) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669' }}>
+                  <span>Volume Discount:</span>
+                  <span>-{formatPHP(activeReceipt.discountPHP)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000' }}>
+                <span>Value Added Tax (12% VAT):</span>
+                <span>{formatPHP(activeReceipt.taxPHP || 0)}</span>
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000' }}>
                 <span>Payment Method:</span>
                 <span style={{ fontWeight: 600, color: '#000000' }}>{activeReceipt.paymentMethod}</span>
@@ -352,7 +372,7 @@ export function CashierSalesHistoryView({ branch, cashierName }: CashierSalesHis
                 }}
               >
                 <span>TOTAL AMOUNT:</span>
-                <span>₱{(activeReceipt.totalAmountPHP ?? activeReceipt.totalAmountUSD ?? 0).toLocaleString()}</span>
+                <span>{formatPHP(activeReceipt.totalAmountPHP ?? activeReceipt.totalAmountUSD ?? 0)}</span>
               </div>
             </div>
 

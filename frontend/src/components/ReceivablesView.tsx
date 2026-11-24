@@ -27,6 +27,7 @@ import {
   recordReceivablePayment,
 } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
+import { formatPHP } from '../utils/currency';
 
 interface ReceivablesViewProps {
   currentBranch?: BranchLocation;
@@ -110,7 +111,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
 
     // Balance check warning
     if (selectedReceivable && parseFloat(sanitized) > selectedReceivable.totalOutstandingPHP) {
-      setInputWarning(`Warning: Amount exceeds outstanding balance of ₱${selectedReceivable.totalOutstandingPHP.toLocaleString()}`);
+      setInputWarning(`Warning: Amount exceeds outstanding balance of ${formatPHP(selectedReceivable.totalOutstandingPHP)}`);
     }
   };
 
@@ -180,7 +181,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
             <DollarSign size={18} style={{ color: '#0284C7' }} />
           </div>
           <div style={{ color: '#000000', fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem' }}>
-            ₱{stats?.totalReceivablesPHP.toLocaleString() ?? 0}
+            {formatPHP(stats?.totalReceivablesPHP ?? 0)}
           </div>
           <div style={{ color: '#0284C7', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 600 }}>
             Total Customer Ledger Debit
@@ -193,7 +194,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
             <CheckCircle2 size={18} style={{ color: '#059669' }} />
           </div>
           <div style={{ color: '#059669', fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem' }}>
-            ₱{stats?.totalCurrentPHP.toLocaleString() ?? 0}
+            {formatPHP(stats?.totalCurrentPHP ?? 0)}
           </div>
           <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '0.25rem' }}>
             Within Normal Terms
@@ -206,7 +207,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
             <AlertTriangle size={18} style={{ color: '#D97706' }} />
           </div>
           <div style={{ color: '#D97706', fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem' }}>
-            ₱{stats?.totalOverduePHP.toLocaleString() ?? 0}
+            {formatPHP(stats?.totalOverduePHP ?? 0)}
           </div>
           <div style={{ color: '#D97706', fontSize: '0.75rem', marginTop: '0.25rem', fontWeight: 600 }}>
             Requires Collection Action
@@ -219,7 +220,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
             <CreditCard size={18} style={{ color: '#7C3AED' }} />
           </div>
           <div style={{ color: '#7C3AED', fontSize: '1.5rem', fontWeight: 700, marginTop: '0.5rem' }}>
-            ₱{stats?.pendingPdcAmountPHP.toLocaleString() ?? 0}
+            {formatPHP(stats?.pendingPdcAmountPHP ?? 0)}
           </div>
           <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '0.25rem' }}>
             {stats?.pendingPdcCount ?? 0} Cheques Awaiting Maturity
@@ -261,12 +262,12 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               item.customerName,
               item.companyName,
               item.tin,
-              `₱${item.totalOutstandingPHP.toLocaleString()}`,
-              `₱${item.creditLimitPHP.toLocaleString()}`,
-              `₱${item.currentBalancePHP.toLocaleString()}`,
-              `₱${item.days30BalancePHP.toLocaleString()}`,
-              `₱${item.days60BalancePHP.toLocaleString()}`,
-              `₱${item.days90PlusBalancePHP.toLocaleString()}`,
+              formatPHP(item.totalOutstandingPHP),
+              formatPHP(item.creditLimitPHP),
+              formatPHP(item.currentBalancePHP),
+              formatPHP(item.days30BalancePHP),
+              formatPHP(item.days60BalancePHP),
+              formatPHP(item.days90PlusBalancePHP),
               item.status,
             ])}
           />
@@ -314,7 +315,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
 
                     <td style={{ padding: '0.85rem 1rem', width: '200px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                        <span style={{ color: '#000000', fontWeight: 600 }}>₱{item.totalOutstandingPHP.toLocaleString()}</span>
+                        <span style={{ color: '#000000', fontWeight: 600 }}>{formatPHP(item.totalOutstandingPHP)}</span>
                         <span style={{ color: '#000000' }}>/ ₱{(item.creditLimitPHP / 1000000).toFixed(1)}M</span>
                       </div>
                       <div style={{ width: '100%', height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
@@ -329,29 +330,29 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: '#000000' }}>
-                      ₱{item.totalOutstandingPHP.toLocaleString()}
+                      {formatPHP(item.totalOutstandingPHP)}
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', fontSize: '0.75rem' }}>
                         {item.currentBalancePHP > 0 && (
                           <span style={{ background: '#065F46', color: '#6EE7B7', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
-                            Curr: ₱{item.currentBalancePHP.toLocaleString()}
+                            Curr: {formatPHP(item.currentBalancePHP)}
                           </span>
                         )}
                         {item.days30BalancePHP > 0 && (
                           <span style={{ background: '#78350F', color: '#FDE68A', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
-                            30d: ₱{item.days30BalancePHP.toLocaleString()}
+                            30d: {formatPHP(item.days30BalancePHP)}
                           </span>
                         )}
                         {item.days60BalancePHP > 0 && (
                           <span style={{ background: '#991B1B', color: '#FCA5A5', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
-                            60d: ₱{item.days60BalancePHP.toLocaleString()}
+                            60d: {formatPHP(item.days60BalancePHP)}
                           </span>
                         )}
                         {item.days90PlusBalancePHP > 0 && (
                           <span style={{ background: '#450A0A', color: '#EF4444', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
-                            90d+: ₱{item.days90PlusBalancePHP.toLocaleString()}
+                            90d+: {formatPHP(item.days90PlusBalancePHP)}
                           </span>
                         )}
                       </div>
@@ -429,7 +430,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               <div style={{ color: '#000000', fontSize: '0.8rem' }}>{selectedReceivable.companyName}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.85rem' }}>
                 <span style={{ color: '#000000' }}>Total Outstanding:</span>
-                <span style={{ color: '#0284C7', fontWeight: 700 }}>₱{selectedReceivable.totalOutstandingPHP.toLocaleString()}</span>
+                <span style={{ color: '#0284C7', fontWeight: 700 }}>{formatPHP(selectedReceivable.totalOutstandingPHP)}</span>
               </div>
             </div>
 
@@ -598,9 +599,9 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                 <div style={{ fontSize: '0.85rem', color: '#000000' }}>TIN: {soaCustomer.tin}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.85rem', color: '#000000' }}>Credit Limit: ₱{soaCustomer.creditLimitPHP.toLocaleString()}</div>
+                <div style={{ fontSize: '0.85rem', color: '#000000' }}>Credit Limit: {formatPHP(soaCustomer.creditLimitPHP)}</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#DC2626', marginTop: '0.25rem' }}>
-                  Total Due: ₱{soaCustomer.totalOutstandingPHP.toLocaleString()}
+                  Total Due: {formatPHP(soaCustomer.totalOutstandingPHP)}
                 </div>
               </div>
             </div>
@@ -618,11 +619,11 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                 </thead>
                 <tbody>
                   <tr>
-                    <td style={{ padding: '0.5rem', border: '1px solid #CBD5E1' }}>₱{soaCustomer.currentBalancePHP.toLocaleString()}</td>
-                    <td style={{ padding: '0.5rem', border: '1px solid #CBD5E1' }}>₱{soaCustomer.days30BalancePHP.toLocaleString()}</td>
-                    <td style={{ padding: '0.5rem', border: '1px solid #CBD5E1' }}>₱{soaCustomer.days60BalancePHP.toLocaleString()}</td>
+                    <td style={{ padding: '0.5rem', border: '1px solid #CBD5E1' }}>{formatPHP(soaCustomer.currentBalancePHP)}</td>
+                    <td style={{ padding: '0.5rem', border: '1px solid #CBD5E1' }}>{formatPHP(soaCustomer.days30BalancePHP)}</td>
+                    <td style={{ padding: '0.5rem', border: '1px solid #CBD5E1' }}>{formatPHP(soaCustomer.days60BalancePHP)}</td>
                     <td style={{ padding: '0.5rem', border: '1px solid #CBD5E1', color: '#DC2626', fontWeight: 700 }}>
-                      ₱{soaCustomer.days90PlusBalancePHP.toLocaleString()}
+                      {formatPHP(soaCustomer.days90PlusBalancePHP)}
                     </td>
                   </tr>
                 </tbody>
@@ -695,10 +696,10 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#000000', fontWeight: 700 }}>Account Financial Standing</div>
                 <div style={{ fontSize: '0.85rem', color: '#000000', marginTop: '0.15rem' }}>
-                  Credit Limit: <span style={{ fontWeight: 600 }}>₱{historyCustomer.creditLimitPHP.toLocaleString()}</span>
+                  Credit Limit: <span style={{ fontWeight: 600 }}>{formatPHP(historyCustomer.creditLimitPHP)}</span>
                 </div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '0.25rem', color: historyCustomer.totalOutstandingPHP > 0 ? '#DC2626' : '#059669' }}>
-                  {historyCustomer.totalOutstandingPHP > 0 ? `Current Debt: ₱${historyCustomer.totalOutstandingPHP.toLocaleString()}` : 'STATUS: FULLY LIQUIDATED (₱0.00)'}
+                  {historyCustomer.totalOutstandingPHP > 0 ? `Current Debt: ${formatPHP(historyCustomer.totalOutstandingPHP)}` : 'STATUS: FULLY LIQUIDATED (₱0.00)'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#000000' }}>
                   Account Standing: <span style={{ fontWeight: 600, color: '#000000' }}>{historyCustomer.status}</span>
@@ -752,13 +753,13 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                           </span>
                         </td>
                         <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', color: '#000000' }}>
-                          ₱{p.balanceBefore.toLocaleString()}
+                          {formatPHP(p.balanceBefore)}
                         </td>
                         <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', fontWeight: 700, color: '#059669' }}>
-                          ₱{p.amount.toLocaleString()}
+                          {formatPHP(p.amount)}
                         </td>
                         <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', fontWeight: 600, color: '#000000' }}>
-                          ₱{p.balanceAfter.toLocaleString()}
+                          {formatPHP(p.balanceAfter)}
                         </td>
                         <td style={{ padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', fontSize: '0.75rem', color: '#000000' }}>
                           {p.recordedByName || 'Authorized Officer'}
@@ -775,7 +776,7 @@ export function ReceivablesView({ currentBranch, currentUserName }: ReceivablesV
                         Total Cumulative Payments:
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1', textAlign: 'right', color: '#059669', fontSize: '0.9rem' }}>
-                        ₱{historyCustomer.payments.reduce((acc, cur) => acc + cur.amount, 0).toLocaleString()}
+                        {formatPHP(historyCustomer.payments.reduce((acc, cur) => acc + cur.amount, 0))}
                       </td>
                       <td colSpan={3} style={{ padding: '0.6rem 0.75rem', border: '1px solid #CBD5E1' }}></td>
                     </tr>

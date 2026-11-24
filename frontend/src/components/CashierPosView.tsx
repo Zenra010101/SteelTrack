@@ -23,6 +23,7 @@ import { BranchLocation } from '../types/auth';
 import type { PosTransaction, PosCartItem, SteelCategory } from '../types/pos';
 import { fetchPosBatches, processPosSale, fetchCustomers, type PosBatchItem } from '../services/api';
 import { printReceiptPdf } from '../utils/tableExport';
+import { formatPHP } from '../utils/currency';
 import {
   enqueueOfflineSale,
   getPendingOfflineSalesCount,
@@ -79,7 +80,8 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   const [activeReceipt, setActiveReceipt] = useState<PosTransaction | null>(null);
   const [transactionError, setTransactionError] = useState<{ message: string; details?: string } | null>(null);
 
-  // Dedicated Payment Modal State
+  // Dedicated Review Cart & Payment Modal State
+  const [isReviewCartModalOpen, setIsReviewCartModalOpen] = useState<boolean>(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
   const [isProcessingSale, setIsProcessingSale] = useState<boolean>(false);
   const [fifoNotice, setFifoNotice] = useState<string | null>(null);
@@ -217,7 +219,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
       if (remainingOldStock > 0) {
         setFifoNotice(
-          `FIFO Policy Active: Older stock (Batch #${oldestBatch.batchCode} @ ₱${oldestBatch.sellingPrice.toLocaleString()}) must be depleted before newer products with updated prices.`
+          `FIFO Policy Active: Older stock (Batch #${oldestBatch.batchCode} @ ${formatPHP(oldestBatch.sellingPrice)}) must be depleted before newer products with updated prices.`
         );
         targetBatch = oldestBatch;
       }
@@ -684,12 +686,12 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                           {batch.quantity} {batch.unitOfMeasure || 'pcs'} in stock
                         </span>
                         <span className="price-pill" style={{ fontSize: '0.95rem', fontWeight: 800, color: '#000000' }}>
-                          ₱{batch.sellingPrice.toLocaleString()}
+                          {formatPHP(batch.sellingPrice)}
                         </span>
                       </div>
 
                       <div style={{ fontSize: '0.72rem', color: '#000000', marginTop: '0.2rem', textAlign: 'right' }}>
-                        Cost: ₱{batch.costPrice.toLocaleString()}
+                        Cost: {formatPHP(batch.costPrice)}
                       </div>
 
                       <button
@@ -812,7 +814,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                     </div>
 
                     <div className="cart-item-total" style={{ fontWeight: 700 }}>
-                      ₱{item.lineTotalPHP.toLocaleString()}
+                      {formatPHP(item.lineTotalPHP)}
                     </div>
 
                     <button
@@ -837,7 +839,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
               <div className="summary-row">
                 <span>Subtotal:</span>
-                <span>₱{subtotalPHP.toLocaleString()}</span>
+                <span>{formatPHP(subtotalPHP)}</span>
               </div>
 
               <div className="summary-row">
@@ -849,7 +851,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   />
                   <span>Standard Value Added Tax (12% VAT):</span>
                 </label>
-                <span>₱{taxPHP.toLocaleString()}</span>
+                <span>{formatPHP(taxPHP)}</span>
               </div>
 
               <div className="summary-row">
@@ -866,17 +868,17 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
 
               <div className="summary-row total-highlight">
                 <span>Grand Total Due:</span>
-                <span className="total-due">₱{grandTotalPHP.toLocaleString()}</span>
+                <span className="total-due">{formatPHP(grandTotalPHP)}</span>
               </div>
             </div>
 
-            {/* Checkout Action: Proceed to Payment Modal */}
+            {/* Checkout Action: Review Customer Cart Modal Trigger */}
             <div style={{ marginTop: '1.25rem' }}>
               <button
                 type="button"
                 className="checkout-submit-btn"
                 disabled={cart.length === 0}
-                onClick={() => setIsPaymentModalOpen(true)}
+                onClick={() => setIsReviewCartModalOpen(true)}
                 style={{
                   width: '100%',
                   padding: '0.85rem',
@@ -900,6 +902,154 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
           </form>
         </div>
       </div>
+
+      {/* REVIEW CUSTOMER CART MODAL */}
+      {isReviewCartModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsReviewCartModalOpen(false)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 840, width: '92%', borderRadius: 12, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', padding: 0, overflow: 'hidden' }}
+          >
+            <div className="modal-header" style={{ borderBottom: '1px solid #E2E8F0', padding: '1rem 1.5rem', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '8px', background: '#E0F2FE', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShoppingCart size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#000000' }}>Review Customer Cart</h3>
+                  <div style={{ fontSize: '0.78rem', color: '#000000' }}>
+                    {selectedCustomerName === 'Other' ? (customCustomerInput || 'Cash Client') : selectedCustomerName} {customers.find((c) => c.name === selectedCustomerName)?.tin ? `• TIN: ${customers.find((c) => c.name === selectedCustomerName)?.tin}` : ''} • Verify item specifications before payment
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setIsReviewCartModalOpen(false)}
+                style={{ padding: '0.25rem 0.5rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                title="Close"
+              >
+                <X size={18} style={{ color: '#000000' }} />
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '1.5rem', padding: '1.5rem' }}>
+              {/* Left Panel: List of products purchasing */}
+              <div style={{ borderRight: '1px solid #E2E8F0', paddingRight: '1.5rem' }}>
+                <h4 style={{ margin: '0 0 0.85rem 0', fontSize: '0.95rem', fontWeight: 700, color: '#000000', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>Purchased Products</span>
+                  <span style={{ fontSize: '0.75rem', background: '#E2E8F0', color: '#000000', padding: '0.1rem 0.45rem', borderRadius: 999 }}>{cart.length}</span>
+                </h4>
+
+                <div style={{ maxHeight: '360px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #CBD5E1', textAlign: 'left', background: '#F8FAFC' }}>
+                        <th style={{ padding: '0.5rem 0.6rem', color: '#000000' }}>Item Details</th>
+                        <th style={{ padding: '0.5rem 0.6rem', textAlign: 'center', color: '#000000' }}>Qty</th>
+                        <th style={{ padding: '0.5rem 0.6rem', textAlign: 'right', color: '#000000' }}>Unit Price</th>
+                        <th style={{ padding: '0.5rem 0.6rem', textAlign: 'right', color: '#000000' }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cart.map((item) => (
+                        <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <td style={{ padding: '0.6rem' }}>
+                            <div style={{ fontWeight: 700, color: '#000000' }}>{item.productName}</div>
+                            <div style={{ fontSize: '0.72rem', color: '#000000' }}>{item.sku} • {item.dimensions}</div>
+                          </td>
+                          <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 700, color: '#000000' }}>
+                            {item.quantityTons} {item.unitOfMeasure || 'pcs'}
+                          </td>
+                          <td style={{ padding: '0.6rem', textAlign: 'right', color: '#000000' }}>
+                            {formatPHP(item.pricePerTonPHP)}
+                          </td>
+                          <td style={{ padding: '0.6rem', textAlign: 'right', fontWeight: 700, color: '#000000' }}>
+                            {formatPHP(item.lineTotalPHP)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Right Panel: Order Summary */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', fontWeight: 700, color: '#000000' }}>Order Summary</h4>
+
+                  <div style={{ background: '#F8FAFC', borderRadius: 8, padding: '1rem', border: '1px solid #E2E8F0', fontSize: '0.88rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', color: '#000000' }}>
+                      <span>Line Items Count:</span>
+                      <strong>{cart.length} item(s) ({totalQuantityUnits} units)</strong>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', color: '#000000' }}>
+                      <span>Subtotal:</span>
+                      <span>{formatPHP(subtotalPHP)}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', color: '#000000' }}>
+                      <span>Calculated Tax (12% VAT):</span>
+                      <span>{formatPHP(taxPHP)}</span>
+                    </div>
+
+                    {discountAmount > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', color: '#059669' }}>
+                        <span>Volume Discount:</span>
+                        <span>-{formatPHP(discountAmount)}</span>
+                      </div>
+                    )}
+
+                    <div style={{ borderTop: '2px solid #CBD5E1', margin: '0.75rem 0' }} />
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#000000' }}>Total Amount Due:</span>
+                      <span style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0284C7' }}>{formatPHP(grandTotalPHP)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setIsReviewCartModalOpen(false)}
+                    style={{ flex: 1, padding: '0.75rem', fontSize: '0.9rem', fontWeight: 600 }}
+                  >
+                    Back to Edit Cart
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => {
+                      setIsReviewCartModalOpen(false);
+                      setIsPaymentModalOpen(true);
+                    }}
+                    style={{
+                      flex: 1.4,
+                      padding: '0.75rem',
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
+                      background: '#10B981',
+                      borderColor: '#059669',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.45rem',
+                      boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.4)',
+                    }}
+                  >
+                    <CheckCircle2 size={18} /> Confirm Order
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DEDICATED POS PAYMENT MODAL */}
       {isPaymentModalOpen && (
@@ -940,43 +1090,41 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   Grand Total Due
                 </div>
                 <div style={{ fontSize: '2.1rem', fontWeight: 800, color: '#0284C7', marginTop: 2 }}>
-                  ₱{grandTotalPHP.toLocaleString()}
+                  {formatPHP(grandTotalPHP)}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: 4 }}>
-                  {cart.length} item(s) · Subtotal: ₱{subtotalPHP.toLocaleString()} {applyVat ? `· 12% VAT: ₱${taxPHP.toLocaleString()}` : ''} {discountAmount > 0 ? `· Discount: -₱${discountAmount.toLocaleString()}` : ''}
+                  {cart.length} item(s) · Subtotal: {formatPHP(subtotalPHP)} {applyVat ? `· 12% VAT: ${formatPHP(taxPHP)}` : ''} {discountAmount > 0 ? `· Discount: -${formatPHP(discountAmount)}` : ''}
                 </div>
               </div>
 
-              {/* Payment Method Selector */}
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#000000', marginBottom: '0.5rem' }}>
+              {/* Payment Method Selector Dropdown */}
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#000000', marginBottom: '0.4rem' }}>
                 Select Payment Method:
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                {(['Cash', 'Card', 'Bank Transfer', 'Cheque', 'Corporate Credit Line', 'Split Payment'] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setPaymentMethod(m)}
-                    style={{
-                      padding: '0.65rem 0.4rem',
-                      borderRadius: 6,
-                      fontSize: '0.82rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      background: paymentMethod === m ? '#0284C7' : '#F8FAFC',
-                      color: paymentMethod === m ? '#FFFFFF' : '#334155',
-                      border: paymentMethod === m ? '1.5px solid #0284C7' : '1px solid #CBD5E1',
-                    }}
-                  >
-                    {m === 'Cash' && '💵 Cash'}
-                    {m === 'Card' && '💳 Card / QRPH'}
-                    {m === 'Bank Transfer' && '🏦 Bank Transfer'}
-                    {m === 'Cheque' && '📝 Cheque / PDC'}
-                    {m === 'Corporate Credit Line' && '🏢 Credit Line'}
-                    {m === 'Split Payment' && '✂️ Split Payment'}
-                  </button>
-                ))}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as any)}
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: 8,
+                    border: '1.5px solid #CBD5E1',
+                    fontSize: '0.92rem',
+                    fontWeight: 600,
+                    color: '#000000',
+                    background: '#FFFFFF',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="Cash">💵 Cash Settlement</option>
+                  <option value="Card">💳 Card / QRPH Digital</option>
+                  <option value="Bank Transfer">🏦 Bank Transfer</option>
+                  <option value="Cheque">📝 Cheque / Post-Dated Cheque (PDC)</option>
+                  <option value="Corporate Credit Line">🏢 Corporate Credit Line (A/R Terms)</option>
+                  <option value="Split Payment">✂️ Split Payment (Multi-Tender)</option>
+                </select>
               </div>
 
               {/* Method-Specific Inputs */}
@@ -1004,7 +1152,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                       style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem' }}
                       onClick={() => setAmountTendered(grandTotalPHP)}
                     >
-                      Exact (₱{grandTotalPHP.toLocaleString()})
+                      Exact ({formatPHP(grandTotalPHP)})
                     </button>
                     <button
                       type="button"
@@ -1012,7 +1160,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                       style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem' }}
                       onClick={() => setAmountTendered((prev) => prev + 500)}
                     >
-                      +₱500
+                      +₱500.00
                     </button>
                     <button
                       type="button"
@@ -1020,19 +1168,19 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                       style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem' }}
                       onClick={() => setAmountTendered((prev) => prev + 1000)}
                     >
-                      +₱1,000
+                      +₱1,000.00
                     </button>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.6rem', borderTop: '1px solid #E2E8F0', fontSize: '0.95rem' }}>
                     <span style={{ color: '#000000', fontWeight: 600 }}>Change Returned:</span>
                     <strong style={{ fontSize: '1.15rem', color: amountTendered >= grandTotalPHP ? '#059669' : '#DC2626' }}>
-                      ₱{changeDuePHP.toLocaleString()}
+                      {formatPHP(changeDuePHP)}
                     </strong>
                   </div>
                   {amountTendered < grandTotalPHP && (
                     <div style={{ color: '#DC2626', fontSize: '0.75rem', marginTop: 4, textAlign: 'right' }}>
-                      Insufficient cash tendered: Needs ₱{(grandTotalPHP - amountTendered).toLocaleString()} more
+                      Insufficient cash tendered: Needs {formatPHP(grandTotalPHP - amountTendered)} more
                     </div>
                   )}
                 </div>
@@ -1194,17 +1342,17 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   <div style={{ background: '#F1F5F9', padding: '0.75rem', borderRadius: 6, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', fontSize: '0.8rem' }}>
                     <div>
                       <span style={{ color: '#000000', display: 'block' }}>Total Allocated:</span>
-                      <strong style={{ fontSize: '0.95rem', color: '#0284C7' }}>₱{totalSplitAllocated.toLocaleString()}</strong>
+                      <strong style={{ fontSize: '0.95rem', color: '#0284C7' }}>{formatPHP(totalSplitAllocated)}</strong>
                     </div>
                     <div>
                       <span style={{ color: '#000000', display: 'block' }}>Remaining Due:</span>
                       <strong style={{ fontSize: '0.95rem', color: splitRemainingDue > 0 ? '#DC2626' : '#059669' }}>
-                        ₱{splitRemainingDue.toLocaleString()}
+                        {formatPHP(splitRemainingDue)}
                       </strong>
                     </div>
                     <div>
                       <span style={{ color: '#000000', display: 'block' }}>Cash Change:</span>
-                      <strong style={{ fontSize: '0.95rem', color: '#059669' }}>₱{splitChangeDue.toLocaleString()}</strong>
+                      <strong style={{ fontSize: '0.95rem', color: '#059669' }}>{formatPHP(splitChangeDue)}</strong>
                     </div>
                   </div>
 
@@ -1222,7 +1370,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                           });
                         }}
                       >
-                        Auto-fill Remaining (₱{splitRemainingDue.toLocaleString()}) to Last Tender
+                        Auto-fill Remaining ({formatPHP(splitRemainingDue)}) to Last Tender
                       </button>
                     </div>
                   )}
@@ -1317,8 +1465,8 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                       </td>
                       <td style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{it.batchCode || it.heatNumber}</td>
                       <td style={{ textAlign: 'right' }}>{it.quantityTons} {it.unitOfMeasure || 'pcs'}</td>
-                      <td style={{ textAlign: 'right' }}>₱{it.pricePerTonPHP.toLocaleString()}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700 }}>₱{it.lineTotalPHP.toLocaleString()}</td>
+                      <td style={{ textAlign: 'right' }}>{formatPHP(it.pricePerTonPHP)}</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatPHP(it.lineTotalPHP)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1328,21 +1476,21 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
             <div className="receipt-totals-box">
               <div className="total-line">
                 <span>Subtotal Amount:</span>
-                <span>₱{activeReceipt.subtotalPHP.toLocaleString()}</span>
+                <span>{formatPHP(activeReceipt.subtotalPHP)}</span>
               </div>
               {activeReceipt.discountPHP > 0 && (
                 <div className="total-line discount">
                   <span>Volume Discount:</span>
-                  <span>-₱{activeReceipt.discountPHP.toLocaleString()}</span>
+                  <span>-{formatPHP(activeReceipt.discountPHP)}</span>
                 </div>
               )}
               <div className="total-line">
                 <span>Value Added Tax (12% VAT):</span>
-                <span>₱{activeReceipt.taxPHP.toLocaleString()}</span>
+                <span>{formatPHP(activeReceipt.taxPHP)}</span>
               </div>
               <div className="total-line grand">
                 <span>Grand Total:</span>
-                <span>₱{activeReceipt.totalAmountPHP.toLocaleString()}</span>
+                <span>{formatPHP(activeReceipt.totalAmountPHP)}</span>
               </div>
               <div className="total-line">
                 <span>Payment Method:</span>
@@ -1354,7 +1502,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   {activeReceipt.splitTenders.map((t, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', color: '#000000' }}>
                       <span>• {t.method} {t.referenceNumber ? `(${t.referenceNumber})` : ''}:</span>
-                      <strong>₱{t.amount.toLocaleString()}</strong>
+                      <strong>{formatPHP(t.amount)}</strong>
                     </div>
                   ))}
                 </div>
@@ -1363,11 +1511,11 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 <>
                   <div className="total-line">
                     <span>Cash Tendered:</span>
-                    <span>₱{activeReceipt.amountTenderedPHP.toLocaleString()}</span>
+                    <span>{formatPHP(activeReceipt.amountTenderedPHP)}</span>
                   </div>
                   <div className="total-line">
                     <span>Change Returned:</span>
-                    <span>₱{(activeReceipt.changeDuePHP || 0).toLocaleString()}</span>
+                    <span>{formatPHP(activeReceipt.changeDuePHP || 0)}</span>
                   </div>
                 </>
               )}

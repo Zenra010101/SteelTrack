@@ -24,9 +24,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  History,
 } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
 import type { SteelBatch } from '../types/steel';
+import { formatPHP } from '../utils/currency';
 
 type ViewTab = 'rbdss' | 'forecast' | 'all';
 type RbdssSegment = 'matrix' | 'schedule' | 'all';
@@ -172,15 +174,19 @@ export function OwnerForecastView({ selectedBranch = 'All' }: OwnerForecastViewP
     [BranchLocation.Mandaue]: 3,
   });
 
-  // The window we ask the API for: current month + 3-month forward demand (no past months)
+  // Historical inspection & comparison toggle
+  const [showHistorical, setShowHistorical] = useState<boolean>(true);
+
+  // The window we ask the API for:
+  // When showHistorical is enabled, query 4 months back so historical and forward forecast series can be compared
   const { fromMonth, toMonth, currentMonthKey } = useMemo(() => {
     const now = startOfMonth(new Date());
     return {
-      fromMonth: monthKey(now),
+      fromMonth: showHistorical ? monthKey(addMonths(now, -4)) : monthKey(now),
       toMonth: monthKey(addMonths(now, FORECAST_MONTHS)),
       currentMonthKey: monthKey(now),
     };
-  }, []);
+  }, [showHistorical]);
 
   useEffect(() => {
     async function loadBatches() {
@@ -371,12 +377,12 @@ export function OwnerForecastView({ selectedBranch = 'All' }: OwnerForecastViewP
     return productOptions.find((p) => p.id === effectiveProductId) || productOptions[0];
   }, [productOptions, effectiveProductId]);
 
-  // Forecast graph: includes ONLY the current month and the 3-month forward demand (no past months)
+  // Forecast graph: includes current & forward demand, plus historical months when comparison toggle is active
   const series = useMemo(() => {
     return rows
-      .filter((r) => r.productId === effectiveProductId && r.month >= currentMonthKey)
+      .filter((r) => r.productId === effectiveProductId && (showHistorical ? true : r.month >= currentMonthKey))
       .sort((a, b) => a.month.localeCompare(b.month));
-  }, [rows, effectiveProductId, currentMonthKey]);
+  }, [rows, effectiveProductId, currentMonthKey, showHistorical]);
 
   const maxVal = useMemo(() => {
     const values = series.flatMap((r) => [
@@ -1269,7 +1275,7 @@ export function OwnerForecastView({ selectedBranch = 'All' }: OwnerForecastViewP
             }}
           >
             <TrendingUp size={15} />
-            📈 Demand Forecasting (LSTM)
+            📈 Demand Forecasting
           </button>
           <button
             type="button"
@@ -1511,18 +1517,45 @@ export function OwnerForecastView({ selectedBranch = 'All' }: OwnerForecastViewP
         <>
           {/* Interactive Demand Projection Graph */}
           <div className="chart-card">
-            <div className="chart-legend">
-              <div className="legend-item">
-                <span className="legend-dot actual" /> Actual Units Sold
+            <div className="chart-legend" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+                <div className="legend-item">
+                  <span className="legend-dot actual" /> Actual Units Sold
+                </div>
+                <div className="legend-item">
+                  <span className="legend-dot predicted" /> Forecasted Demand Units
+                </div>
               </div>
-              <div className="legend-item">
-                <span className="legend-dot predicted" /> LSTM Predicted Units
-              </div>
+
+              {/* Historical Inspection & Comparison Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowHistorical(!showHistorical)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '6px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: showHistorical ? '#E0F2FE' : '#F8FAFC',
+                  color: showHistorical ? '#0284C7' : '#475569',
+                  border: showHistorical ? '1.5px solid #0284C7' : '1px solid #CBD5E1',
+                  transition: 'all 0.15s ease-in-out',
+                  boxShadow: showHistorical ? '0 1px 3px rgba(2, 132, 199, 0.2)' : 'none',
+                }}
+                title="Toggle inspection of historical monthly sales data side-by-side with forecast projection"
+              >
+                <History size={14} />
+                <span>{showHistorical ? 'Historical Comparison: Active' : 'Compare Historical Sales'}</span>
+              </button>
             </div>
 
             {isLoading ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', height: '280px', color: '#000000', fontSize: '0.9rem' }}>
-                <Loader2 size={18} className="spin" /> Loading forecast from the LSTM service…
+                <Loader2 size={18} className="spin" /> Loading demand forecast…
               </div>
             ) : chartPoints.length === 0 ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '280px', color: '#000000', fontSize: '0.9rem' }}>
@@ -1704,7 +1737,7 @@ export function OwnerForecastView({ selectedBranch = 'All' }: OwnerForecastViewP
               <div>
                 <h4>Projected Forecast Value</h4>
                 <div className="insight-value">
-                  ₱{forecastRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  {formatPHP(forecastRevenue)}
                 </div>
                 <p className="insight-desc">
                   Revenue implied by the {FORECAST_MONTHS}-month demand forecast ({forecastDemandUnits.toLocaleString()} units total).
@@ -1989,7 +2022,7 @@ export function OwnerForecastView({ selectedBranch = 'All' }: OwnerForecastViewP
                       <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right', background: '#F0F9FF', color: '#0369A1', fontWeight: 700 }}>
                         PAS (F1)
                       </th>
-                      <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>LSTM Demand</th>
+                      <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Forecasted Demand</th>
                       <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Safety (SS)</th>
                       <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right', background: '#F8FAFC', fontWeight: 700 }}>
                         RS (F2)
@@ -2362,7 +2395,7 @@ export function OwnerForecastView({ selectedBranch = 'All' }: OwnerForecastViewP
                       <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', background: '#F0F9FF', color: '#0369A1', fontWeight: 700 }}>
                         PAS (F1)
                       </th>
-                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right' }}>LSTM Demand</th>
+                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right' }}>Forecasted Demand</th>
                       <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right' }}>Safety (SS)</th>
                       <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', background: '#F8FAFC', fontWeight: 700 }}>
                         RS (F2)
@@ -2696,7 +2729,7 @@ export function OwnerForecastView({ selectedBranch = 'All' }: OwnerForecastViewP
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0284C7', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Cpu size={22} />
-                  LSTM Demand Forecasting Service Health
+                  Demand Forecasting Service Health
                 </h3>
                 <div style={{ fontSize: '0.82rem', color: '#000000', marginTop: '0.25rem' }}>
                   Real-time microservice status, trained neural network telemetry, and fallback metrics.

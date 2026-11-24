@@ -425,7 +425,7 @@ export function App() {
       case 'audit':
         return 'System Audit Logs & Visual JSON Diff Inspection';
       case 'forecast':
-        return 'LSTM Neural Network Steel Demand Forecast';
+        return 'Demand Forecasting';
       case 'transfers':
         return 'Inter-Branch Stock Transfer System';
       case 'pos':

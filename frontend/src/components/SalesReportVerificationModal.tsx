@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Calculator } from 'lucide-react';
 import { BranchLocation } from '../types/auth';
+import { formatPHP } from '../utils/currency';
 
 interface SalesReportVerificationModalProps {
   isOpen: boolean;
@@ -61,7 +62,7 @@ export function SalesReportVerificationModal({
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.5rem', borderTop: '1px solid #E2E8F0', fontSize: '0.98rem' }}>
             <span style={{ color: '#000000', fontWeight: 600 }}>System Recorded Net Sales:</span>
-            <strong style={{ color: '#000000', fontSize: '1.1rem' }}>₱{systemTotalPHP.toLocaleString()}</strong>
+            <strong style={{ color: '#000000', fontSize: '1.1rem' }}>{formatPHP(systemTotalPHP)}</strong>
           </div>
         </div>
 
@@ -100,7 +101,7 @@ export function SalesReportVerificationModal({
               {variance < 0 && <span style={{ color: '#000000', fontWeight: 600 }}> (Shortage)</span>}
             </div>
             <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#000000' }}>
-              ₱{Math.abs(variance).toLocaleString()}
+              {formatPHP(Math.abs(variance))}
             </div>
           </div>
 

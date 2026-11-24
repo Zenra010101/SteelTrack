@@ -895,10 +895,16 @@ export async function processPosSale(
     });
   }
 
+  const discountPercent = dto.subtotalPHP && dto.subtotalPHP > 0 && dto.discountPHP
+    ? (dto.discountPHP / dto.subtotalPHP) * 100
+    : 0;
+
   const salePayload: any = {
     branch: dto.branch,
     customerName: dto.customerName,
     customerTin: dto.customerTin,
+    discountPercent: Number(discountPercent.toFixed(2)),
+    taxMode: (dto.taxPHP && dto.taxPHP > 0) ? 1 : 0,
     subTotal: dto.subtotalPHP,
     discountAmount: dto.discountPHP,
     taxAmount: dto.taxPHP,

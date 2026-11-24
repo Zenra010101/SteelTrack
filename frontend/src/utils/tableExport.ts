@@ -4,6 +4,8 @@
  * across all modules and tables in the application.
  */
 
+import { formatPHP } from './currency';
+
 export interface ExportTableData {
   filename: string;
   title: string;
@@ -278,8 +280,8 @@ export function printReceiptPdf(receipt: any): void {
         <div style="font-size: 9px; color: #64748B;">${escapeHtml(it.sku || it.dimensions || 'Standard')}</div>
       </td>
       <td style="text-align: right; padding: 4px 0;">${Number(it.quantityTons ?? it.quantity ?? 1)}</td>
-      <td style="text-align: right; padding: 4px 0;">₱${Number(it.pricePerTonPHP ?? it.unitPrice ?? 0).toLocaleString()}</td>
-      <td style="text-align: right; padding: 4px 0; font-weight: 700;">₱${Number(it.lineTotalPHP ?? it.lineTotal ?? 0).toLocaleString()}</td>
+      <td style="text-align: right; padding: 4px 0;">${formatPHP(it.pricePerTonPHP ?? it.unitPrice ?? 0)}</td>
+      <td style="text-align: right; padding: 4px 0; font-weight: 700;">${formatPHP(it.lineTotalPHP ?? it.lineTotal ?? 0)}</td>
     </tr>`
     )
     .join('');
@@ -290,7 +292,7 @@ export function printReceiptPdf(receipt: any): void {
         ${receipt.splitTenders.map((t: any) => `
           <div style="display: flex; justify-content: space-between;">
             <span>• ${escapeHtml(t.method)} ${t.referenceNumber ? `(${escapeHtml(t.referenceNumber)})` : ''}:</span>
-            <strong>₱${Number(t.amount).toLocaleString()}</strong>
+            <strong>${formatPHP(t.amount)}</strong>
           </div>
         `).join('')}
       </div>`
@@ -377,20 +379,20 @@ export function printReceiptPdf(receipt: any): void {
   <div class="totals">
     <div class="row">
       <span>Subtotal:</span>
-      <span>₱${Number(receipt.subtotalPHP ?? receipt.totalAmountPHP ?? 0).toLocaleString()}</span>
+      <span>${formatPHP(receipt.subtotalPHP ?? receipt.totalAmountPHP ?? 0)}</span>
     </div>
     ${receipt.discountPHP > 0 ? `
     <div class="row" style="color: #059669;">
       <span>Volume Discount:</span>
-      <span>-₱${Number(receipt.discountPHP).toLocaleString()}</span>
+      <span>-${formatPHP(receipt.discountPHP)}</span>
     </div>` : ''}
     <div class="row">
       <span>12% VAT Included:</span>
-      <span>₱${Number(receipt.taxPHP ?? 0).toLocaleString()}</span>
+      <span>${formatPHP(receipt.taxPHP ?? 0)}</span>
     </div>
     <div class="row grand">
       <span>TOTAL DUE:</span>
-      <span>₱${Number(receipt.totalAmountPHP ?? receipt.totalAmountUSD ?? 0).toLocaleString()}</span>
+      <span>${formatPHP(receipt.totalAmountPHP ?? receipt.totalAmountUSD ?? 0)}</span>
     </div>
     <div class="row" style="margin-top: 4px;">
       <span>Payment Method:</span>
@@ -400,11 +402,11 @@ export function printReceiptPdf(receipt: any): void {
     ${receipt.paymentMethod === 'Cash' && receipt.amountTenderedPHP !== undefined ? `
     <div class="row">
       <span>Cash Tendered:</span>
-      <span>₱${Number(receipt.amountTenderedPHP).toLocaleString()}</span>
+      <span>${formatPHP(receipt.amountTenderedPHP)}</span>
     </div>
     <div class="row">
       <span>Change Due:</span>
-      <span>₱${Number(receipt.changeDuePHP ?? 0).toLocaleString()}</span>
+      <span>${formatPHP(receipt.changeDuePHP ?? 0)}</span>
     </div>` : ''}
   </div>
 

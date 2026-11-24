@@ -94,6 +94,9 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
       setUsername('');
       setPassword('');
 
+      // 400ms delay to smooth out loading state transitions
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
       onLogin({
         username: authData?.user?.email || trimmedUser,
         name: displayName,

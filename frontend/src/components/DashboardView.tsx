@@ -28,6 +28,7 @@ import {
   fetchReceivableStats,
 } from '../services/api';
 import { TableExportButtons } from './TableExportButtons';
+import { formatPHP } from '../utils/currency';
 
 export type RevenueTimeframe = 'Daily' | 'Monthly' | 'Trimester' | 'Semester' | 'Yearly';
 
@@ -90,6 +91,7 @@ export function DashboardView({
   const [transfersCount, setTransfersCount] = useState<number>(0);
   const [approvalsCount, setApprovalsCount] = useState<number>(0);
   const [allSales, setAllSales] = useState<PosTransaction[]>([]);
+  const [globalSales, setGlobalSales] = useState<PosTransaction[]>([]);
   const [receivablesTotal, setReceivablesTotal] = useState<number>(0);
   const [timeframe, setTimeframe] = useState<RevenueTimeframe>('Monthly');
 
@@ -107,12 +109,15 @@ export function DashboardView({
     async function loadDashboardMetrics() {
       setLoading(true);
       try {
-        const [prodResult, trList, appList, posResult, recStats] = await Promise.all([
+        const [prodResult, trList, appList, posResult, recStats, globalPosResult] = await Promise.all([
           fetchBranchProducts(undefined, undefined, undefined, false, effectiveBranch),
           fetchTransfers(effectiveBranch),
           fetchApprovals(undefined, effectiveBranch),
           fetchPosTransactions(effectiveBranch),
           fetchReceivableStats(effectiveBranch),
+          userSession.role === UserRole.Owner && effectiveBranch !== undefined
+            ? fetchPosTransactions(undefined)
+            : Promise.resolve(null),
         ]);
 
         if (cancelled) return;
@@ -121,6 +126,9 @@ export function DashboardView({
         setTransfersCount(trList.filter((t) => t.status === 'Pending' || t.status === 'InTransit').length);
         setApprovalsCount(appList.filter((a) => a.status === 'Pending').length);
         setAllSales(posResult || []);
+        if (userSession.role === UserRole.Owner) {
+          setGlobalSales(globalPosResult !== null ? (globalPosResult || []) : (posResult || []));
+        }
 
         if (recStats) {
           setReceivablesTotal(recStats.totalReceivablesPHP || 0);
@@ -149,6 +157,18 @@ export function DashboardView({
 
   const salesCount = timeframeSales.length;
 
+  // Enterprise-wide sales for Owner branch breakdown (always global across all 4 branches regardless of sidebar filter)
+  const enterpriseTimeframeSales = useMemo(() => {
+    const list = userSession.role === UserRole.Owner && globalSales.length > 0 ? globalSales : allSales;
+    return list.filter((s) => isDateInTimeframe(s.createdAt, timeframe));
+  }, [userSession.role, globalSales, allSales, timeframe]);
+
+  const enterpriseSalesRevenueTotal = useMemo(() => {
+    return enterpriseTimeframeSales.reduce((sum, s) => sum + (s.totalAmountPHP || s.totalAmountUSD || 0), 0);
+  }, [enterpriseTimeframeSales]);
+
+  const enterpriseSalesCount = enterpriseTimeframeSales.length;
+
   const totalStockTons = branchProducts
     .reduce((acc, p) => acc + Number(p.weightInTons ?? Number(p.stockQuantity ?? 0) * 0.1), 0)
     .toFixed(1);
@@ -171,7 +191,7 @@ export function DashboardView({
     return qty >= 10 && qty <= 20;
   });
 
-  // Owner Breakdown: revenue & volume disseminated across all 4 official branches
+  // Owner Breakdown: revenue & volume disseminated across all 4 official branches (always global)
   const branchBreakdownData = useMemo(() => {
     const branches = [
       BranchLocation.Davao,
@@ -181,7 +201,7 @@ export function DashboardView({
     ];
 
     return branches.map((loc) => {
-      const bSales = timeframeSales.filter((s) => {
+      const bSales = enterpriseTimeframeSales.filter((s) => {
         const bName = (s.branch || '').toLowerCase();
         const lName = loc.toLowerCase();
         return bName.includes(lName) || lName.includes(bName);
@@ -189,7 +209,7 @@ export function DashboardView({
 
       const rev = bSales.reduce((sum, s) => sum + (s.totalAmountPHP || s.totalAmountUSD || 0), 0);
       const count = bSales.length;
-      const share = salesRevenueTotal > 0 ? (rev / salesRevenueTotal) * 100 : 0;
+      const share = enterpriseSalesRevenueTotal > 0 ? (rev / enterpriseSalesRevenueTotal) * 100 : 0;
       const avgTicket = count > 0 ? rev / count : 0;
 
       return {
@@ -200,7 +220,7 @@ export function DashboardView({
         avgTicket,
       };
     });
-  }, [timeframeSales, salesRevenueTotal]);
+  }, [enterpriseTimeframeSales, enterpriseSalesRevenueTotal]);
 
   // Branch Manager Breakdown: revenue breakdown by payment method for their assigned branch
   const branchPaymentBreakdown = useMemo(() => {
@@ -449,7 +469,7 @@ export function DashboardView({
                   : `Total Revenue (${timeframe})`}
               </div>
               <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#000000', marginTop: 4 }}>
-                ₱{salesRevenueTotal.toLocaleString()}
+                {formatPHP(salesRevenueTotal)}
               </div>
             </div>
             <div style={{ width: 40, height: 40, borderRadius: 8, background: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -671,12 +691,12 @@ export function DashboardView({
               <TableExportButtons
                 filename={`${userSession.branch}_Revenue_${timeframe}`}
                 title={`${userSession.branch} Branch Revenue Breakdown (${timeframe})`}
-                subtitle={`Total Period Revenue: ₱${salesRevenueTotal.toLocaleString()} across ${salesCount} transaction(s)`}
+                subtitle={`Total Period Revenue: ${formatPHP(salesRevenueTotal)} across ${salesCount} transaction(s)`}
                 headers={['Payment Tender Channel', 'Transaction Count', 'Revenue Total (PHP)', 'Share of Period Revenue']}
                 rows={branchPaymentBreakdown.map((b) => [
                   b.method,
                   b.count,
-                  `₱${b.revenue.toLocaleString()}`,
+                  formatPHP(b.revenue),
                   `${b.share.toFixed(1)}%`,
                 ])}
               />
@@ -688,10 +708,10 @@ export function DashboardView({
                   Branch Period Total
                 </div>
                 <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#000000', marginTop: 4 }}>
-                  ₱{salesRevenueTotal.toLocaleString()}
+                  {formatPHP(salesRevenueTotal)}
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#059669', marginTop: 4, fontWeight: 600 }}>
-                  {salesCount} Total Orders • Avg Order: ₱{salesCount > 0 ? Math.round(salesRevenueTotal / salesCount).toLocaleString() : '0'}
+                  {salesCount} Total Orders • Avg Order: {formatPHP(salesCount > 0 ? salesRevenueTotal / salesCount : 0)}
                 </div>
               </div>
 
@@ -743,14 +763,14 @@ export function DashboardView({
               <TableExportButtons
                 filename={`AllBranches_Revenue_Breakdown_${timeframe}`}
                 title={`Enterprise Revenue Breakdown per Branch (${timeframe})`}
-                subtitle={`Overall Combined Revenue: ₱${salesRevenueTotal.toLocaleString()} across ${salesCount} transaction(s)`}
+                subtitle={`Overall Combined Revenue: ${formatPHP(enterpriseSalesRevenueTotal)} across ${enterpriseSalesCount} transaction(s)`}
                 headers={['Branch Facility', 'Revenue Total (PHP)', 'Share of Revenue (%)', 'Transaction Count', 'Avg Ticket (PHP)']}
                 rows={branchBreakdownData.map((b) => [
                   `${b.branch} Branch`,
-                  `₱${b.revenue.toLocaleString()}`,
+                  formatPHP(b.revenue),
                   `${b.share.toFixed(1)}%`,
                   b.count,
-                  `₱${Math.round(b.avgTicket).toLocaleString()}`,
+                  formatPHP(b.avgTicket),
                 ])}
               />
             </div>
@@ -790,7 +810,7 @@ export function DashboardView({
                           </div>
                         </td>
                         <td style={{ textAlign: 'right', padding: '0.75rem 0.85rem', fontWeight: 700, color: '#000000', fontFamily: 'Outfit, sans-serif' }}>
-                          ₱{b.revenue.toLocaleString()}
+                          {formatPHP(b.revenue)}
                         </td>
                         <td style={{ padding: '0.75rem 0.85rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -812,7 +832,7 @@ export function DashboardView({
                           {b.count}
                         </td>
                         <td style={{ textAlign: 'right', padding: '0.75rem 0.85rem', color: '#000000' }}>
-                          ₱{Math.round(b.avgTicket).toLocaleString()}
+                          {formatPHP(b.avgTicket)}
                         </td>
                         <td style={{ textAlign: 'center', padding: '0.75rem 0.85rem' }}>
                           <button
@@ -897,7 +917,7 @@ export function DashboardView({
               </h4>
               {receivablesTotal > 0 && (
                 <span style={{ fontSize: '0.78rem', color: '#000000' }}>
-                  Total Receivables: <strong style={{ color: '#000000' }}>₱{receivablesTotal.toLocaleString()}</strong>
+                  Total Receivables: <strong style={{ color: '#000000' }}>{formatPHP(receivablesTotal)}</strong>
                 </span>
               )}
             </div>
@@ -907,7 +927,7 @@ export function DashboardView({
                 onClick={() => onSelectTab('forecast')}
                 style={{ padding: '0.65rem 1rem', display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.85rem', justifyContent: 'flex-start' }}
               >
-                <Sparkles size={16} style={{ color: '#0284C7' }} /> LSTM Demand Forecast
+                <Sparkles size={16} style={{ color: '#0284C7' }} /> Demand Forecasting
               </button>
               <button
                 className="btn-secondary"

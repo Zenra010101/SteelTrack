@@ -195,10 +195,10 @@ export function Sidebar({
             <button
               className={`sidebar-nav-item ${activeTab === 'forecast' ? 'active' : ''}`}
               onClick={() => onSelectTab('forecast')}
-              title="LSTM Demand Forecast"
+              title="Demand Forecasting"
             >
               <TrendingUp size={18} />
-              {!isCollapsed && <span>LSTM AI Demand Forecast</span>}
+              {!isCollapsed && <span>Demand Forecasting</span>}
             </button>
 
             <button
