@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layers, Mail, KeyRound, ArrowRight, Sparkles, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Layers, Mail, KeyRound, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { UserRole, BranchLocation, type UserSession } from '../types/auth';
 import loginHeroImg from '../assets/login-hero.jpg';
 
@@ -13,7 +13,6 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [redirectNotice, setRedirectNotice] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -92,23 +91,15 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
 
       const displayName = authData?.user?.fullName || trimmedUser.split('@')[0];
 
-      setRedirectNotice(
-        role === UserRole.Owner
-          ? 'Authenticated! Redirecting to All-Branches Executive View...'
-          : `Verified! Redirecting ${displayName} to ${branch} Branch Workspace...`
-      );
-
       setUsername('');
       setPassword('');
 
-      setTimeout(() => {
-        onLogin({
-          username: authData?.user?.email || trimmedUser,
-          name: displayName,
-          role,
-          branch,
-        });
-      }, 400);
+      onLogin({
+        username: authData?.user?.email || trimmedUser,
+        name: displayName,
+        role,
+        branch,
+      });
     } catch (err: any) {
       console.error('Login request failed:', err);
       setErrorMessage('Unable to connect to authentication server. Please verify your connection.');
@@ -155,13 +146,6 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
           </div>
 
           {/* Feedback & Notices */}
-          {redirectNotice && (
-            <div className="login-auto-notice" style={{ background: '#ECFDF5', borderColor: '#A7F3D0', color: '#065F46', marginBottom: '1rem' }}>
-              <Sparkles size={16} />
-              <span>{redirectNotice}</span>
-            </div>
-          )}
-
           {errorMessage && (
             <div className="login-auto-notice" style={{ background: '#FEF2F2', borderColor: '#FECACA', color: '#B91C1C', marginBottom: '1rem' }}>
               <AlertCircle size={16} />
@@ -223,7 +207,7 @@ export function LoginScreen({ onLogin, notice: _notice }: LoginScreenProps) {
             </div>
 
             <button type="submit" className="btn-login" style={{ marginTop: '0.5rem' }} disabled={isLoading}>
-              <span>{isLoading ? 'Verifying with Database...' : 'Sign In to Workspace'}</span>
+              <span>{isLoading ? 'Signing in...' : 'Sign In to Workspace'}</span>
               <ArrowRight size={18} />
             </button>
           </form>
