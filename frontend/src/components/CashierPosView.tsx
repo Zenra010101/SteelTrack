@@ -62,8 +62,12 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Card' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque' | 'Split Payment'>('Cash');
   const [amountTendered, setAmountTendered] = useState<number>(0);
   const [referenceNumber, setReferenceNumber] = useState<string>('');
-  const [applyVat, setApplyVat] = useState<boolean>(true);
-  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [taxMode, setTaxMode] = useState<0 | 1 | 2 | 3>(1); // 0=None, 1=VAT 12%, 2=WHT 1%, 3=Manual
+  const [manualTaxName, setManualTaxName] = useState<string>('Manual Tax');
+  const [manualTaxIsPercent, setManualTaxIsPercent] = useState<boolean>(true);
+  const [manualTaxValue, setManualTaxValue] = useState<number>(5);
+  const [manualTaxIsDeduction, setManualTaxIsDeduction] = useState<boolean>(false);
+  const [discountPercent, setDiscountPercent] = useState<number>(0);
 
   // Split Payment tenders state
   const [splitTenders, setSplitTenders] = useState<Array<{
@@ -308,13 +312,45 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
     return cart.reduce((sum, item) => sum + item.quantityTons, 0);
   }, [cart]);
 
-  const taxPHP = useMemo(() => {
-    return applyVat ? Number((subtotalPHP * 0.12).toFixed(2)) : 0;
-  }, [subtotalPHP, applyVat]);
+  const discountAmount = useMemo(() => {
+    return Number(((subtotalPHP * discountPercent) / 100).toFixed(2));
+  }, [subtotalPHP, discountPercent]);
+
+  const taxableBasePHP = useMemo(() => {
+    return Math.max(0, Number((subtotalPHP - discountAmount).toFixed(2)));
+  }, [subtotalPHP, discountAmount]);
+
+  const { taxPHP, withholdingPHP, taxLabel } = useMemo(() => {
+    if (taxMode === 1) {
+      return {
+        taxPHP: Number((taxableBasePHP * 0.12).toFixed(2)),
+        withholdingPHP: 0,
+        taxLabel: 'VAT 12%',
+      };
+    }
+    if (taxMode === 2) {
+      return {
+        taxPHP: 0,
+        withholdingPHP: Number((taxableBasePHP * 0.01).toFixed(2)),
+        taxLabel: 'WHT 1%',
+      };
+    }
+    if (taxMode === 3) {
+      const val = Math.max(0, manualTaxValue || 0);
+      const computed = manualTaxIsPercent
+        ? Number(((taxableBasePHP * val) / 100).toFixed(2))
+        : Number(val.toFixed(2));
+      const label = manualTaxName.trim() || 'Manual Tax';
+      return manualTaxIsDeduction
+        ? { taxPHP: 0, withholdingPHP: computed, taxLabel: label }
+        : { taxPHP: computed, withholdingPHP: 0, taxLabel: label };
+    }
+    return { taxPHP: 0, withholdingPHP: 0, taxLabel: 'No Tax' };
+  }, [taxMode, taxableBasePHP, manualTaxName, manualTaxIsPercent, manualTaxValue, manualTaxIsDeduction]);
 
   const grandTotalPHP = useMemo(() => {
-    return Math.max(0, Number((subtotalPHP + taxPHP - discountAmount).toFixed(2)));
-  }, [subtotalPHP, taxPHP, discountAmount]);
+    return Math.max(0, Number((taxableBasePHP + taxPHP - withholdingPHP).toFixed(2)));
+  }, [taxableBasePHP, taxPHP, withholdingPHP]);
 
   const changeDuePHP = useMemo(() => {
     if (paymentMethod !== 'Cash' || amountTendered < grandTotalPHP) return 0;
@@ -347,6 +383,10 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
   // Sale Execution from Dedicated Payment Modal (Supports Offline Queueing)
   const handleExecuteSale = async () => {
     if (cart.length === 0 || isProcessingSale) return;
+    if (taxMode === 3 && (!manualTaxValue || manualTaxValue <= 0)) {
+      setTransactionError({ message: 'Please enter a manual tax value greater than zero.' });
+      return;
+    }
     setIsProcessingSale(true);
 
     const customer = selectedCustomerName === 'Other' ? customCustomerInput || 'Cash Customer' : selectedCustomerName;
@@ -370,6 +410,14 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
       totalTonnage: Number(totalQuantityUnits.toFixed(2)),
       subtotalPHP: Number(subtotalPHP.toFixed(2)),
       taxPHP,
+      withholdingPHP,
+      taxMode,
+      taxTypeLabel: taxLabel,
+      manualTaxName: taxMode === 3 ? (manualTaxName.trim() || 'Manual Tax') : undefined,
+      manualTaxIsPercent: taxMode === 3 ? manualTaxIsPercent : false,
+      manualTaxValue: taxMode === 3 ? manualTaxValue : 0,
+      manualTaxIsDeduction: taxMode === 3 ? manualTaxIsDeduction : false,
+      discountPercent,
       discountPHP: discountAmount,
       totalAmountPHP: grandTotalPHP,
       paymentMethod,
@@ -430,6 +478,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
       setIsPaymentModalOpen(false);
       setActiveReceipt(newTx);
       setCart([]);
+      setDiscountPercent(0);
       setAmountTendered(0);
       setReferenceNumber('');
       setSplitTenders([
@@ -842,29 +891,110 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                 <span>{formatPHP(subtotalPHP)}</span>
               </div>
 
-              <div className="summary-row">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={applyVat}
-                    onChange={(e) => setApplyVat(e.target.checked)}
-                  />
-                  <span>Standard Value Added Tax (12% VAT):</span>
-                </label>
-                <span>{formatPHP(taxPHP)}</span>
+              <div className="summary-row" style={{ alignItems: 'center', gap: '0.5rem' }}>
+                <span>Discount:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <select
+                    aria-label="Discount Percentage"
+                    value={discountPercent}
+                    onChange={(e) => setDiscountPercent(Number(e.target.value))}
+                    style={{
+                      padding: '0.25rem 0.5rem',
+                      fontSize: '0.82rem',
+                      borderRadius: '6px',
+                      border: '1px solid #CBD5E1',
+                      background: '#FFFFFF',
+                      color: '#000000',
+                    }}
+                  >
+                    <option value={0}>0% (None)</option>
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((pct) => (
+                      <option key={pct} value={pct}>
+                        {pct}%
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ minWidth: '72px', textAlign: 'right', color: discountAmount > 0 ? '#059669' : '#000000' }}>
+                    {discountAmount > 0 ? `-${formatPHP(discountAmount)}` : formatPHP(0)}
+                  </span>
+                </div>
               </div>
 
-              <div className="summary-row">
-                <span>Volume Discount (₱):</span>
-                <input
-                  type="number"
-                  min={0}
-                  step="10"
-                  value={discountAmount}
-                  onChange={(e) => setDiscountAmount(Math.max(0, parseFloat(e.target.value) || 0))}
-                  style={{ width: '80px', textAlign: 'right', fontSize: '0.8rem', padding: '0.2rem' }}
-                />
+              <div className="summary-row" style={{ alignItems: 'center', gap: '0.5rem' }}>
+                <span>Tax:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <select
+                    aria-label="Tax Mode"
+                    value={taxMode}
+                    onChange={(e) => setTaxMode(Number(e.target.value) as 0 | 1 | 2 | 3)}
+                    style={{
+                      padding: '0.25rem 0.5rem',
+                      fontSize: '0.82rem',
+                      borderRadius: '6px',
+                      border: '1px solid #CBD5E1',
+                      background: '#FFFFFF',
+                      color: '#000000',
+                    }}
+                  >
+                    <option value={1}>VAT 12%</option>
+                    <option value={2}>WHT 1%</option>
+                    <option value={3}>Manual Tax</option>
+                    <option value={0}>No Tax (0%)</option>
+                  </select>
+                  <span style={{ minWidth: '72px', textAlign: 'right', color: withholdingPHP > 0 ? '#DC2626' : '#000000' }}>
+                    {withholdingPHP > 0 ? `-${formatPHP(withholdingPHP)}` : formatPHP(taxPHP)}
+                  </span>
+                </div>
               </div>
+
+              {taxMode === 3 && (
+                <div
+                  style={{
+                    background: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '6px',
+                    padding: '0.5rem',
+                    marginBottom: '0.5rem',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 68px 64px 74px',
+                    gap: '0.35rem',
+                    alignItems: 'center',
+                  }}
+                >
+                  <input
+                    type="text"
+                    placeholder="Tax name"
+                    value={manualTaxName}
+                    onChange={(e) => setManualTaxName(e.target.value)}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.4rem', borderRadius: 4, border: '1px solid #CBD5E1' }}
+                  />
+                  <input
+                    type="number"
+                    min={0.01}
+                    max={manualTaxIsPercent ? 100 : undefined}
+                    step="0.5"
+                    value={manualTaxValue}
+                    onChange={(e) => setManualTaxValue(Math.max(0, parseFloat(e.target.value) || 0))}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.35rem', textAlign: 'right', borderRadius: 4, border: '1px solid #CBD5E1' }}
+                  />
+                  <select
+                    value={manualTaxIsPercent ? 'pct' : 'php'}
+                    onChange={(e) => setManualTaxIsPercent(e.target.value === 'pct')}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem', borderRadius: 4, border: '1px solid #CBD5E1', background: '#FFF' }}
+                  >
+                    <option value="pct">%</option>
+                    <option value="php">₱</option>
+                  </select>
+                  <select
+                    value={manualTaxIsDeduction ? 'deduct' : 'add'}
+                    onChange={(e) => setManualTaxIsDeduction(e.target.value === 'deduct')}
+                    style={{ fontSize: '0.75rem', padding: '0.25rem', borderRadius: 4, border: '1px solid #CBD5E1', background: '#FFF' }}
+                  >
+                    <option value="add">+ Add</option>
+                    <option value="deduct">- Ded</option>
+                  </select>
+                </div>
+              )}
 
               <div className="summary-row total-highlight">
                 <span>Grand Total Due:</span>
@@ -991,17 +1121,17 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                       <span>{formatPHP(subtotalPHP)}</span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', color: '#000000' }}>
-                      <span>Calculated Tax (12% VAT):</span>
-                      <span>{formatPHP(taxPHP)}</span>
-                    </div>
-
                     {discountAmount > 0 && (
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', color: '#059669' }}>
-                        <span>Volume Discount:</span>
+                        <span>Discount ({discountPercent}%):</span>
                         <span>-{formatPHP(discountAmount)}</span>
                       </div>
                     )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', color: withholdingPHP > 0 ? '#DC2626' : '#000000' }}>
+                      <span>Tax ({taxLabel}):</span>
+                      <span>{withholdingPHP > 0 ? `-${formatPHP(withholdingPHP)}` : formatPHP(taxPHP)}</span>
+                    </div>
 
                     <div style={{ borderTop: '2px solid #CBD5E1', margin: '0.75rem 0' }} />
 
@@ -1093,7 +1223,7 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
                   {formatPHP(grandTotalPHP)}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#000000', marginTop: 4 }}>
-                  {cart.length} item(s) · Subtotal: {formatPHP(subtotalPHP)} {applyVat ? `· 12% VAT: ${formatPHP(taxPHP)}` : ''} {discountAmount > 0 ? `· Discount: -${formatPHP(discountAmount)}` : ''}
+                  {cart.length} item(s) · Subtotal: {formatPHP(subtotalPHP)} {discountAmount > 0 ? `· Discount (${discountPercent}%): -${formatPHP(discountAmount)}` : ''} {taxMode !== 0 ? `· ${taxLabel}: ${withholdingPHP > 0 ? `-${formatPHP(withholdingPHP)}` : formatPHP(taxPHP)}` : ''}
                 </div>
               </div>
 
@@ -1480,13 +1610,17 @@ export function CashierPosView({ branch, cashierName }: CashierPosViewProps) {
               </div>
               {activeReceipt.discountPHP > 0 && (
                 <div className="total-line discount">
-                  <span>Volume Discount:</span>
+                  <span>Discount{activeReceipt.discountPercent ? ` (${activeReceipt.discountPercent}%)` : ''}:</span>
                   <span>-{formatPHP(activeReceipt.discountPHP)}</span>
                 </div>
               )}
               <div className="total-line">
-                <span>Value Added Tax (12% VAT):</span>
-                <span>{formatPHP(activeReceipt.taxPHP)}</span>
+                <span>Tax ({activeReceipt.taxTypeLabel || 'VAT 12%'}):</span>
+                <span>
+                  {activeReceipt.withholdingPHP && activeReceipt.withholdingPHP > 0
+                    ? `-${formatPHP(activeReceipt.withholdingPHP)}`
+                    : formatPHP(activeReceipt.taxPHP)}
+                </span>
               </div>
               <div className="total-line grand">
                 <span>Grand Total:</span>

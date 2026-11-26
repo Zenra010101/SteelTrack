@@ -902,16 +902,24 @@ export async function processPosSale(
     });
   }
 
-  const discountPercent = dto.subtotalPHP && dto.subtotalPHP > 0 && dto.discountPHP
-    ? (dto.discountPHP / dto.subtotalPHP) * 100
-    : 0;
+  const discountPercent = dto.discountPercent !== undefined
+    ? dto.discountPercent
+    : (dto.subtotalPHP && dto.subtotalPHP > 0 && dto.discountPHP
+        ? (dto.discountPHP / dto.subtotalPHP) * 100
+        : 0);
+
+  const taxMode = dto.taxMode !== undefined ? dto.taxMode : ((dto.taxPHP && dto.taxPHP > 0) ? 1 : 0);
 
   const salePayload: any = {
     branch: dto.branch,
     customerName: dto.customerName,
     customerTin: dto.customerTin,
     discountPercent: Number(discountPercent.toFixed(2)),
-    taxMode: (dto.taxPHP && dto.taxPHP > 0) ? 1 : 0,
+    taxMode,
+    manualTaxName: taxMode === 3 ? (dto.manualTaxName || 'Manual Tax') : undefined,
+    manualTaxIsPercent: taxMode === 3 ? Boolean(dto.manualTaxIsPercent) : false,
+    manualTaxValue: taxMode === 3 ? Number(dto.manualTaxValue || 0) : 0,
+    manualTaxIsDeduction: taxMode === 3 ? Boolean(dto.manualTaxIsDeduction) : false,
     subTotal: dto.subtotalPHP,
     discountAmount: dto.discountPHP,
     taxAmount: dto.taxPHP,

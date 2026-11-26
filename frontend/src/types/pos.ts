@@ -55,6 +55,14 @@ export interface PosTransaction {
   totalTonnage: number;
   subtotalPHP: number;
   taxPHP: number;
+  withholdingPHP?: number;
+  taxMode?: number;
+  taxTypeLabel?: string;
+  manualTaxName?: string;
+  manualTaxIsPercent?: boolean;
+  manualTaxValue?: number;
+  manualTaxIsDeduction?: boolean;
+  discountPercent?: number;
   discountPHP: number;
   totalAmountPHP: number;
   paymentMethod: 'Cash' | 'Card' | 'Bank Transfer' | 'Corporate Credit Line' | 'Cheque' | 'Split Payment';
